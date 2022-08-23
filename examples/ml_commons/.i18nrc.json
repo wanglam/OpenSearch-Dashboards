@@ -1,0 +1,7 @@
+{
+  "prefix": "mlCommons",
+  "paths": {
+    "mlCommons": "."
+  },
+  "translations": ["translations/ja-JP.json"]
+}
