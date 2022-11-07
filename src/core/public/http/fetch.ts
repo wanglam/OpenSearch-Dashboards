@@ -29,7 +29,6 @@
  */
 
 import { omitBy } from 'lodash';
-import { format } from 'url';
 import { BehaviorSubject } from 'rxjs';
 
 import {
@@ -147,18 +146,29 @@ export class Fetch {
         'osd-version': this.params.opensearchDashboardsVersion,
       }),
     };
+    let url;
+    let shouldRemoveOrigin = false;
+    const initalUrl = shouldPrependBasePath
+      ? this.params.basePath.prepend(options.path)
+      : options.path;
+    try {
+      url = new URL(initalUrl);
+    } catch (e) {
+      shouldRemoveOrigin = true;
+      url = new URL(initalUrl, location.origin);
+    }
 
-    const url = format({
-      pathname: shouldPrependBasePath ? this.params.basePath.prepend(options.path) : options.path,
-      query: removedUndefined(query),
-    });
+    url.search = new URLSearchParams(removedUndefined(query)).toString();
 
     // Make sure the system request header is only present if `asSystemRequest` is true.
     if (asSystemRequest) {
       fetchOptions.headers['osd-system-request'] = 'true';
     }
 
-    return new Request(url, fetchOptions as RequestInit);
+    return new Request(
+      url.toString().substring(shouldRemoveOrigin ? url.origin.length : 0),
+      fetchOptions as RequestInit
+    );
   }
 
   private async fetchResponse(fetchOptions: HttpFetchOptionsWithPath): Promise<HttpResponse<any>> {
