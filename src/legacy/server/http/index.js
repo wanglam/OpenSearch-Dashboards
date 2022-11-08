@@ -28,8 +28,8 @@
  * under the License.
  */
 
-import { format } from 'url';
 import Boom from '@hapi/boom';
+import { URL } from 'url';
 
 import { registerHapiPlugins } from './register_hapi_plugins';
 import { setupBasePathProvider } from './setup_base_path_provider';
@@ -51,13 +51,18 @@ export default async function (osdServer, server) {
       }
 
       const pathPrefix = req.getBasePath() ? `${req.getBasePath()}/` : '';
+      const pathname = pathPrefix + path.slice(0, -1);
+      let url;
+      let shouldRemoveOrigin = false;
+      try {
+        url = new URL(pathname);
+      } catch (e) {
+        url = new URL(pathname, 'http://localhost');
+        shouldRemoveOrigin = true;
+      }
+      url.search = req.url.search;
       return h
-        .redirect(
-          format({
-            search: req.url.search,
-            pathname: pathPrefix + path.slice(0, -1),
-          })
-        )
+        .redirect(url.toString().substring(shouldRemoveOrigin ? url.origin.length : 0))
         .permanent(true);
     },
   });
