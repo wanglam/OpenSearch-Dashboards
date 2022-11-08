@@ -33,29 +33,22 @@ import { trim } from 'lodash';
 import Boom from '@hapi/boom';
 
 export function shortUrlAssertValid(url: string) {
-  let urlObject: URL | undefined;
+  let urlObject;
+  let usedFakeOrigin = false;
+  const FAKE_ORIGIN = 'http://localhost';
   try {
     urlObject = new URL(url);
   } catch {
-    urlObject = undefined;
+    urlObject = new URL(url, FAKE_ORIGIN);
+    usedFakeOrigin = true;
+  }
+  const { pathname, hostname, origin, protocol } = urlObject;
+
+  if (protocol && !usedFakeOrigin) {
+    throw Boom.notAcceptable(`Short url targets cannot have a protocol, found "${protocol}"`);
   }
 
-  if (urlObject?.protocol) {
-    throw Boom.notAcceptable(
-      `Short url targets cannot have a protocol, found "${urlObject.protocol}"`
-    );
-  }
-
-  if (urlObject?.hostname) {
-    throw Boom.notAcceptable(
-      `Short url targets cannot have a hostname, found "${urlObject.hostname}"`
-    );
-  }
-
-  const FAKE_ORIGIN = 'http://localhost';
-  const { pathname, hostname, origin } = new URL(url, FAKE_ORIGIN);
-
-  if (origin !== FAKE_ORIGIN) {
+  if (hostname && (!usedFakeOrigin || origin !== FAKE_ORIGIN)) {
     throw Boom.notAcceptable(`Short url targets cannot have a hostname, found "${hostname}"`);
   }
 
