@@ -28,22 +28,34 @@
  * under the License.
  */
 
-import { parse } from 'url';
+import { URL } from 'url';
 import { trim } from 'lodash';
 import Boom from '@hapi/boom';
 
 export function shortUrlAssertValid(url: string) {
-  const { protocol, hostname, pathname } = parse(
-    url,
-    false /* parseQueryString */,
-    true /* slashesDenoteHost */
-  );
-
-  if (protocol !== null) {
-    throw Boom.notAcceptable(`Short url targets cannot have a protocol, found "${protocol}"`);
+  let urlObject: URL | undefined;
+  try {
+    urlObject = new URL(url);
+  } catch {
+    urlObject = undefined;
   }
 
-  if (hostname !== null) {
+  if (urlObject?.protocol) {
+    throw Boom.notAcceptable(
+      `Short url targets cannot have a protocol, found "${urlObject.protocol}"`
+    );
+  }
+
+  if (urlObject?.hostname) {
+    throw Boom.notAcceptable(
+      `Short url targets cannot have a hostname, found "${urlObject.hostname}"`
+    );
+  }
+
+  const FAKE_ORIGIN = 'http://localhost';
+  const { pathname, hostname, origin } = new URL(url, FAKE_ORIGIN);
+
+  if (origin !== FAKE_ORIGIN) {
     throw Boom.notAcceptable(`Short url targets cannot have a hostname, found "${hostname}"`);
   }
 
