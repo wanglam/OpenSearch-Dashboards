@@ -48,31 +48,33 @@ export class WorkspacesClient {
   }
 
   public async enterWorkspace(id: string): Promise<IResponse<null>> {
-    return {
-      success: false,
-      error: 'Unimplement',
-    };
+    return this.http.post(this.getPath(['_enter', id]));
   }
 
   public async exitWorkspace(): Promise<IResponse<null>> {
-    return {
-      success: false,
-      error: 'Unimplement',
-    };
+    return this.http.post(this.getPath(['_exit']));
   }
 
   public async getCurrentWorkspaceId(): Promise<IResponse<WorkspaceAttribute['id']>> {
-    return {
-      success: false,
-      error: 'Unimplement',
-    };
+    const currentWorkspaceIdResp = await this.http.get(this.getPath(['_current']));
+    if (currentWorkspaceIdResp.success && !currentWorkspaceIdResp.result) {
+      return {
+        success: false,
+        error: 'You are not in any workspace yet.',
+      };
+    }
+
+    return currentWorkspaceIdResp;
   }
 
   public async getCurrentWorkspace(): Promise<IResponse<WorkspaceAttribute>> {
-    return {
-      success: false,
-      error: 'Unimplement',
-    };
+    const currentWorkspaceIdResp = await this.getCurrentWorkspaceId();
+    if (currentWorkspaceIdResp.success) {
+      const currentWorkspaceResp = await this.get(currentWorkspaceIdResp.result);
+      return currentWorkspaceResp;
+    } else {
+      return currentWorkspaceIdResp;
+    }
   }
 
   /**
@@ -127,13 +129,12 @@ export class WorkspacesClient {
   public list = (
     options?: WorkspaceFindOptions
   ): Promise<
-    IResponse<
-      WorkspaceAttribute & {
-        total: number;
-        perPage: number;
-        page: number;
-      }
-    >
+    IResponse<{
+      workspaces: WorkspaceAttribute[];
+      total: number;
+      per_page: number;
+      page: number;
+    }>
   > => {
     const path = this.getPath(['_list']);
     return this.http.fetch(path, {
@@ -176,16 +177,9 @@ export class WorkspacesClient {
       attributes,
     };
 
-    return this.http
-      .fetch(path, {
-        method: 'PUT',
-        body: JSON.stringify(body),
-      })
-      .then((resp: WorkspaceAttribute) => {
-        return {
-          result: true,
-          success: true,
-        };
-      });
+    return this.http.fetch(path, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
   }
 }
