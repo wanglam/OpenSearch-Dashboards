@@ -8,14 +8,38 @@ import { EuiPage, EuiPageBody, EuiPageHeader, EuiPageContent } from '@elastic/eu
 
 import { useOpenSearchDashboards } from '../../../../../plugins/opensearch_dashboards_react/public';
 
-import { WorkspaceForm } from './workspace_form';
+import { WorkspaceForm, WorkspaceFormData } from './workspace_form';
 
 export const WorkspaceCreator = () => {
   const {
-    services: { application },
+    services: { application, workspaces, notifications },
   } = useOpenSearchDashboards();
 
-  const handleWorkspaceFormSubmit = useCallback(() => {}, []);
+  const handleWorkspaceFormSubmit = useCallback(
+    async (data: WorkspaceFormData) => {
+      let result;
+      try {
+        result = await workspaces?.client.create(data);
+      } catch (error) {
+        notifications?.toasts.addDanger({
+          title: 'Failed to create workspace',
+          text: error instanceof Error ? error.message : JSON.stringify(error),
+        });
+        return;
+      }
+      if (result?.success) {
+        notifications?.toasts.addSuccess({
+          title: 'Create workspace successfully',
+        });
+        return;
+      }
+      notifications?.toasts.addDanger({
+        title: 'Failed to create workspace',
+        text: result?.error,
+      });
+    },
+    [notifications?.toasts, workspaces?.client]
+  );
 
   return (
     <EuiPage paddingSize="none">
