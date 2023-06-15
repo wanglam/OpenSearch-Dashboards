@@ -5,6 +5,7 @@
 
 import React, { useCallback } from 'react';
 import { EuiPage, EuiPageBody, EuiPageHeader, EuiPageContent } from '@elastic/eui';
+import { i18n } from '@osd/i18n';
 
 import { useOpenSearchDashboards } from '../../../../../plugins/opensearch_dashboards_react/public';
 
@@ -22,19 +23,25 @@ export const WorkspaceCreator = () => {
         result = await workspaces?.client.create(data);
       } catch (error) {
         notifications?.toasts.addDanger({
-          title: 'Failed to create workspace',
+          title: i18n.translate('workspace.create.failed', {
+            defaultMessage: 'Failed to create workspace',
+          }),
           text: error instanceof Error ? error.message : JSON.stringify(error),
         });
         return;
       }
       if (result?.success) {
         notifications?.toasts.addSuccess({
-          title: 'Create workspace successfully',
+          title: i18n.translate('workspace.create.success', {
+            defaultMessage: 'Create workspace successfully',
+          }),
         });
         return;
       }
       notifications?.toasts.addDanger({
-        title: 'Failed to create workspace',
+        title: i18n.translate('workspace.create.failed', {
+          defaultMessage: 'Failed to create workspace',
+        }),
         text: result?.error,
       });
     },
