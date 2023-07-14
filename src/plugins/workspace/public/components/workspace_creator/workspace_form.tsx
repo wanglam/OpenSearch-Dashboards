@@ -36,34 +36,12 @@ import { WorkspaceTemplate } from '../../../../../core/types';
 import { App, AppNavLinkStatus, ApplicationStart } from '../../../../../core/public';
 import { useApplications, useWorkspaceTemplate } from '../../hooks';
 import { WORKSPACE_OP_TYPE_CREATE, WORKSPACE_OP_TYPE_UPDATE } from '../../../common/constants';
+import {
+  isFeatureDependOnSelectedFeatures,
+  getFinalFeatureIdsByDependency,
+} from '../utils/feature';
 
 import { WorkspaceIconSelector } from './workspace_icon_selector';
-
-const isFeatureDependOnSelectedFeatures = (
-  featureId: string,
-  selectedFeatureIds: string[],
-  featureDependencies: { [key: string]: string[] }
-) =>
-  selectedFeatureIds.some((selectedFeatureId) =>
-    (featureDependencies[selectedFeatureId] || []).some((dependencies) =>
-      dependencies.includes(featureId)
-    )
-  );
-
-const getFinalFeatureIdsByDependency = (
-  featureIds: string[],
-  featureDependencies: { [key: string]: string[] },
-  oldFeatureIds: string[] = []
-) =>
-  Array.from(
-    new Set([
-      ...oldFeatureIds,
-      ...featureIds.reduce(
-        (pValue, featureId) => [...pValue, ...(featureDependencies[featureId] || [])],
-        featureIds
-      ),
-    ])
-  );
 
 interface WorkspaceFeature extends Pick<App, 'dependencies'> {
   id: string;
