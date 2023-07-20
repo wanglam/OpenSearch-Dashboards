@@ -15,6 +15,7 @@ import {
   SavedObjectsClientWrapperFactory,
   SavedObjectsCreateOptions,
   SavedObjectsDeleteOptions,
+  SavedObjectsFindOptions,
 } from 'opensearch-dashboards/server';
 import {
   WorkspacePermissionControl,
@@ -135,11 +136,35 @@ export class WorkspaceSavedObjectsClientWrapper {
       return objectToBulkGet;
     };
 
+    const findWithWorkspacePermissionControl = async <T = unknown>(
+      options: SavedObjectsFindOptions
+    ) => {
+      if (options.workspaces) {
+        options.workspaces = options.workspaces.filter(
+          async (workspaceId) =>
+            await this.permissionControl.validate(
+              workspaceId,
+              WorkspacePermissionMode.Read,
+              wrapperOptions.request
+            )
+        );
+      } else {
+        options.workspaces = [
+          'public',
+          ...(await this.permissionControl.getPermittedWorkspaceIds(
+            WorkspacePermissionMode.Read,
+            wrapperOptions.request
+          )),
+        ];
+      }
+      return await wrapperOptions.client.find<T>(options);
+    };
+
     return {
       ...wrapperOptions.client,
       get: getWithWorkspacePermissionControl,
       checkConflicts: wrapperOptions.client.checkConflicts,
-      find: wrapperOptions.client.find,
+      find: findWithWorkspacePermissionControl,
       bulkGet: bulkGetWithWorkspacePermissionControl,
       errors: wrapperOptions.client.errors,
       addToNamespaces: wrapperOptions.client.addToNamespaces,
@@ -147,6 +172,8 @@ export class WorkspaceSavedObjectsClientWrapper {
       create: createWithWorkspacePermissionControl,
       bulkCreate: bulkCreateWithWorkspacePermissionControl,
       delete: deleteWithWorkspacePermissionControl,
+      update: wrapperOptions.client.update,
+      bulkUpdate: wrapperOptions.client.bulkUpdate,
     };
   };
 
