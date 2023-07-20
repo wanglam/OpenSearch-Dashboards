@@ -4,6 +4,7 @@
  */
 
 import { i18n } from '@osd/i18n';
+import Boom from '@hapi/boom';
 
 import {
   OpenSearchDashboardsRequest,
@@ -22,8 +23,9 @@ import {
   WorkspacePermissionMode,
 } from '../workspace_permission_control';
 
+// Can't throw unauthorized for now, the page will be refreshed if unauthorized
 const generateWorkspacePermissionError = () =>
-  new Error(
+  Boom.illegal(
     i18n.translate('workspace.permission.invalidate', {
       defaultMessage: 'Invalidate workspace permission',
     })
