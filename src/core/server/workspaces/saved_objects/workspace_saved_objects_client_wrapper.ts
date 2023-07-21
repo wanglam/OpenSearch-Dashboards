@@ -31,6 +31,16 @@ const generateWorkspacePermissionError = () =>
     })
   );
 
+interface AttributesWithWorkspaces {
+  workspaces: string[];
+}
+
+const isWorkspacesLikeAttributes = (attributes: unknown): attributes is AttributesWithWorkspaces =>
+  typeof attributes === 'object' &&
+  !!attributes &&
+  attributes.hasOwnProperty('workspaces') &&
+  Array.isArray((attributes as { workspaces: unknown }).workspaces);
+
 export class WorkspaceSavedObjectsClientWrapper {
   private async validateMultiWorkspacesPermissions(
     workspaces: string[] | undefined,
@@ -94,13 +104,8 @@ export class WorkspaceSavedObjectsClientWrapper {
       attributes: T,
       options?: SavedObjectsCreateOptions
     ) => {
-      if (
-        attributes &&
-        typeof attributes === 'object' &&
-        'workspaces' in attributes &&
-        Array.isArray(attributes.workspaces)
-      ) {
-        this.validateMultiWorkspacesPermissions(
+      if (isWorkspacesLikeAttributes(attributes)) {
+        await this.validateMultiWorkspacesPermissions(
           attributes.workspaces,
           wrapperOptions.request,
           WorkspacePermissionMode.Admin
