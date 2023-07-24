@@ -37,8 +37,9 @@ import { App, AppNavLinkStatus, ApplicationStart } from '../../../../../core/pub
 import { useApplications, useWorkspaceTemplate } from '../../hooks';
 import { WORKSPACE_OP_TYPE_CREATE, WORKSPACE_OP_TYPE_UPDATE } from '../../../common/constants';
 import {
-  isFeatureDependOnSelectedFeatures,
+  isFeatureDependBySelectedFeatures,
   getFinalFeatureIdsByDependency,
+  generateFeatureDependencyMap,
 } from '../utils/feature';
 
 import { WorkspaceIconSelector } from './workspace_icon_selector';
@@ -124,7 +125,7 @@ export const WorkspaceForm = ({
           ({ navLinkStatus, chromeless, featureGroup }) =>
             navLinkStatus !== AppNavLinkStatus.hidden &&
             !chromeless &&
-            !featureGroup?.includes('ADMIN')
+            featureGroup?.includes('WORKSPACE')
         )
         .map(({ id, title, workspaceTemplate, dependencies }) => ({
           id,
@@ -162,25 +163,9 @@ export const WorkspaceForm = ({
     [featureOrGroups]
   );
 
-  const featureDependencies = useMemo(
-    () =>
-      allFeatures.reduce<{ [key: string]: string[] }>(
-        (pValue, { id, dependencies }) =>
-          dependencies
-            ? {
-                ...pValue,
-                [id]: [
-                  ...(pValue[id] || []),
-                  ...Object.keys(dependencies).filter(
-                    (key) => dependencies[key].type === 'required'
-                  ),
-                ],
-              }
-            : pValue,
-        {}
-      ),
-    [allFeatures]
-  );
+  const featureDependencies = useMemo(() => generateFeatureDependencyMap(allFeatures), [
+    allFeatures,
+  ]);
 
   if (!formIdRef.current) {
     formIdRef.current = workspaceHtmlIdGenerator();
@@ -209,7 +194,7 @@ export const WorkspaceForm = ({
           return getFinalFeatureIdsByDependency([featureId], featureDependencies, previousData);
         }
 
-        if (isFeatureDependOnSelectedFeatures(featureId, previousData, featureDependencies)) {
+        if (isFeatureDependBySelectedFeatures(featureId, previousData, featureDependencies)) {
           return previousData;
         }
 
@@ -248,7 +233,7 @@ export const WorkspaceForm = ({
             while (true) {
               const lastRemainFeatures = groupRemainFeatureIds.length;
               groupRemainFeatureIds = groupRemainFeatureIds.filter((featureId) =>
-                isFeatureDependOnSelectedFeatures(
+                isFeatureDependBySelectedFeatures(
                   featureId,
                   [...outGroupFeatureIds, ...groupRemainFeatureIds],
                   featureDependencies

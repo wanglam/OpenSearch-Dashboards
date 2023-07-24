@@ -3,17 +3,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { isFeatureDependOnSelectedFeatures, getFinalFeatureIdsByDependency } from './feature';
+import {
+  isFeatureDependBySelectedFeatures,
+  getFinalFeatureIdsByDependency,
+  generateFeatureDependencyMap,
+} from './feature';
 
 describe('feature utils', () => {
-  describe('isFeatureDependOnSelectedFeatures', () => {
+  describe('isFeatureDependBySelectedFeatures', () => {
     it('should return true', () => {
-      expect(isFeatureDependOnSelectedFeatures('a', ['b'], { b: ['a'] })).toBe(true);
-      expect(isFeatureDependOnSelectedFeatures('a', ['b'], { b: ['a', 'c'] })).toBe(true);
+      expect(isFeatureDependBySelectedFeatures('a', ['b'], { b: ['a'] })).toBe(true);
+      expect(isFeatureDependBySelectedFeatures('a', ['b'], { b: ['a', 'c'] })).toBe(true);
     });
     it('should return false', () => {
-      expect(isFeatureDependOnSelectedFeatures('a', ['b'], { b: ['c'] })).toBe(false);
-      expect(isFeatureDependOnSelectedFeatures('a', ['b'], {})).toBe(false);
+      expect(isFeatureDependBySelectedFeatures('a', ['b'], { b: ['c'] })).toBe(false);
+      expect(isFeatureDependBySelectedFeatures('a', ['b'], {})).toBe(false);
     });
   });
 
@@ -32,6 +36,18 @@ describe('feature utils', () => {
         'b',
         'e',
       ]);
+    });
+  });
+
+  it('should generate consistent features dependency map', () => {
+    expect(
+      generateFeatureDependencyMap([
+        { id: 'a', dependencies: { b: { type: 'required' }, c: { type: 'optional' } } },
+        { id: 'b', dependencies: { c: { type: 'required' } } },
+      ])
+    ).toEqual({
+      a: ['b'],
+      b: ['c'],
     });
   });
 });
