@@ -41,7 +41,7 @@ const workspaceAttributesSchema = schema.object({
   permissions: schema.oneOf([workspacePermission, schema.arrayOf(workspacePermission)]),
 });
 
-const convertToPrinciplePermissions = (
+const convertToACL = (
   workspacePermissions: WorkspaceRoutePermissionItem | WorkspaceRoutePermissionItem[]
 ) => {
   workspacePermissions = Array.isArray(workspacePermissions)
@@ -64,7 +64,7 @@ const convertToPrinciplePermissions = (
   return acl.getPermissions() || {};
 };
 
-const convertPrinciple = (permissions: Permissions) => {
+const convertFromACL = (permissions: Permissions) => {
   const acl = new ACL(permissions);
 
   return acl.transformPermissions().map(({ name, permissions: modes, type }) => ({
@@ -117,7 +117,7 @@ export function registerRoutes({
             ...result.result,
             workspaces: result.result.workspaces.map((workspace) => ({
               ...workspace,
-              permissions: convertPrinciple(workspace.permissions),
+              permissions: convertFromACL(workspace.permissions),
             })),
           },
         },
@@ -152,7 +152,7 @@ export function registerRoutes({
           ...result,
           result: {
             ...result.result,
-            permissions: convertPrinciple(result.result.permissions),
+            permissions: convertFromACL(result.result.permissions),
           },
         },
       });
@@ -178,7 +178,7 @@ export function registerRoutes({
         },
         {
           ...attributes,
-          permissions: convertToPrinciplePermissions(attributes.permissions),
+          permissions: convertToACL(attributes.permissions),
         }
       );
       return res.ok({ body: result });
@@ -209,7 +209,7 @@ export function registerRoutes({
         id,
         {
           ...attributes,
-          permissions: convertToPrinciplePermissions(attributes.permissions),
+          permissions: convertToACL(attributes.permissions),
         }
       );
       return res.ok({ body: result });
