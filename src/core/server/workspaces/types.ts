@@ -8,6 +8,10 @@ import {
   RequestHandlerContext,
   SavedObjectsFindResponse,
 } from '..';
+
+import { Permissions } from '../saved_objects/permission_control/acl';
+import { PermissionMode } from '../../utils/constants';
+
 import { WorkspacesSetupDeps } from './workspaces_service';
 
 export interface WorkspaceAttribute {
@@ -18,6 +22,7 @@ export interface WorkspaceAttribute {
   color?: string;
   icon?: string;
   defaultVISTheme?: string;
+  permissions: Permissions;
 }
 
 export interface WorkspaceFindOptions {
@@ -70,3 +75,7 @@ export type IResponse<T> =
       success: false;
       error?: string;
     };
+
+export type WorkspaceRoutePermissionItem = {
+  modes: Array<PermissionMode.Read | PermissionMode.Write | PermissionMode.Management>;
+} & ({ type: 'user'; userId: string } | { type: 'group'; group: string });
