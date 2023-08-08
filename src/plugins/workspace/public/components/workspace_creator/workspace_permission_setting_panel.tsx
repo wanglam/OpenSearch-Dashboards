@@ -26,20 +26,20 @@ export type WorkspacePermissionSetting = (
   userId?: string;
   group?: string;
   modes: Array<
-    | WorkspacePermissionMode.Read
-    | WorkspacePermissionMode.Write
+    | WorkspacePermissionMode.LibraryRead
+    | WorkspacePermissionMode.LibraryWrite
     | WorkspacePermissionMode.Management
   >;
 };
 
 const permissionModeOptions = [
   {
-    id: WorkspacePermissionMode.Read,
+    id: WorkspacePermissionMode.LibraryRead,
     label: 'View',
     iconType: 'eye',
   },
   {
-    id: WorkspacePermissionMode.Write,
+    id: WorkspacePermissionMode.LibraryWrite,
     label: 'Edit',
     iconType: 'pencil',
   },
@@ -58,11 +58,11 @@ const permissionTypeOptions = [
 const isWorkspacePermissionMode = (
   test: string
 ): test is
-  | WorkspacePermissionMode.Read
-  | WorkspacePermissionMode.Write
+  | WorkspacePermissionMode.LibraryRead
+  | WorkspacePermissionMode.LibraryWrite
   | WorkspacePermissionMode.Management =>
-  test === WorkspacePermissionMode.Read ||
-  test === WorkspacePermissionMode.Write ||
+  test === WorkspacePermissionMode.LibraryRead ||
+  test === WorkspacePermissionMode.LibraryWrite ||
   test === WorkspacePermissionMode.Management;
 
 interface WorkspacePermissionSettingInputProps {
@@ -72,8 +72,8 @@ interface WorkspacePermissionSettingInputProps {
   userId?: string;
   group?: string;
   modes?: Array<
-    | WorkspacePermissionMode.Read
-    | WorkspacePermissionMode.Write
+    | WorkspacePermissionMode.LibraryRead
+    | WorkspacePermissionMode.LibraryWrite
     | WorkspacePermissionMode.Management
   >;
   onTypeChange: (type: 'user' | 'group', index: number) => void;
@@ -86,8 +86,8 @@ interface WorkspacePermissionSettingInputProps {
   ) => void;
   onPermissionModesChange: (
     WorkspacePermissionMode: Array<
-      | WorkspacePermissionMode.Read
-      | WorkspacePermissionMode.Write
+      | WorkspacePermissionMode.LibraryRead
+      | WorkspacePermissionMode.LibraryWrite
       | WorkspacePermissionMode.Management
     >,
     index: number
@@ -113,8 +113,10 @@ const WorkspacePermissionSettingInput = ({
   );
   const permissionModesIdToSelectMap = useMemo(
     () => ({
-      [WorkspacePermissionMode.Read]: !!modes?.includes(WorkspacePermissionMode.Read),
-      [WorkspacePermissionMode.Write]: !!modes?.includes(WorkspacePermissionMode.Write),
+      [WorkspacePermissionMode.LibraryRead]: !!modes?.includes(WorkspacePermissionMode.LibraryRead),
+      [WorkspacePermissionMode.LibraryWrite]: !!modes?.includes(
+        WorkspacePermissionMode.LibraryWrite
+      ),
       [WorkspacePermissionMode.Management]: !!modes?.includes(WorkspacePermissionMode.Management),
     }),
     [modes]

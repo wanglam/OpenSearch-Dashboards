@@ -77,5 +77,7 @@ export type IResponse<T> =
     };
 
 export type WorkspaceRoutePermissionItem = {
-  modes: Array<PermissionMode.Read | PermissionMode.Write | PermissionMode.Management>;
+  modes: Array<
+    PermissionMode.LibraryRead | PermissionMode.LibraryWrite | PermissionMode.Management
+  >;
 } & ({ type: 'user'; userId: string } | { type: 'group'; group: string });
