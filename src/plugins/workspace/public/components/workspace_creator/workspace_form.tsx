@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useState, FormEventHandler, useRef, useMemo } from 'react';
+import React, { useCallback, useState, FormEventHandler, useRef, useMemo, useEffect } from 'react';
 import { groupBy } from 'lodash';
 import {
   EuiPanel,
@@ -106,6 +106,7 @@ interface WorkspaceFormProps {
   onSubmit?: (formData: WorkspaceFormData) => void;
   defaultValues?: WorkspaceFormData;
   opType?: string;
+  permissionEnabled: boolean;
 }
 
 export const WorkspaceForm = ({
@@ -113,6 +114,7 @@ export const WorkspaceForm = ({
   onSubmit,
   defaultValues,
   opType,
+  permissionEnabled,
 }: WorkspaceFormProps) => {
   const applications = useApplications(application);
 
@@ -347,6 +349,16 @@ export const WorkspaceForm = ({
     setDefaultVISTheme(options[0]?.value);
   }, []);
 
+  useEffect(() => {
+    if (!permissionEnabled) {
+      setPermissionSettings([]);
+      return;
+    }
+    setPermissionSettings((previousPermissionSettings) =>
+      previousPermissionSettings.length > 0 ? previousPermissionSettings : [{}]
+    );
+  }, [permissionEnabled]);
+
   return (
     <EuiForm id={formIdRef.current} onSubmit={handleFormSubmit} component="form">
       <EuiPanel>
@@ -450,17 +462,21 @@ export const WorkspaceForm = ({
           })}
         </EuiFlexGrid>
       </EuiPanel>
-      <EuiSpacer />
-      <EuiPanel>
-        <EuiTitle size="s">
-          <h2>Members & permissions</h2>
-        </EuiTitle>
-        <WorkspacePermissionSettingPanel
-          errors={formErrors.permissions}
-          value={permissionSettings}
-          onChange={setPermissionSettings}
-        />
-      </EuiPanel>
+      {permissionEnabled && (
+        <>
+          <EuiSpacer />
+          <EuiPanel>
+            <EuiTitle size="s">
+              <h2>Members & permissions</h2>
+            </EuiTitle>
+            <WorkspacePermissionSettingPanel
+              errors={formErrors.permissions}
+              value={permissionSettings}
+              onChange={setPermissionSettings}
+            />
+          </EuiPanel>
+        </>
+      )}
       <EuiSpacer />
       <EuiText textAlign="right">
         {opType === WORKSPACE_OP_TYPE_CREATE && (

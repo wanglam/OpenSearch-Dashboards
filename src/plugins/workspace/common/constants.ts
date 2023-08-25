@@ -30,3 +30,5 @@ export const WORKSPACE_NAV_CATEGORY: AppCategory = {
   euiIconType: 'folderClosed',
   order: 2000,
 };
+
+export const WORKSPACES_API_BASE_URL = '/api/workspaces';

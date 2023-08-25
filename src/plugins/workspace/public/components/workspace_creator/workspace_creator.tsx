@@ -6,16 +6,18 @@
 import React, { useCallback } from 'react';
 import { EuiPage, EuiPageBody, EuiPageHeader, EuiPageContent } from '@elastic/eui';
 import { i18n } from '@osd/i18n';
+import { useObservable } from 'react-use';
+
 import { useOpenSearchDashboards } from '../../../../opensearch_dashboards_react/public';
 import { WorkspaceForm, WorkspaceFormData } from './workspace_form';
 import { WORKSPACE_OVERVIEW_APP_ID, WORKSPACE_OP_TYPE_CREATE } from '../../../common/constants';
 import { formatUrlWithWorkspaceId } from '../../utils';
 import { WorkspaceClient } from '../../workspace_client';
-
 export const WorkspaceCreator = () => {
   const {
     services: { application, notifications, http, workspaceClient },
   } = useOpenSearchDashboards<{ workspaceClient: WorkspaceClient }>();
+  const workspaceSetting = useObservable(workspaceClient.getWorkspaceSettings$());
 
   const handleWorkspaceFormSubmit = useCallback(
     async (data: WorkspaceFormData) => {
@@ -70,11 +72,12 @@ export const WorkspaceCreator = () => {
           hasShadow={false}
           style={{ width: '100%', maxWidth: 1000 }}
         >
-          {application && (
+          {application && workspaceSetting && (
             <WorkspaceForm
               application={application}
               onSubmit={handleWorkspaceFormSubmit}
               opType={WORKSPACE_OP_TYPE_CREATE}
+              permissionEnabled={workspaceSetting.permission}
             />
           )}
         </EuiPageContent>

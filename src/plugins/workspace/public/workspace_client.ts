@@ -2,7 +2,7 @@
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
  */
-import { combineLatest } from 'rxjs';
+import { BehaviorSubject, combineLatest } from 'rxjs';
 import { isEqual } from 'lodash';
 
 import {
@@ -13,8 +13,7 @@ import {
   WorkspaceSetup,
 } from '../../../core/public';
 import { WorkspacePermissionMode } from '../../../core/public';
-
-const WORKSPACES_API_BASE_URL = '/api/workspaces';
+import { WORKSPACES_API_BASE_URL } from '../common/constants';
 
 enum WORKSPACE_ERROR_REASON_MAP {
   WORKSPACE_STALED = 'WORKSPACE_STALED',
@@ -53,6 +52,11 @@ interface WorkspaceFindOptions {
   sortOrder?: string;
 }
 
+interface WorkspaceSettings {
+  enabled: boolean;
+  permission: boolean;
+}
+
 /**
  * Workspaces is OpenSearchDashboards's visualize mechanism allowing admins to
  * organize related features
@@ -62,6 +66,7 @@ interface WorkspaceFindOptions {
 export class WorkspaceClient {
   private http: HttpSetup;
   private workspaces: WorkspaceSetup;
+  private workspaceSettings$ = new BehaviorSubject<WorkspaceSettings | null>(null);
 
   constructor(http: HttpSetup, workspaces: WorkspaceSetup) {
     this.http = http;
@@ -102,6 +107,11 @@ export class WorkspaceClient {
    */
   public init() {
     this.updateWorkspaceListAndNotify();
+    this.getSettings().then((settings) => {
+      if (settings.success) {
+        this.workspaceSettings$.next(settings.result);
+      }
+    });
   }
 
   private findWorkspace(payload: [WorkspaceAttribute[], string]): WorkspaceAttribute | null {
@@ -332,6 +342,7 @@ export class WorkspaceClient {
   public async getSettings(): Promise<
     IResponse<{
       enabled: boolean;
+      permission: boolean;
     }>
   > {
     const result = await this.safeFetch(this.getPath(['settings']), {
@@ -339,6 +350,10 @@ export class WorkspaceClient {
     });
 
     return result;
+  }
+
+  public getWorkspaceSettings$() {
+    return this.workspaceSettings$;
   }
 
   public stop() {

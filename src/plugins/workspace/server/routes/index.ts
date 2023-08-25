@@ -6,6 +6,7 @@ import { schema } from '@osd/config-schema';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { first } from 'rxjs/operators';
 import { ensureRawRequest } from '../../../../core/server';
+import { WORKSPACES_API_BASE_URL } from '../../common/constants';
 
 import {
   ACL,
@@ -16,8 +17,6 @@ import {
 } from '../../../../core/server';
 import { IWorkspaceDBImpl, WorkspaceRoutePermissionItem } from '../types';
 import { ConfigSchema } from '../../config';
-
-const WORKSPACES_API_BASE_URL = '/api/workspaces';
 
 const workspacePermissionMode = schema.oneOf([
   schema.literal(WorkspacePermissionMode.LibraryRead),
@@ -268,7 +267,7 @@ export function registerRoutes({
       path: `${WORKSPACES_API_BASE_URL}/settings`,
       validate: {},
     },
-    router.handleLegacyErrors(async (context, req, res) => {
+    router.handleLegacyErrors(async (_context, _req, res) => {
       const config = await config$.pipe(first()).toPromise();
       return res.ok({
         body: {
@@ -276,6 +275,8 @@ export function registerRoutes({
           result: {
             ...config,
             enabled: enabled$.getValue(),
+            // TODO: Update to real workspace permission enabled logic
+            permission: true,
           },
         },
       });

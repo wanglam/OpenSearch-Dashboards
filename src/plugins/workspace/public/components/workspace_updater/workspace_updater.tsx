@@ -23,26 +23,43 @@ import { DeleteWorkspaceModal } from '../delete_workspace_modal';
 import { formatUrlWithWorkspaceId } from '../../utils';
 import { WorkspaceClient } from '../../workspace_client';
 
+type WorkspaceAttributeWithPermissionItems = WorkspaceAttribute &
+  Pick<WorkspaceFormData, 'permissions'>;
+
+const getWorkspaceFormData = (
+  workspace: WorkspaceAttributeWithPermissionItems | null | undefined
+) => {
+  if (!workspace) {
+    return {
+      features: [],
+      name: '',
+      permissions: [],
+    };
+  }
+  const { id, features, ...otherAttributes } = workspace;
+  return {
+    features: features ? features : [],
+    ...otherAttributes,
+  };
+};
+
 export const WorkspaceUpdater = () => {
   const {
     services: { application, workspaces, notifications, http, workspaceClient },
   } = useOpenSearchDashboards<{ workspaceClient: WorkspaceClient }>();
 
-  const currentWorkspace = useObservable(workspaces ? workspaces.currentWorkspace$ : of(null));
-
-  const excludedAttribute = 'id';
-  const { [excludedAttribute]: removedProperty, ...otherAttributes } =
-    currentWorkspace || ({} as WorkspaceAttribute);
-
+  const currentWorkspace = useObservable(
+    workspaces ? workspaces.currentWorkspace$ : of(null)
+  ) as WorkspaceAttributeWithPermissionItems | null;
+  const workspaceSetting = useObservable(workspaceClient.getWorkspaceSettings$());
   const [deleteWorkspaceModalVisible, setDeleteWorkspaceModalVisible] = useState(false);
-  const [currentWorkspaceFormData, setCurrentWorkspaceFormData] = useState<
-    Omit<WorkspaceAttribute, 'id'>
-  >(otherAttributes);
+  const [currentWorkspaceFormData, setCurrentWorkspaceFormData] = useState<WorkspaceFormData>(() =>
+    getWorkspaceFormData(currentWorkspace)
+  );
 
   useEffect(() => {
-    const { id, ...others } = currentWorkspace || ({} as WorkspaceAttribute);
-    setCurrentWorkspaceFormData(others);
-  }, [workspaces, currentWorkspace, excludedAttribute]);
+    setCurrentWorkspaceFormData(getWorkspaceFormData(currentWorkspace));
+  }, [currentWorkspace]);
 
   const handleWorkspaceFormSubmit = useCallback(
     async (data: WorkspaceFormData) => {
@@ -204,12 +221,13 @@ export const WorkspaceUpdater = () => {
               />
             </EuiPanel>
           )}
-          {application && (
+          {application && workspaceSetting && (
             <WorkspaceForm
               application={application}
               onSubmit={handleWorkspaceFormSubmit}
               defaultValues={currentWorkspaceFormData}
               opType={WORKSPACE_OP_TYPE_UPDATE}
+              permissionEnabled={workspaceSetting.permission}
             />
           )}
         </EuiPageContent>
