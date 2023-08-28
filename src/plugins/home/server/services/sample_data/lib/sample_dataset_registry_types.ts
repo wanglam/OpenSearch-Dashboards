@@ -88,7 +88,7 @@ export interface SampleDatasetSchema<T = unknown> {
 
   // saved object id of main dashboard for sample data set
   overviewDashboard: string;
-  getDataSourceIntegratedDashboard: (dataSourceId?: string) => string;
+  getDataSourceIntegratedDashboard: (workspaceId?: string) => (dataSourceId?: string) => string;
   appLinks: AppLinkSchema[];
 
   // saved object id of default index-pattern for sample data set
