@@ -34,9 +34,9 @@ import { getSavedObjects } from './saved_objects';
 import { fieldMappings } from './field_mappings';
 import { SampleDatasetSchema, AppLinkSchema } from '../../lib/sample_dataset_registry_types';
 import {
-  getSavedObjectsWithDataSource,
   appendDataSourceId,
   appendWorkspaceAndDataSourceId,
+  enhanceGetSavedObjectsWithWorkspaceAndDataSource,
 } from '../util';
 
 const flightsName = i18n.translate('home.sampleData.flightsSpecTitle', {
@@ -49,6 +49,10 @@ const initialAppLinks = [] as AppLinkSchema[];
 
 const DEFAULT_INDEX = 'd3d7af60-4c81-11e8-b3d7-01146121b73d';
 const DASHBOARD_ID = '7adfa750-4c81-11e8-b3d7-01146121b73d';
+
+const getWorkspaceAndDataSourceIntegratedSavedObjects = enhanceGetSavedObjectsWithWorkspaceAndDataSource(
+  getSavedObjects
+);
 
 export const flightsSpecProvider = function (): SampleDatasetSchema {
   return {
@@ -63,8 +67,8 @@ export const flightsSpecProvider = function (): SampleDatasetSchema {
     defaultIndex: DEFAULT_INDEX,
     getDataSourceIntegratedDefaultIndex: appendDataSourceId(DEFAULT_INDEX),
     savedObjects: getSavedObjects(),
-    getDataSourceIntegratedSavedObjects: (dataSourceId?: string, dataSourceTitle?: string) =>
-      getSavedObjectsWithDataSource(getSavedObjects(), dataSourceId, dataSourceTitle),
+    getDataSourceIntegratedSavedObjects: getWorkspaceAndDataSourceIntegratedSavedObjects(),
+    getWorkspaceAndDataSourceIntegratedSavedObjects,
     dataIndices: [
       {
         id: 'flights',

@@ -102,6 +102,9 @@ export interface SampleDatasetSchema<T = unknown> {
     dataSourceId?: string,
     dataSourceTitle?: string
   ) => Array<SavedObject<T>>;
+  getWorkspaceAndDataSourceIntegratedSavedObjects: (
+    workspaceId?: string
+  ) => (dataSourceId?: string, dataSourceTitle?: string) => Array<SavedObject<T>>;
   dataIndices: DataIndexSchema[];
   status?: string | undefined;
   statusMsg?: unknown;

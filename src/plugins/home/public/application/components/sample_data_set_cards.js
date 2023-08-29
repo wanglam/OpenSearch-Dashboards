@@ -117,7 +117,12 @@ export class SampleDataSetCards extends React.Component {
     }));
 
     try {
-      await installSampleDataSet(id, targetSampleDataSet.defaultIndex, dataSourceId);
+      await installSampleDataSet(
+        id,
+        targetSampleDataSet.defaultIndex,
+        dataSourceId,
+        getServices().workspaces.currentWorkspaceId$.getValue()
+      );
     } catch (fetchError) {
       if (this._isMounted) {
         this.setState((prevState) => ({

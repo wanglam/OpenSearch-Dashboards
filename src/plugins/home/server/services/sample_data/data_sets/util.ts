@@ -84,8 +84,20 @@ export const getSavedObjectsWithDataSource = (
 };
 
 export const appendWorkspaceId = (id: string) => (workspaceId?: string) =>
-  `${workspaceId ? `${workspaceId}_` : workspaceId}${id}`;
+  `${id}${workspaceId ? `_${workspaceId}` : workspaceId}`;
 
 export const appendWorkspaceAndDataSourceId = (id: string) => (workspaceId?: string) => (
   dataSourceId?: string
 ) => appendDataSourceId(appendWorkspaceId(id)(workspaceId))(dataSourceId);
+
+export const enhanceGetSavedObjectsWithWorkspaceAndDataSource = (
+  getSavedObjects: () => SavedObject[]
+) => (workspaceId?: string) => (dataSourceId?: string, dataSourceTitle?: string) => {
+  const savedObjects = workspaceId
+    ? getSavedObjects().map((item) => ({ ...item, id: appendWorkspaceId(item.id)(workspaceId) }))
+    : getSavedObjects();
+  if (!dataSourceId) {
+    return savedObjects;
+  }
+  return getSavedObjectsWithDataSource(savedObjects, dataSourceId, dataSourceTitle);
+};
