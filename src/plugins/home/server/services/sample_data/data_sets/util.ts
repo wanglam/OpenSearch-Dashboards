@@ -83,6 +83,9 @@ export const getSavedObjectsWithDataSource = (
   return saveObjectList;
 };
 
-export const appendWorkspaceId = (fn: typeof appendDataSourceId) => (id: string) => (
-  workspaceId: string
-) => `${workspaceId ? `${workspaceId}_` : workspaceId}${fn(id)}`;
+export const appendWorkspaceId = (id: string) => (workspaceId?: string) =>
+  `${workspaceId ? `${workspaceId}_` : workspaceId}${id}`;
+
+export const appendWorkspaceAndDataSourceId = (id: string) => (workspaceId?: string) => (
+  dataSourceId?: string
+) => appendDataSourceId(appendWorkspaceId(id)(workspaceId))(dataSourceId);

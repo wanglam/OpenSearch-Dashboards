@@ -81,7 +81,10 @@ export class SampleDataSetCards extends React.Component {
   loadSampleDataSets = async (dataSourceId) => {
     let sampleDataSets;
     try {
-      sampleDataSets = await listSampleDataSets(dataSourceId);
+      sampleDataSets = await listSampleDataSets(
+        dataSourceId,
+        getServices().workspaces.currentWorkspaceId$.getValue()
+      );
     } catch (fetchError) {
       this.toastNotifications.addDanger({
         title: i18n.translate('home.sampleDataSet.unableToLoadListErrorMessage', {

@@ -36,7 +36,7 @@ function clearIndexPatternsCache() {
   getServices().indexPatternService.clearCache();
 }
 
-export async function listSampleDataSets(dataSourceId) {
+export async function listSampleDataSets(dataSourceId, workspaceId) {
   const query = buildQuery(dataSourceId);
   return await getServices().http.get(sampleDataUrl, { query });
 }
@@ -68,11 +68,15 @@ export async function uninstallSampleDataSet(id, sampleDataDefaultIndex, dataSou
   clearIndexPatternsCache();
 }
 
-function buildQuery(dataSourceId) {
+function buildQuery(dataSourceId, workspaceId) {
   const query = {};
 
   if (dataSourceId) {
     query.data_source_id = dataSourceId;
+  }
+
+  if (workspaceId) {
+    query.workspace_id = workspaceId;
   }
 
   return query;
