@@ -62,12 +62,11 @@ export const flightsSpecProvider = function (): SampleDatasetSchema {
     previewImagePath: '/plugins/home/assets/sample_data_resources/flights/dashboard.png',
     darkPreviewImagePath: '/plugins/home/assets/sample_data_resources/flights/dashboard_dark.png',
     overviewDashboard: DASHBOARD_ID,
-    getDataSourceIntegratedDashboard: appendWorkspaceAndDataSourceId(DASHBOARD_ID),
+    getWorkspaceDataSourceIntegratedDashboard: appendWorkspaceAndDataSourceId(DASHBOARD_ID),
     appLinks: initialAppLinks,
     defaultIndex: DEFAULT_INDEX,
     getDataSourceIntegratedDefaultIndex: appendDataSourceId(DEFAULT_INDEX),
     savedObjects: getSavedObjects(),
-    getDataSourceIntegratedSavedObjects: getWorkspaceAndDataSourceIntegratedSavedObjects(),
     getWorkspaceAndDataSourceIntegratedSavedObjects,
     dataIndices: [
       {

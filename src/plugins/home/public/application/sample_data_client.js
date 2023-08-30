@@ -52,8 +52,13 @@ export async function installSampleDataSet(id, sampleDataDefaultIndex, dataSourc
   clearIndexPatternsCache();
 }
 
-export async function uninstallSampleDataSet(id, sampleDataDefaultIndex, dataSourceId) {
-  const query = buildQuery(dataSourceId);
+export async function uninstallSampleDataSet(
+  id,
+  sampleDataDefaultIndex,
+  dataSourceId,
+  workspaceId
+) {
+  const query = buildQuery(dataSourceId, workspaceId);
   await getServices().http.delete(`${sampleDataUrl}/${id}`, { query });
 
   const uiSettings = getServices().uiSettings;

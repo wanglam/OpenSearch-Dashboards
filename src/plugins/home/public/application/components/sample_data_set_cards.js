@@ -170,7 +170,12 @@ export class SampleDataSetCards extends React.Component {
     }));
 
     try {
-      await uninstallSampleDataSet(id, targetSampleDataSet.defaultIndex, dataSourceId);
+      await uninstallSampleDataSet(
+        id,
+        targetSampleDataSet.defaultIndex,
+        dataSourceId,
+        getServices().workspaces.currentWorkspaceId$.getValue()
+      );
     } catch (fetchError) {
       if (this._isMounted) {
         this.setState((prevState) => ({
