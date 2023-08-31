@@ -33,7 +33,11 @@ import { i18n } from '@osd/i18n';
 import { getSavedObjects } from './saved_objects';
 import { fieldMappings } from './field_mappings';
 import { SampleDatasetSchema, AppLinkSchema } from '../../lib/sample_dataset_registry_types';
-import { getSavedObjectsWithDataSource, appendDataSourceId } from '../util';
+import {
+  appendDataSourceId,
+  appendWorkspaceAndDataSourceId,
+  enhanceGetSavedObjectsWithWorkspaceAndDataSource,
+} from '../util';
 
 const flightsName = i18n.translate('home.sampleData.flightsSpecTitle', {
   defaultMessage: 'Sample flight data',
@@ -46,6 +50,10 @@ const initialAppLinks = [] as AppLinkSchema[];
 const DEFAULT_INDEX = 'd3d7af60-4c81-11e8-b3d7-01146121b73d';
 const DASHBOARD_ID = '7adfa750-4c81-11e8-b3d7-01146121b73d';
 
+const getWorkspaceAndDataSourceIntegratedSavedObjects = enhanceGetSavedObjectsWithWorkspaceAndDataSource(
+  getSavedObjects
+);
+
 export const flightsSpecProvider = function (): SampleDatasetSchema {
   return {
     id: 'flights',
@@ -54,13 +62,12 @@ export const flightsSpecProvider = function (): SampleDatasetSchema {
     previewImagePath: '/plugins/home/assets/sample_data_resources/flights/dashboard.png',
     darkPreviewImagePath: '/plugins/home/assets/sample_data_resources/flights/dashboard_dark.png',
     overviewDashboard: DASHBOARD_ID,
-    getDataSourceIntegratedDashboard: appendDataSourceId(DASHBOARD_ID),
+    getWorkspaceAndDataSourceIntegratedDashboard: appendWorkspaceAndDataSourceId(DASHBOARD_ID),
     appLinks: initialAppLinks,
     defaultIndex: DEFAULT_INDEX,
     getDataSourceIntegratedDefaultIndex: appendDataSourceId(DEFAULT_INDEX),
     savedObjects: getSavedObjects(),
-    getDataSourceIntegratedSavedObjects: (dataSourceId?: string, dataSourceTitle?: string) =>
-      getSavedObjectsWithDataSource(getSavedObjects(), dataSourceId, dataSourceTitle),
+    getWorkspaceAndDataSourceIntegratedSavedObjects,
     dataIndices: [
       {
         id: 'flights',
