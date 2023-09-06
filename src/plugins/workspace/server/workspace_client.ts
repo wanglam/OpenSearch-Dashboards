@@ -19,7 +19,7 @@ import {
   WorkspaceAttributeWithPermission,
 } from './types';
 import { workspace } from './saved_objects';
-import { generateRandomId } from './utils';
+import { generateRandomId, convertToFullPermissions } from './utils';
 
 const WORKSPACE_ID_SIZE = 6;
 
@@ -167,7 +167,7 @@ export class WorkspaceClientWithSavedObject implements IWorkspaceDBImpl {
         }
       }
       await client.update<Omit<WorkspaceAttribute, 'id'>>(WORKSPACE_TYPE, id, attributes, {
-        permissions,
+        permissions: convertToFullPermissions(permissions),
       });
       return {
         success: true,
