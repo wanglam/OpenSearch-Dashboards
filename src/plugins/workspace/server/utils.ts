@@ -24,13 +24,9 @@ const addMissingPrincipals = (principals: Permissions[string]) => ({
  * @param permissions - The partial permissions object.
  * @returns The full permissions object with all permission modes and their corresponding principals.
  */
-export const convertToFullWorkspacePermissions = (permissions: Permissions) => ({
+export const convertToFullPermissions = (permissions: Permissions) => ({
   ...permissions,
-  ...[
-    WorkspacePermissionMode.LibraryRead,
-    WorkspacePermissionMode.LibraryWrite,
-    WorkspacePermissionMode.Management,
-  ].reduce(
+  ...Object.values(WorkspacePermissionMode).reduce(
     (previousValue, permissionMode) => ({
       ...previousValue,
       [permissionMode]: addMissingPrincipals(permissions[permissionMode] || {}),

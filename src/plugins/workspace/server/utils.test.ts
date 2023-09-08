@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { generateRandomId, convertToFullWorkspacePermissions } from './utils';
+import { generateRandomId, convertToFullPermissions } from './utils';
 
 describe('workspace utils', () => {
   it('should generate id with the specified size', () => {
@@ -20,32 +20,37 @@ describe('workspace utils', () => {
   });
 });
 
-describe('convertToFullWorkspacePermissions', () => {
+describe('convertToFullPermissions', () => {
   it('should convert partial permissions to full permissions', () => {
+    // Arrange
     const partialPermissions = {
-      library_read: { users: ['user1'], groups: ['group1'] },
-      library_write: { users: ['user2'] },
+      read: { users: ['user1'], groups: ['group1'] },
+      write: { users: ['user2'] },
       management: { groups: ['group1'] },
     };
 
     const expectedFullPermissions = {
-      library_read: { users: ['user1'], groups: ['group1'] },
-      library_write: { users: ['user2'], groups: [] },
+      read: { users: ['user1'], groups: ['group1'] },
+      write: { users: ['user2'], groups: [] },
       management: { users: [], groups: ['group1'] },
+      library_read: { users: [], groups: [] },
+      library_write: { users: [], groups: [] },
     };
 
-    expect(convertToFullWorkspacePermissions(partialPermissions)).toEqual(expectedFullPermissions);
+    expect(convertToFullPermissions(partialPermissions)).toEqual(expectedFullPermissions);
   });
 
   it('should handle empty partial permissions', () => {
     const partialPermissions = {};
 
     const expectedFullPermissions = {
+      read: { users: [], groups: [] },
+      write: { users: [], groups: [] },
       management: { users: [], groups: [] },
       library_read: { users: [], groups: [] },
       library_write: { users: [], groups: [] },
     };
 
-    expect(convertToFullWorkspacePermissions(partialPermissions)).toEqual(expectedFullPermissions);
+    expect(convertToFullPermissions(partialPermissions)).toEqual(expectedFullPermissions);
   });
 });
