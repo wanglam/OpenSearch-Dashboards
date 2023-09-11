@@ -36,7 +36,8 @@ import { SampleDatasetSchema, AppLinkSchema } from '../../lib/sample_dataset_reg
 import {
   appendDataSourceId,
   appendWorkspaceAndDataSourceId,
-  enhanceGetSavedObjectsWithWorkspaceAndDataSource,
+  getDataSourceIntegratedSavedObjects,
+  getWorkspaceIntegratedSavedObjects,
 } from '../util';
 
 const ecommerceName = i18n.translate('home.sampleData.ecommerceSpecTitle', {
@@ -49,10 +50,6 @@ const initialAppLinks = [] as AppLinkSchema[];
 
 const DEFAULT_INDEX = 'ff959d40-b880-11e8-a6d9-e546fe2bba5f';
 const DASHBOARD_ID = '722b74f0-b882-11e8-a6d9-e546fe2bba5f';
-
-const getWorkspaceAndDataSourceIntegratedSavedObjects = enhanceGetSavedObjectsWithWorkspaceAndDataSource(
-  getSavedObjects
-);
 
 export const ecommerceSpecProvider = function (): SampleDatasetSchema {
   return {
@@ -67,7 +64,8 @@ export const ecommerceSpecProvider = function (): SampleDatasetSchema {
     defaultIndex: DEFAULT_INDEX,
     getDataSourceIntegratedDefaultIndex: appendDataSourceId(DEFAULT_INDEX),
     savedObjects: getSavedObjects(),
-    getWorkspaceAndDataSourceIntegratedSavedObjects,
+    getDataSourceIntegratedSavedObjects,
+    getWorkspaceIntegratedSavedObjects,
     dataIndices: [
       {
         id: 'ecommerce',

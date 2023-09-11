@@ -36,7 +36,8 @@ import { SampleDatasetSchema, AppLinkSchema } from '../../lib/sample_dataset_reg
 import {
   appendDataSourceId,
   appendWorkspaceAndDataSourceId,
-  enhanceGetSavedObjectsWithWorkspaceAndDataSource,
+  getDataSourceIntegratedSavedObjects,
+  getWorkspaceIntegratedSavedObjects,
 } from '../util';
 
 const flightsName = i18n.translate('home.sampleData.flightsSpecTitle', {
@@ -49,10 +50,6 @@ const initialAppLinks = [] as AppLinkSchema[];
 
 const DEFAULT_INDEX = 'd3d7af60-4c81-11e8-b3d7-01146121b73d';
 const DASHBOARD_ID = '7adfa750-4c81-11e8-b3d7-01146121b73d';
-
-const getWorkspaceAndDataSourceIntegratedSavedObjects = enhanceGetSavedObjectsWithWorkspaceAndDataSource(
-  getSavedObjects
-);
 
 export const flightsSpecProvider = function (): SampleDatasetSchema {
   return {
@@ -67,7 +64,8 @@ export const flightsSpecProvider = function (): SampleDatasetSchema {
     defaultIndex: DEFAULT_INDEX,
     getDataSourceIntegratedDefaultIndex: appendDataSourceId(DEFAULT_INDEX),
     savedObjects: getSavedObjects(),
-    getWorkspaceAndDataSourceIntegratedSavedObjects,
+    getDataSourceIntegratedSavedObjects,
+    getWorkspaceIntegratedSavedObjects,
     dataIndices: [
       {
         id: 'flights',

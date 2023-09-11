@@ -13,6 +13,9 @@ export const appendDataSourceId = (id: string) => {
   return (dataSourceId?: string) => generateIdWithPrefix(id, dataSourceId);
 };
 
+const cloneSavedObjectsList = (savedObjectList: SavedObject[]) =>
+  JSON.parse(JSON.stringify(savedObjectList));
+
 const overrideSavedObjectId = (savedObject: SavedObject, idGenerator: (id: string) => string) => {
   savedObject.id = idGenerator(savedObject.id);
   // update reference
@@ -54,11 +57,12 @@ const overrideSavedObjectId = (savedObject: SavedObject, idGenerator: (id: strin
   }
 };
 
-export const getSavedObjectsWithDataSource = (
+export const getDataSourceIntegratedSavedObjects = (
   savedObjectList: SavedObject[],
   dataSourceId?: string,
   dataSourceTitle?: string
 ): SavedObject[] => {
+  savedObjectList = cloneSavedObjectsList(savedObjectList);
   if (dataSourceId) {
     const idGeneratorWithDataSource = (id: string) => generateIdWithPrefix(id, dataSourceId);
     return savedObjectList.map((savedObject) => {
@@ -99,18 +103,15 @@ export const appendWorkspaceAndDataSourceId = (id: string) => (workspaceId?: str
   dataSourceId?: string
 ) => appendDataSourceId(appendWorkspaceId(id)(workspaceId))(dataSourceId);
 
-export const enhanceGetSavedObjectsWithWorkspaceAndDataSource = (
-  getSavedObjects: () => SavedObject[]
-) => (workspaceId?: string) => (dataSourceId?: string, dataSourceTitle?: string) => {
-  const idGeneratorWithWorkspace = (id: string) => generateIdWithPrefix(id, workspaceId);
-  const savedObjects = workspaceId
-    ? getSavedObjects().map((item) => {
-        overrideSavedObjectId(item, idGeneratorWithWorkspace);
-        return item;
-      })
-    : getSavedObjects();
-  if (!dataSourceId) {
-    return savedObjects;
-  }
-  return getSavedObjectsWithDataSource(savedObjects, dataSourceId, dataSourceTitle);
+export const getWorkspaceIntegratedSavedObjects = (
+  savedObjectList: SavedObject[],
+  workspaceId?: string
+) => {
+  savedObjectList = cloneSavedObjectsList(savedObjectList);
+  const generateWithWorkspaceId = (id: string) => appendWorkspaceId(id)(workspaceId);
+
+  savedObjectList.forEach((savedObject) => {
+    overrideSavedObjectId(savedObject, generateWithWorkspaceId);
+  });
+  return savedObjectList;
 };

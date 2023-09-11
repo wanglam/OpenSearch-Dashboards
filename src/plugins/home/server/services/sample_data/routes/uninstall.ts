@@ -80,10 +80,19 @@ export function createUninstallRoute(
         }
       }
 
-      const savedObjectsList =
-        dataSourceId || workspaceId
-          ? sampleDataset.getWorkspaceAndDataSourceIntegratedSavedObjects(workspaceId)(dataSourceId)
-          : sampleDataset.savedObjects;
+      let savedObjectsList = sampleDataset.savedObjects;
+      if (dataSourceId) {
+        savedObjectsList = sampleDataset.getDataSourceIntegratedSavedObjects(
+          savedObjectsList,
+          dataSourceId
+        );
+      }
+      if (workspaceId) {
+        savedObjectsList = sampleDataset.getWorkspaceIntegratedSavedObjects(
+          savedObjectsList,
+          workspaceId
+        );
+      }
 
       const deletePromises = savedObjectsList.map(({ type, id }) =>
         context.core.savedObjects.client.delete(type, id)

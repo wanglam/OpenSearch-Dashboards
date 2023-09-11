@@ -36,7 +36,8 @@ import { SampleDatasetSchema, AppLinkSchema } from '../../lib/sample_dataset_reg
 import {
   appendDataSourceId,
   appendWorkspaceAndDataSourceId,
-  enhanceGetSavedObjectsWithWorkspaceAndDataSource,
+  getDataSourceIntegratedSavedObjects,
+  getWorkspaceIntegratedSavedObjects,
 } from '../util';
 
 const logsName = i18n.translate('home.sampleData.logsSpecTitle', {
@@ -49,10 +50,6 @@ const initialAppLinks = [] as AppLinkSchema[];
 
 const DEFAULT_INDEX = '90943e30-9a47-11e8-b64d-95841ca0b247';
 const DASHBOARD_ID = 'edf84fe0-e1a0-11e7-b6d5-4dc382ef7f5b';
-
-const getWorkspaceAndDataSourceIntegratedSavedObjects = enhanceGetSavedObjectsWithWorkspaceAndDataSource(
-  getSavedObjects
-);
 
 export const logsSpecProvider = function (): SampleDatasetSchema {
   return {
@@ -67,7 +64,8 @@ export const logsSpecProvider = function (): SampleDatasetSchema {
     defaultIndex: DEFAULT_INDEX,
     getDataSourceIntegratedDefaultIndex: appendDataSourceId(DEFAULT_INDEX),
     savedObjects: getSavedObjects(),
-    getWorkspaceAndDataSourceIntegratedSavedObjects,
+    getDataSourceIntegratedSavedObjects,
+    getWorkspaceIntegratedSavedObjects,
     dataIndices: [
       {
         id: 'logs',
