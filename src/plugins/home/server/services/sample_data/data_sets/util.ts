@@ -13,11 +13,11 @@ export const appendDataSourceId = (id: string) => {
   return (dataSourceId?: string) => generateIdWithPrefix(id, dataSourceId);
 };
 
-const overrideSavedObjectId = (saveObject: SavedObject, idGenerator: (id: string) => string) => {
-  saveObject.id = idGenerator(saveObject.id);
+const overrideSavedObjectId = (savedObject: SavedObject, idGenerator: (id: string) => string) => {
+  savedObject.id = idGenerator(savedObject.id);
   // update reference
-  if (saveObject.type === 'dashboard') {
-    saveObject.references.map((reference) => {
+  if (savedObject.type === 'dashboard') {
+    savedObject.references.map((reference) => {
       if (reference.id) {
         reference.id = idGenerator(reference.id);
       }
@@ -25,15 +25,17 @@ const overrideSavedObjectId = (saveObject: SavedObject, idGenerator: (id: string
   }
 
   // update reference
-  if (saveObject.type === 'visualization' || saveObject.type === 'search') {
-    const searchSourceString = saveObject.attributes?.kibanaSavedObjectMeta?.searchSourceJSON;
-    const visStateString = saveObject.attributes?.visState;
+  if (savedObject.type === 'visualization' || savedObject.type === 'search') {
+    const searchSourceString = savedObject.attributes?.kibanaSavedObjectMeta?.searchSourceJSON;
+    const visStateString = savedObject.attributes?.visState;
 
     if (searchSourceString) {
       const searchSource = JSON.parse(searchSourceString);
       if (searchSource.index) {
         searchSource.index = idGenerator(searchSource.index);
-        saveObject.attributes.kibanaSavedObjectMeta.searchSourceJSON = JSON.stringify(searchSource);
+        savedObject.attributes.kibanaSavedObjectMeta.searchSourceJSON = JSON.stringify(
+          searchSource
+        );
       }
     }
 
@@ -47,24 +49,24 @@ const overrideSavedObjectId = (saveObject: SavedObject, idGenerator: (id: string
           }
         });
       }
-      saveObject.attributes.visState = JSON.stringify(visState);
+      savedObject.attributes.visState = JSON.stringify(visState);
     }
   }
 };
 
 export const getSavedObjectsWithDataSource = (
-  saveObjectList: SavedObject[],
+  savedObjectList: SavedObject[],
   dataSourceId?: string,
   dataSourceTitle?: string
 ): SavedObject[] => {
   if (dataSourceId) {
     const idGeneratorWithDataSource = (id: string) => generateIdWithPrefix(id, dataSourceId);
-    return saveObjectList.map((saveObject) => {
-      overrideSavedObjectId(saveObject, idGeneratorWithDataSource);
+    return savedObjectList.map((savedObject) => {
+      overrideSavedObjectId(savedObject, idGeneratorWithDataSource);
 
       // update reference
-      if (saveObject.type === 'index-pattern') {
-        saveObject.references = [
+      if (savedObject.type === 'index-pattern') {
+        savedObject.references = [
           {
             id: `${dataSourceId}`,
             type: 'data-source',
@@ -75,19 +77,19 @@ export const getSavedObjectsWithDataSource = (
 
       if (dataSourceTitle) {
         if (
-          saveObject.type === 'dashboard' ||
-          saveObject.type === 'visualization' ||
-          saveObject.type === 'search'
+          savedObject.type === 'dashboard' ||
+          savedObject.type === 'visualization' ||
+          savedObject.type === 'search'
         ) {
-          saveObject.attributes.title = saveObject.attributes.title + `_${dataSourceTitle}`;
+          savedObject.attributes.title = savedObject.attributes.title + `_${dataSourceTitle}`;
         }
       }
 
-      return saveObject;
+      return savedObject;
     });
   }
 
-  return saveObjectList;
+  return savedObjectList;
 };
 
 export const appendWorkspaceId = (id: string) => (workspaceId?: string) =>
