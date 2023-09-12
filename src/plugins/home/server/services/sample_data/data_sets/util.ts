@@ -4,6 +4,7 @@
  */
 
 import { SavedObject } from 'opensearch-dashboards/server';
+import { cloneDeep } from 'lodash';
 
 const generateIdWithPrefix = (id: string, prefix?: string) => {
   return [...(prefix ? [prefix] : []), id].join('_');
@@ -12,9 +13,6 @@ const generateIdWithPrefix = (id: string, prefix?: string) => {
 export const appendDataSourceId = (id: string) => {
   return (dataSourceId?: string) => generateIdWithPrefix(id, dataSourceId);
 };
-
-const cloneSavedObjectsList = (savedObjectList: SavedObject[]) =>
-  JSON.parse(JSON.stringify(savedObjectList));
 
 const overrideSavedObjectId = (savedObject: SavedObject, idGenerator: (id: string) => string) => {
   savedObject.id = idGenerator(savedObject.id);
@@ -62,7 +60,7 @@ export const getDataSourceIntegratedSavedObjects = (
   dataSourceId?: string,
   dataSourceTitle?: string
 ): SavedObject[] => {
-  savedObjectList = cloneSavedObjectsList(savedObjectList);
+  savedObjectList = cloneDeep(savedObjectList);
   if (dataSourceId) {
     const idGeneratorWithDataSource = (id: string) => generateIdWithPrefix(id, dataSourceId);
     return savedObjectList.map((savedObject) => {
@@ -107,7 +105,7 @@ export const getWorkspaceIntegratedSavedObjects = (
   savedObjectList: SavedObject[],
   workspaceId?: string
 ) => {
-  savedObjectList = cloneSavedObjectsList(savedObjectList);
+  savedObjectList = cloneDeep(savedObjectList);
   const generateWithWorkspaceId = (id: string) => appendWorkspaceId(id)(workspaceId);
 
   savedObjectList.forEach((savedObject) => {
