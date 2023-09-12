@@ -14,7 +14,7 @@ const withPrefix = (...args: Array<string | undefined>) => (id: string) => {
   return id;
 };
 
-export const appendPrefixTo = (id: string) => (...args: Array<string | undefined>) => {
+export const addPrefixTo = (id: string) => (...args: Array<string | undefined>) => {
   return withPrefix(...args)(id);
 };
 

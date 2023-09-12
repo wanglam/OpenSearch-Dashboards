@@ -33,7 +33,7 @@ import { i18n } from '@osd/i18n';
 import { getSavedObjects } from './saved_objects';
 import { fieldMappings } from './field_mappings';
 import { SampleDatasetSchema, AppLinkSchema } from '../../lib/sample_dataset_registry_types';
-import { appendPrefixTo } from '../util';
+import { addPrefixTo } from '../util';
 
 const flightsName = i18n.translate('home.sampleData.flightsSpecTitle', {
   defaultMessage: 'Sample flight data',
@@ -54,10 +54,10 @@ export const flightsSpecProvider = function (): SampleDatasetSchema {
     previewImagePath: '/plugins/home/assets/sample_data_resources/flights/dashboard.png',
     darkPreviewImagePath: '/plugins/home/assets/sample_data_resources/flights/dashboard_dark.png',
     overviewDashboard: DASHBOARD_ID,
-    getDashboardWithPrefix: appendPrefixTo(DASHBOARD_ID),
+    getDashboardWithPrefix: addPrefixTo(DASHBOARD_ID),
     appLinks: initialAppLinks,
     defaultIndex: DEFAULT_INDEX,
-    getDataSourceIntegratedDefaultIndex: appendPrefixTo(DEFAULT_INDEX),
+    getDataSourceIntegratedDefaultIndex: addPrefixTo(DEFAULT_INDEX),
     savedObjects: getSavedObjects(),
     dataIndices: [
       {

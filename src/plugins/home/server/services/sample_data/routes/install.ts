@@ -205,15 +205,15 @@ export function createInstallRoute(
 
       let createResults;
       let savedObjectsList = sampleDataset.savedObjects;
+      if (workspaceId) {
+        savedObjectsList = getWorkspaceIntegratedSavedObjects(savedObjectsList, workspaceId);
+      }
       if (dataSourceId) {
         savedObjectsList = getDataSourceIntegratedSavedObjects(
           savedObjectsList,
           dataSourceId,
           dataSourceTitle
         );
-      }
-      if (workspaceId) {
-        savedObjectsList = getWorkspaceIntegratedSavedObjects(savedObjectsList, workspaceId);
       }
 
       try {
