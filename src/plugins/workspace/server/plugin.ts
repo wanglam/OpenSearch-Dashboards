@@ -2,16 +2,12 @@
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
  */
-import {
-  PluginInitializerContext,
-  CoreSetup,
-  Plugin,
-  Logger,
-  CoreStart,
-} from '../../../core/server';
+import { PluginInitializerContext, CoreSetup, Plugin, Logger } from '../../../core/server';
+import { WORKSPACE_SAVED_OBJECTS_CLIENT_WRAPPER_ID } from '../common/constants';
 import { IWorkspaceDBImpl } from './types';
 import { WorkspaceClientWithSavedObject } from './workspace_client';
 import { registerRoutes } from './routes';
+import { WorkspaceSavedObjectsClientWrapper } from './saved_objects';
 
 export class WorkspacePlugin implements Plugin<{}, {}> {
   private readonly logger: Logger;
@@ -27,6 +23,14 @@ export class WorkspacePlugin implements Plugin<{}, {}> {
     this.client = new WorkspaceClientWithSavedObject(core);
 
     await this.client.setup(core);
+
+    const workspaceSavedObjectsClientWrapper = new WorkspaceSavedObjectsClientWrapper();
+
+    core.savedObjects.addClientWrapper(
+      0,
+      WORKSPACE_SAVED_OBJECTS_CLIENT_WRAPPER_ID,
+      workspaceSavedObjectsClientWrapper.wrapperFactory
+    );
 
     registerRoutes({
       http: core.http,
