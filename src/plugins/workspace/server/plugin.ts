@@ -10,9 +10,11 @@ import {
   Logger,
   CoreStart,
 } from '../../../core/server';
+import { WORKSPACE_SAVED_OBJECTS_CLIENT_WRAPPER_ID } from '../common/constants';
 import { IWorkspaceClientImpl } from './types';
 import { WorkspaceClient } from './workspace_client';
 import { registerRoutes } from './routes';
+import { WorkspaceSavedObjectsClientWrapper } from './saved_objects';
 import { cleanWorkspaceId, getWorkspaceIdFromUrl } from '../../../core/server/utils';
 
 export class WorkspacePlugin implements Plugin<{}, {}> {
@@ -47,6 +49,13 @@ export class WorkspacePlugin implements Plugin<{}, {}> {
     await this.client.setup(core);
 
     this.proxyWorkspaceTrafficToRealHandler(core);
+    const workspaceSavedObjectsClientWrapper = new WorkspaceSavedObjectsClientWrapper();
+
+    core.savedObjects.addClientWrapper(
+      0,
+      WORKSPACE_SAVED_OBJECTS_CLIENT_WRAPPER_ID,
+      workspaceSavedObjectsClientWrapper.wrapperFactory
+    );
 
     registerRoutes({
       http: core.http,
