@@ -10,11 +10,15 @@ import {
   Logger,
   CoreStart,
 } from '../../../core/server';
+import {
+  WORKSPACE_SAVED_OBJECTS_CLIENT_WRAPPER_ID,
+  WORKSPACE_CONFLICT_CONTROL_SAVED_OBJECTS_CLIENT_WRAPPER_ID,
+} from '../common/constants';
 import { IWorkspaceClientImpl } from './types';
 import { WorkspaceClient } from './workspace_client';
 import { registerRoutes } from './routes';
+import { WorkspaceSavedObjectsClientWrapper } from './saved_objects';
 import { cleanWorkspaceId, getWorkspaceIdFromUrl } from '../../../core/server/utils';
-import { WORKSPACE_CONFLICT_CONTROL_SAVED_OBJECTS_CLIENT_WRAPPER_ID } from '../common/constants';
 import { WorkspaceConflictSavedObjectsClientWrapper } from './saved_objects/saved_objects_wrapper_for_check_workspace_conflict';
 
 export class WorkspacePlugin implements Plugin<{}, {}> {
@@ -56,6 +60,14 @@ export class WorkspacePlugin implements Plugin<{}, {}> {
       -1,
       WORKSPACE_CONFLICT_CONTROL_SAVED_OBJECTS_CLIENT_WRAPPER_ID,
       this.workspaceConflictControl.wrapperFactory
+    );
+
+    const workspaceSavedObjectsClientWrapper = new WorkspaceSavedObjectsClientWrapper();
+
+    core.savedObjects.addClientWrapper(
+      0,
+      WORKSPACE_SAVED_OBJECTS_CLIENT_WRAPPER_ID,
+      workspaceSavedObjectsClientWrapper.wrapperFactory
     );
 
     registerRoutes({
