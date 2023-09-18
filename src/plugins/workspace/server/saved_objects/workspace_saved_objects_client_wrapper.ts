@@ -188,11 +188,7 @@ export class WorkspaceSavedObjectsClientWrapper {
           objectToDeleted,
           wrapperOptions.request,
           [WorkspacePermissionMode.LibraryWrite, WorkspacePermissionMode.Management],
-          [
-            WorkspacePermissionMode.Management,
-            WorkspacePermissionMode.LibraryWrite,
-            WorkspacePermissionMode.Write,
-          ]
+          [WorkspacePermissionMode.Management, WorkspacePermissionMode.Write]
         ))
       ) {
         throw generateSavedObjectsPermissionError();
@@ -208,11 +204,7 @@ export class WorkspaceSavedObjectsClientWrapper {
         objectToUpdate,
         wrapperOptions.request,
         [WorkspacePermissionMode.LibraryWrite, WorkspacePermissionMode.Management],
-        [
-          WorkspacePermissionMode.Management,
-          WorkspacePermissionMode.LibraryWrite,
-          WorkspacePermissionMode.Write,
-        ],
+        [WorkspacePermissionMode.Management, WorkspacePermissionMode.Write],
         false
       );
     };
@@ -288,11 +280,7 @@ export class WorkspaceSavedObjectsClientWrapper {
           await wrapperOptions.client.get(type, options.id),
           wrapperOptions.request,
           [WorkspacePermissionMode.LibraryWrite, WorkspacePermissionMode.Management],
-          [
-            WorkspacePermissionMode.Write,
-            WorkspacePermissionMode.LibraryWrite,
-            WorkspacePermissionMode.Management,
-          ],
+          [WorkspacePermissionMode.Write, WorkspacePermissionMode.Management],
           false
         ))
       ) {
@@ -320,7 +308,6 @@ export class WorkspaceSavedObjectsClientWrapper {
           ],
           [
             WorkspacePermissionMode.LibraryRead,
-            WorkspacePermissionMode.LibraryWrite,
             WorkspacePermissionMode.Management,
             WorkspacePermissionMode.Read,
             WorkspacePermissionMode.Write,
@@ -351,7 +338,6 @@ export class WorkspaceSavedObjectsClientWrapper {
             ],
             [
               WorkspacePermissionMode.LibraryRead,
-              WorkspacePermissionMode.LibraryWrite,
               WorkspacePermissionMode.Management,
               WorkspacePermissionMode.Write,
               WorkspacePermissionMode.Read,
