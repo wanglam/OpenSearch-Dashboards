@@ -86,24 +86,24 @@ export class WorkspaceSavedObjectsClientWrapper {
   }
 
   // validate if the `request` has the specified permission(`permissionMode`) to the given `workspaceIds`
-  private async validateMultiWorkspacesPermissions(
+  private validateMultiWorkspacesPermissions = async (
     workspacesIds: string[],
     request: OpenSearchDashboardsRequest,
     permissionMode: WorkspacePermissionMode | WorkspacePermissionMode[]
-  ) {
+  ) => {
     // for attributes and options passed in this function, the num of workspaces may be 0.This case should not be passed permission check.
     if (workspacesIds.length === 0) {
       return false;
     }
     const workspaces = workspacesIds.map((id) => ({ id, type: WORKSPACE_TYPE }));
     return await this.validateObjectsPermissions(workspaces, request, permissionMode);
-  }
+  };
 
-  private async validateAtLeastOnePermittedWorkspaces(
+  private validateAtLeastOnePermittedWorkspaces = async (
     workspaces: string[] | undefined,
     request: OpenSearchDashboardsRequest,
     permissionMode: WorkspacePermissionMode | WorkspacePermissionMode[]
-  ) {
+  ) => {
     // for attributes and options passed in this function, the num of workspaces attribute may be 0.This case should not be passed permission check.
     if (!workspaces || workspaces.length === 0) {
       return false;
@@ -122,7 +122,7 @@ export class WorkspaceSavedObjectsClientWrapper {
       }
     }
     return false;
-  }
+  };
 
   /**
    * check if the type include workspace
@@ -148,22 +148,32 @@ export class WorkspaceSavedObjectsClientWrapper {
       return true;
     }
 
-    if (
-      await (validateAllWorkspaces
+    let hasPermission = false;
+    // Check permission based on object's workspaces
+    if (savedObject.workspaces) {
+      const workspacePermissionValidator = validateAllWorkspaces
         ? this.validateMultiWorkspacesPermissions
-        : this.validateAtLeastOnePermittedWorkspaces
-      ).bind(this)(savedObject.workspaces ?? [], request, workspacePermissionModes)
-    ) {
+        : this.validateAtLeastOnePermittedWorkspaces;
+      hasPermission = await workspacePermissionValidator(
+        savedObject.workspaces,
+        request,
+        workspacePermissionModes
+      );
+    }
+    // If already has permissions based on workspaces, we don't need to check object's ACL(defined by permissions attribute)
+    // So return true immediately
+    if (hasPermission) {
       return true;
     }
-
-    if (
-      !savedObject.permissions ||
-      !(await this.validateObjectsPermissions([{ type, id }], request, objectPermissionModes))
-    ) {
-      return false;
+    // Check permission based on object's ACL(defined by permissions attribute)
+    if (savedObject.permissions) {
+      hasPermission = await this.validateObjectsPermissions(
+        [{ type, id }],
+        request,
+        objectPermissionModes
+      );
     }
-    return true;
+    return hasPermission;
   }
 
   public wrapperFactory: SavedObjectsClientWrapperFactory = (wrapperOptions) => {
