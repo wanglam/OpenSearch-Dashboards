@@ -142,6 +142,8 @@ export class WorkspaceSavedObjectsClientWrapper {
     validateAllWorkspaces = true
   ) {
     const { id, type } = savedObject;
+
+    // Advanced settings have no permissions and workspaces, so we need to skip it.
     if (!savedObject.workspaces && !savedObject.permissions) {
       return true;
     }
