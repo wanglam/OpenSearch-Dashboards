@@ -30,7 +30,6 @@ import {
   SavedObjectsErrorHelpers,
 } from '../../../../core/server';
 import { SavedObjectsPermissionControlContract } from '../permission_control/client';
-import { WorkspaceFindOptions } from '../types';
 import { getPrincipalsFromRequest } from '../utils';
 
 const ALL_WORKSPACE_INNER_DATA_PERMISSION_MODES: string[] = [
@@ -361,7 +360,7 @@ export class WorkspaceSavedObjectsClientWrapper {
     };
 
     const findWithWorkspacePermissionControl = async <T = unknown>(
-      options: SavedObjectsFindOptions & Pick<WorkspaceFindOptions, 'permissionModes'>
+      options: SavedObjectsFindOptions
     ) => {
       const principals = getPrincipalsFromRequest(wrapperOptions.request);
       if (!options.ACLSearchParams) {
