@@ -378,10 +378,16 @@ export class WorkspaceSavedObjectsClientWrapper {
         options.ACLSearchParams.permissionModes = workspaceInnerPermissionModes;
         options.ACLSearchParams.principals = principals;
       } else {
-        const permittedWorkspaceIds = await this.permissionControl.getPermittedWorkspaceIds(
-          wrapperOptions.request,
-          workspaceInnerPermissionModes
-        );
+        const permittedWorkspaceIds = (
+          await wrapperOptions.client.find({
+            type: WORKSPACE_TYPE,
+            perPage: 999,
+            ACLSearchParams: {
+              principals,
+              permissionModes: workspaceInnerPermissionModes,
+            },
+          })
+        ).saved_objects.map((item) => item.id);
 
         if (options.workspaces) {
           const permittedWorkspaces = options.workspaces.filter((item) =>
