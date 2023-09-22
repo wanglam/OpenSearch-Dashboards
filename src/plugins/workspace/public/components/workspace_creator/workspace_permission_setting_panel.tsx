@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   EuiDescribedFormGroup,
   EuiFlexGroup,
@@ -28,42 +28,55 @@ export type WorkspacePermissionSetting = (
   modes: Array<
     | WorkspacePermissionMode.LibraryRead
     | WorkspacePermissionMode.LibraryWrite
-    | WorkspacePermissionMode.Management
+    | WorkspacePermissionMode.Read
+    | WorkspacePermissionMode.Write
   >;
 };
 
+enum PermissionModeId {
+  Read = 'read',
+  ReadAndWrite = 'read+write',
+  Admin = 'admin',
+}
+
 const permissionModeOptions = [
   {
-    id: WorkspacePermissionMode.LibraryRead,
-    label: 'View',
+    id: PermissionModeId.Read,
+    label: 'Read',
     iconType: 'eye',
   },
   {
-    id: WorkspacePermissionMode.LibraryWrite,
-    label: 'Edit',
+    id: PermissionModeId.ReadAndWrite,
+    label: 'Read + Write',
     iconType: 'pencil',
   },
   {
-    id: WorkspacePermissionMode.Management,
+    id: PermissionModeId.Admin,
     label: 'Management',
     iconType: 'visTimelion',
   },
 ];
+
+const optionIdToWorkspacePermissionModesMap: {
+  [key: string]: WorkspacePermissionMode[];
+} = {
+  [PermissionModeId.Read]: [WorkspacePermissionMode.LibraryRead, WorkspacePermissionMode.Read],
+  [PermissionModeId.ReadAndWrite]: [
+    WorkspacePermissionMode.LibraryWrite,
+    WorkspacePermissionMode.Read,
+  ],
+  [PermissionModeId.Admin]: [WorkspacePermissionMode.LibraryWrite, WorkspacePermissionMode.Write],
+};
 
 const permissionTypeOptions = [
   { value: 'user' as const, inputDisplay: 'User' },
   { value: 'group' as const, inputDisplay: 'Group' },
 ];
 
-const isWorkspacePermissionMode = (
-  test: string
-): test is
-  | WorkspacePermissionMode.LibraryRead
-  | WorkspacePermissionMode.LibraryWrite
-  | WorkspacePermissionMode.Management =>
-  test === WorkspacePermissionMode.LibraryRead ||
-  test === WorkspacePermissionMode.LibraryWrite ||
-  test === WorkspacePermissionMode.Management;
+const generateWorkspacePermissionItemKey = (
+  item: Partial<WorkspacePermissionSetting>,
+  index?: number
+) => [item.type, item.userId, item.group, ...(item.modes ?? []), index].filter(Boolean).join('-');
 
 interface WorkspacePermissionSettingInputProps {
   index: number;
@@ -74,7 +87,8 @@ interface WorkspacePermissionSettingInputProps {
   modes?: Array<
     | WorkspacePermissionMode.LibraryRead
     | WorkspacePermissionMode.LibraryWrite
-    | WorkspacePermissionMode.Management
+    | WorkspacePermissionMode.Read
+    | WorkspacePermissionMode.Write
   >;
   onTypeChange: (type: 'user' | 'group', index: number) => void;
   onGroupOrUserIdChange: (
@@ -88,7 +102,8 @@ interface WorkspacePermissionSettingInputProps {
     WorkspacePermissionMode: Array<
       | WorkspacePermissionMode.LibraryRead
       | WorkspacePermissionMode.LibraryWrite
-      | WorkspacePermissionMode.Management
+      | WorkspacePermissionMode.Read
+      | WorkspacePermissionMode.Write
     >,
     index: number
   ) => void;
@@ -111,16 +126,16 @@ const WorkspacePermissionSettingInput = ({
     () => (group || userId ? [{ label: (group || userId) as string }] : []),
     [group, userId]
   );
-  const permissionModesIdToSelectMap = useMemo(
-    () => ({
-      [WorkspacePermissionMode.LibraryRead]: !!modes?.includes(WorkspacePermissionMode.LibraryRead),
-      [WorkspacePermissionMode.LibraryWrite]: !!modes?.includes(
-        WorkspacePermissionMode.LibraryWrite
-      ),
-      [WorkspacePermissionMode.Management]: !!modes?.includes(WorkspacePermissionMode.Management),
-    }),
-    [modes]
-  );
+  const permissionModesSelectedId = useMemo(() => {
+    if (!modes) {
+      return undefined;
+    }
+    for (const key in optionIdToWorkspacePermissionModesMap) {
+      if (optionIdToWorkspacePermissionModesMap[key].every((mode) => modes?.includes(mode))) {
+        return key;
+      }
+    }
+  }, [modes]);
 
   const handleTypeChange = useCallback(
     (newType: 'user' | 'group') => {
@@ -154,16 +169,13 @@ const WorkspacePermissionSettingInput = ({
     [index, type, onGroupOrUserIdChange]
   );
 
-  const handlePermissionStateChange = useCallback(
+  const handlePermissionModeOptionChange = useCallback(
     (id: string) => {
-      if (isWorkspacePermissionMode(id)) {
-        onPermissionModesChange(
-          modes?.includes(id) ? modes.filter((value) => value !== id) : [...(modes ?? []), id],
-          index
-        );
+      if (optionIdToWorkspacePermissionModesMap[id]) {
+        onPermissionModesChange([...optionIdToWorkspacePermissionModesMap[id]], index);
       }
     },
-    [index, modes, onPermissionModesChange]
+    [index, onPermissionModesChange]
   );
 
   const handleDelete = useCallback(() => {
@@ -195,11 +207,11 @@ const WorkspacePermissionSettingInput = ({
       <EuiFlexItem grow={false}>
         <EuiButtonGroup
           legend="Permission Modes"
-          type="multi"
+          type="single"
           options={permissionModeOptions}
-          onChange={handlePermissionStateChange}
           isIconOnly
-          idToSelectedMap={permissionModesIdToSelectMap}
+          idSelected={permissionModesSelectedId}
+          onChange={handlePermissionModeOptionChange}
         />
       </EuiFlexItem>
       <EuiFlexItem grow={false}>
@@ -227,18 +239,44 @@ export const WorkspacePermissionSettingPanel = ({
   onChange,
   firstRowDeletable,
 }: WorkspacePermissionSettingPanelProps) => {
-  const valueRef = useRef(value);
-  valueRef.current = value;
+  const transferredValue = useMemo(() => {
+    if (!value) {
+      return [];
+    }
+    const result: Array<Partial<WorkspacePermissionSetting>> = [];
+    for (let i = 0; i < value.length; i++) {
+      const valueItem = value[i];
+      if (
+        !valueItem.modes ||
+        !valueItem.type ||
+        (valueItem.type === 'user' && !valueItem.userId) ||
+        (valueItem.type === 'group' && !valueItem.group)
+      ) {
+        result.push(valueItem);
+        continue;
+      }
+      for (const key in optionIdToWorkspacePermissionModesMap) {
+        if (!Object.prototype.hasOwnProperty.call(optionIdToWorkspacePermissionModesMap, key)) {
+          continue;
+        }
+        const modesForCertainPermissionId = optionIdToWorkspacePermissionModesMap[key];
+        if (modesForCertainPermissionId.every((mode) => valueItem.modes?.includes(mode))) {
+          result.push({ ...valueItem, modes: modesForCertainPermissionId });
+        }
+      }
+    }
+    return result;
+  }, [value]);
 
   const handleAddNewOne = useCallback(() => {
-    onChange?.([...(valueRef.current ?? []), {}]);
-  }, [onChange]);
+    onChange?.([...(transferredValue ?? []), {}]);
+  }, [onChange, transferredValue]);
 
   const handleDelete = useCallback(
     (index: number) => {
-      onChange?.((valueRef.current ?? []).filter((_item, itemIndex) => itemIndex !== index));
+      onChange?.((transferredValue ?? []).filter((_item, itemIndex) => itemIndex !== index));
     },
-    [onChange]
+    [onChange, transferredValue]
   );
 
   const handlePermissionModesChange = useCallback<
@@ -246,23 +284,23 @@ export const WorkspacePermissionSettingPanel = ({
   >(
     (modes, index) => {
       onChange?.(
-        (valueRef.current ?? []).map((item, itemIndex) =>
+        (transferredValue ?? []).map((item, itemIndex) =>
           index === itemIndex ? { ...item, modes } : item
         )
       );
     },
-    [onChange]
+    [onChange, transferredValue]
   );
 
   const handleTypeChange = useCallback<WorkspacePermissionSettingInputProps['onTypeChange']>(
     (type, index) => {
       onChange?.(
-        (valueRef.current ?? []).map((item, itemIndex) =>
+        (transferredValue ?? []).map((item, itemIndex) =>
           index === itemIndex ? { ...item, type } : item
         )
       );
     },
-    [onChange]
+    [onChange, transferredValue]
   );
 
   const handleGroupOrUserIdChange = useCallback<
@@ -270,20 +308,20 @@ export const WorkspacePermissionSettingPanel = ({
   >(
     (userOrGroupIdWithType, index) => {
       onChange?.(
-        (valueRef.current ?? []).map((item, itemIndex) =>
+        (transferredValue ?? []).map((item, itemIndex) =>
           index === itemIndex
             ? { ...userOrGroupIdWithType, ...(item.modes ? { modes: item.modes } : {}) }
             : item
         )
       );
     },
-    [onChange]
+    [onChange, transferredValue]
   );
 
   return (
     <EuiDescribedFormGroup title={<h3>Users, User Groups & Groups</h3>}>
-      {value?.map((item, index) => (
-        <React.Fragment key={index}>
+      {transferredValue?.map((item, index) => (
+        <React.Fragment key={generateWorkspacePermissionItemKey(item, index)}>
           <EuiFormRow isInvalid={!!errors?.[index]} error={errors?.[index]}>
             <WorkspacePermissionSettingInput
               {...item}
