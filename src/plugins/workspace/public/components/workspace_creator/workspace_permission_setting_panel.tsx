@@ -25,12 +25,7 @@ export type WorkspacePermissionSetting = (
   type: 'user' | 'group';
   userId?: string;
   group?: string;
-  modes: Array<
-    | WorkspacePermissionMode.LibraryRead
-    | WorkspacePermissionMode.LibraryWrite
-    | WorkspacePermissionMode.Read
-    | WorkspacePermissionMode.Write
-  >;
+  modes: WorkspacePermissionMode[];
 };
 
 enum PermissionModeId {
@@ -84,12 +79,7 @@ interface WorkspacePermissionSettingInputProps {
   type?: 'user' | 'group';
   userId?: string;
   group?: string;
-  modes?: Array<
-    | WorkspacePermissionMode.LibraryRead
-    | WorkspacePermissionMode.LibraryWrite
-    | WorkspacePermissionMode.Read
-    | WorkspacePermissionMode.Write
-  >;
+  modes?: WorkspacePermissionMode[];
   onTypeChange: (type: 'user' | 'group', index: number) => void;
   onGroupOrUserIdChange: (
     groupOrUserId:
@@ -99,12 +89,7 @@ interface WorkspacePermissionSettingInputProps {
     index: number
   ) => void;
   onPermissionModesChange: (
-    WorkspacePermissionMode: Array<
-      | WorkspacePermissionMode.LibraryRead
-      | WorkspacePermissionMode.LibraryWrite
-      | WorkspacePermissionMode.Read
-      | WorkspacePermissionMode.Write
-    >,
+    WorkspacePermissionMode: WorkspacePermissionMode[],
     index: number
   ) => void;
   onDelete: (index: number) => void;
@@ -239,13 +224,18 @@ export const WorkspacePermissionSettingPanel = ({
   onChange,
   firstRowDeletable,
 }: WorkspacePermissionSettingPanelProps) => {
-  const transferredValue = useMemo(() => {
+  const transformedValue = useMemo(() => {
     if (!value) {
       return [];
     }
     const result: Array<Partial<WorkspacePermissionSetting>> = [];
+    /**
+     * One workspace permission setting may includes multi setting options,
+     * for loop the workspace permission setting array to separate it to multi rows.
+     **/
     for (let i = 0; i < value.length; i++) {
       const valueItem = value[i];
+      // Incomplete workspace permission setting don't need to separate to multi rows
       if (
         !valueItem.modes ||
         !valueItem.type ||
@@ -255,6 +245,11 @@ export const WorkspacePermissionSettingPanel = ({
         result.push(valueItem);
         continue;
       }
+      /**
+       * For loop the option id to workspace permission modes map,
+       * if one settings includes all permission modes in a specific option,
+       * add these permission modes to the result array.
+       */
       for (const key in optionIdToWorkspacePermissionModesMap) {
         if (!Object.prototype.hasOwnProperty.call(optionIdToWorkspacePermissionModesMap, key)) {
           continue;
@@ -269,14 +264,14 @@ export const WorkspacePermissionSettingPanel = ({
   }, [value]);
 
   const handleAddNewOne = useCallback(() => {
-    onChange?.([...(transferredValue ?? []), {}]);
-  }, [onChange, transferredValue]);
+    onChange?.([...(transformedValue ?? []), {}]);
+  }, [onChange, transformedValue]);
 
   const handleDelete = useCallback(
     (index: number) => {
-      onChange?.((transferredValue ?? []).filter((_item, itemIndex) => itemIndex !== index));
+      onChange?.((transformedValue ?? []).filter((_item, itemIndex) => itemIndex !== index));
     },
-    [onChange, transferredValue]
+    [onChange, transformedValue]
   );
 
   const handlePermissionModesChange = useCallback<
@@ -284,23 +279,23 @@ export const WorkspacePermissionSettingPanel = ({
   >(
     (modes, index) => {
       onChange?.(
-        (transferredValue ?? []).map((item, itemIndex) =>
+        (transformedValue ?? []).map((item, itemIndex) =>
           index === itemIndex ? { ...item, modes } : item
         )
       );
     },
-    [onChange, transferredValue]
+    [onChange, transformedValue]
   );
 
   const handleTypeChange = useCallback<WorkspacePermissionSettingInputProps['onTypeChange']>(
     (type, index) => {
       onChange?.(
-        (transferredValue ?? []).map((item, itemIndex) =>
+        (transformedValue ?? []).map((item, itemIndex) =>
           index === itemIndex ? { ...item, type } : item
         )
       );
     },
-    [onChange, transferredValue]
+    [onChange, transformedValue]
   );
 
   const handleGroupOrUserIdChange = useCallback<
@@ -308,19 +303,19 @@ export const WorkspacePermissionSettingPanel = ({
   >(
     (userOrGroupIdWithType, index) => {
       onChange?.(
-        (transferredValue ?? []).map((item, itemIndex) =>
+        (transformedValue ?? []).map((item, itemIndex) =>
           index === itemIndex
             ? { ...userOrGroupIdWithType, ...(item.modes ? { modes: item.modes } : {}) }
             : item
         )
       );
     },
-    [onChange, transferredValue]
+    [onChange, transformedValue]
   );
 
   return (
     <EuiDescribedFormGroup title={<h3>Users, User Groups & Groups</h3>}>
-      {transferredValue?.map((item, index) => (
+      {transformedValue?.map((item, index) => (
         <React.Fragment key={generateWorkspacePermissionItemKey(item, index)}>
           <EuiFormRow isInvalid={!!errors?.[index]} error={errors?.[index]}>
             <WorkspacePermissionSettingInput

@@ -357,6 +357,13 @@ export class WorkspaceSavedObjectsClientWrapper {
             perPage: 999,
             ACLSearchParams: {
               principals,
+              /**
+               * The permitted workspace ids will be passed to the options.workspaces
+               * or options.ACLSearchParams.workspaces. These two were indicated the saved
+               * objects data inner specific workspaces. We use Library related permission here.
+               * For outside passed permission modes, it may contains other permissions. Add a intersection
+               * here to make sure only Library related permission modes will be used.
+               */
               permissionModes: options.ACLSearchParams.permissionModes
                 ? intersection(options.ACLSearchParams.permissionModes, [
                     WorkspacePermissionMode.LibraryRead,
