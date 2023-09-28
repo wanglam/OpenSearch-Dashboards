@@ -132,7 +132,7 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
     await repositoryKit.clearAll(internalSavedObjectsRepository);
     await opensearchServer.stop();
     await osd.stop();
-  }, 30000);
+  });
 
   beforeEach(() => {
     jest.spyOn(utilsExports, 'getPrincipalsFromRequest').mockReturnValue({
@@ -166,7 +166,7 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
       }
       expect(error).not.toBeUndefined();
       expect(SavedObjectsErrorHelpers.isForbiddenError(error)).toBe(true);
-    }, 30000);
+    });
 
     it('should return consistent dashboard when user permitted', async () => {
       jest.spyOn(utilsExports, 'getPrincipalsFromRequest').mockReturnValue({
@@ -182,7 +182,7 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
       expect(
         (await savedObjectsClient.get('dashboard', 'acl-controlled-dashboard-2')).error
       ).toBeUndefined();
-    }, 30000);
+    });
   });
 
   describe('bulkGet', () => {
@@ -209,7 +209,7 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
       }
       expect(error).not.toBeUndefined();
       expect(SavedObjectsErrorHelpers.isForbiddenError(error)).toBe(true);
-    }, 30000);
+    });
 
     it('should return consistent dashboard when user permitted', async () => {
       jest.spyOn(utilsExports, 'getPrincipalsFromRequest').mockReturnValue({
@@ -233,7 +233,7 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
           ])
         ).saved_objects.length
       ).toEqual(1);
-    }, 30000);
+    });
   });
 
   describe('find', () => {
