@@ -28,7 +28,7 @@
  * under the License.
  */
 
-import { ISavedObjectsRepository } from 'src/core/server';
+import { ISavedObjectsRepository, SavedObjectsClientContract } from 'src/core/server';
 
 import {
   createTestServers,
@@ -61,17 +61,26 @@ const repositoryKit = (() => {
     },
     clearAll: async (repository: ISavedObjectsRepository) => {
       for (let i = 0; i < savedObjects.length; i++) {
-        await repository.delete(savedObjects[i].type, savedObjects[i].id);
+        try {
+          await repository.delete(savedObjects[i].type, savedObjects[i].id);
+        } catch (_e) {
+          // Ignore delete error
+        }
       }
     },
   };
 })();
+
+const permittedRequest = httpServerMock.createOpenSearchDashboardsRequest();
+const notPermittedRequest = httpServerMock.createOpenSearchDashboardsRequest();
 
 describe('WorkspaceSavedObjectsClientWrapper', () => {
   let internalSavedObjectsRepository: ISavedObjectsRepository;
   let servers: TestUtils;
   let opensearchServer: TestOpenSearchUtils;
   let osd: TestOpenSearchDashboardsUtils;
+  let permittedSavedObjectedClient: SavedObjectsClientContract;
+  let notPermittedSavedObjectedClient: SavedObjectsClientContract;
 
   beforeAll(async function () {
     servers = createTestServers({
@@ -126,32 +135,33 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
         },
       }
     );
+
+    jest.spyOn(utilsExports, 'getPrincipalsFromRequest').mockImplementation((request) => {
+      if (request === notPermittedRequest) {
+        return { users: ['bar'] };
+      }
+      return { users: ['foo'] };
+    });
+
+    permittedSavedObjectedClient = osd.coreStart.savedObjects.getScopedClient(permittedRequest);
+    notPermittedSavedObjectedClient = osd.coreStart.savedObjects.getScopedClient(
+      notPermittedRequest
+    );
   });
 
   afterAll(async () => {
     await repositoryKit.clearAll(internalSavedObjectsRepository);
     await opensearchServer.stop();
     await osd.stop();
-  });
 
-  beforeEach(() => {
-    jest.spyOn(utilsExports, 'getPrincipalsFromRequest').mockReturnValue({
-      users: ['bar'],
-    });
-  });
-
-  afterEach(() => {
     jest.spyOn(utilsExports, 'getPrincipalsFromRequest').mockRestore();
   });
 
   describe('get', () => {
     it('should throw forbidden error when user not permitted', async () => {
-      const savedObjectsClient = osd.coreStart.savedObjects.getScopedClient(
-        httpServerMock.createOpenSearchDashboardsRequest()
-      );
       let error;
       try {
-        await savedObjectsClient.get('dashboard', 'inner-workspace-dashboard-1');
+        await notPermittedSavedObjectedClient.get('dashboard', 'inner-workspace-dashboard-1');
       } catch (e) {
         error = e;
       }
@@ -160,7 +170,7 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
 
       error = undefined;
       try {
-        await savedObjectsClient.get('dashboard', 'acl-controlled-dashboard-2');
+        await notPermittedSavedObjectedClient.get('dashboard', 'acl-controlled-dashboard-2');
       } catch (e) {
         error = e;
       }
@@ -169,30 +179,20 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
     });
 
     it('should return consistent dashboard when user permitted', async () => {
-      jest.spyOn(utilsExports, 'getPrincipalsFromRequest').mockReturnValue({
-        users: ['foo'],
-      });
-      const savedObjectsClient = osd.coreStart.savedObjects.getScopedClient(
-        httpServerMock.createOpenSearchDashboardsRequest()
-      );
-
       expect(
-        (await savedObjectsClient.get('dashboard', 'inner-workspace-dashboard-1')).error
+        (await permittedSavedObjectedClient.get('dashboard', 'inner-workspace-dashboard-1')).error
       ).toBeUndefined();
       expect(
-        (await savedObjectsClient.get('dashboard', 'acl-controlled-dashboard-2')).error
+        (await permittedSavedObjectedClient.get('dashboard', 'acl-controlled-dashboard-2')).error
       ).toBeUndefined();
     });
   });
 
   describe('bulkGet', () => {
     it('should throw forbidden error when user not permitted', async () => {
-      const savedObjectsClient = osd.coreStart.savedObjects.getScopedClient(
-        httpServerMock.createOpenSearchDashboardsRequest()
-      );
       let error;
       try {
-        await savedObjectsClient.bulkGet([
+        await notPermittedSavedObjectedClient.bulkGet([
           { type: 'dashboard', id: 'inner-workspace-dashboard-1' },
         ]);
       } catch (e) {
@@ -203,7 +203,9 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
 
       error = undefined;
       try {
-        await savedObjectsClient.bulkGet([{ type: 'dashboard', id: 'acl-controlled-dashboard-2' }]);
+        await notPermittedSavedObjectedClient.bulkGet([
+          { type: 'dashboard', id: 'acl-controlled-dashboard-2' },
+        ]);
       } catch (e) {
         error = e;
       }
@@ -212,23 +214,16 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
     });
 
     it('should return consistent dashboard when user permitted', async () => {
-      jest.spyOn(utilsExports, 'getPrincipalsFromRequest').mockReturnValue({
-        users: ['foo'],
-      });
-      const savedObjectsClient = osd.coreStart.savedObjects.getScopedClient(
-        httpServerMock.createOpenSearchDashboardsRequest()
-      );
-
       expect(
         (
-          await savedObjectsClient.bulkGet([
+          await permittedSavedObjectedClient.bulkGet([
             { type: 'dashboard', id: 'inner-workspace-dashboard-1' },
           ])
         ).saved_objects.length
       ).toEqual(1);
       expect(
         (
-          await savedObjectsClient.bulkGet([
+          await permittedSavedObjectedClient.bulkGet([
             { type: 'dashboard', id: 'acl-controlled-dashboard-2' },
           ])
         ).saved_objects.length
@@ -238,12 +233,9 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
 
   describe('find', () => {
     it('should throw not authorized error when user not permitted', async () => {
-      const savedObjectsClient = osd.coreStart.savedObjects.getScopedClient(
-        httpServerMock.createOpenSearchDashboardsRequest()
-      );
       let error;
       try {
-        await savedObjectsClient.find({
+        await notPermittedSavedObjectedClient.find({
           type: 'dashboard',
           workspaces: ['workspace-1'],
           perPage: 999,
@@ -257,13 +249,7 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
     });
 
     it('should return consistent inner workspace data when user permitted', async () => {
-      jest.spyOn(utilsExports, 'getPrincipalsFromRequest').mockReturnValue({
-        users: ['foo'],
-      });
-      const savedObjectsClient = osd.coreStart.savedObjects.getScopedClient(
-        httpServerMock.createOpenSearchDashboardsRequest()
-      );
-      const result = await savedObjectsClient.find({
+      const result = await permittedSavedObjectedClient.find({
         type: 'dashboard',
         workspaces: ['workspace-1'],
         perPage: 999,
@@ -278,12 +264,9 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
 
   describe('create', () => {
     it('should throw forbidden error when workspace not permitted and create called', async () => {
-      const savedObjectsClient = osd.coreStart.savedObjects.getScopedClient(
-        httpServerMock.createOpenSearchDashboardsRequest()
-      );
       let error;
       try {
-        await savedObjectsClient.create(
+        await notPermittedSavedObjectedClient.create(
           'dashboard',
           {},
           {
@@ -298,13 +281,7 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
     });
 
     it('should able to create saved objects into permitted workspaces after create called', async () => {
-      jest.spyOn(utilsExports, 'getPrincipalsFromRequest').mockReturnValue({
-        users: ['foo'],
-      });
-      const savedObjectsClient = osd.coreStart.savedObjects.getScopedClient(
-        httpServerMock.createOpenSearchDashboardsRequest()
-      );
-      const createResult = await savedObjectsClient.create(
+      const createResult = await permittedSavedObjectedClient.create(
         'dashboard',
         {},
         {
@@ -312,16 +289,13 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
         }
       );
       expect(createResult.error).toBeUndefined();
-      await savedObjectsClient.delete('dashboard', createResult.id);
+      await permittedSavedObjectedClient.delete('dashboard', createResult.id);
     });
 
     it('should throw forbidden error when create with override', async () => {
-      const savedObjectsClient = osd.coreStart.savedObjects.getScopedClient(
-        httpServerMock.createOpenSearchDashboardsRequest()
-      );
       let error;
       try {
-        await savedObjectsClient.create(
+        await notPermittedSavedObjectedClient.create(
           'dashboard',
           {},
           {
@@ -339,12 +313,9 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
 
   describe('bulkCreate', () => {
     it('should throw forbidden error when workspace not permitted and bulkCreate called', async () => {
-      const savedObjectsClient = osd.coreStart.savedObjects.getScopedClient(
-        httpServerMock.createOpenSearchDashboardsRequest()
-      );
       let error;
       try {
-        await savedObjectsClient.bulkCreate([{ type: 'dashboard', attributes: {} }], {
+        await notPermittedSavedObjectedClient.bulkCreate([{ type: 'dashboard', attributes: {} }], {
           workspaces: ['workspace-1'],
         });
       } catch (e) {
@@ -355,32 +326,27 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
     });
 
     it('should able to create saved objects into permitted workspaces after bulkCreate called', async () => {
-      jest.spyOn(utilsExports, 'getPrincipalsFromRequest').mockReturnValue({
-        users: ['foo'],
-      });
-      const savedObjectsClient = osd.coreStart.savedObjects.getScopedClient(
-        httpServerMock.createOpenSearchDashboardsRequest()
-      );
       const objectId = new Date().getTime().toString(16).toUpperCase();
-      const result = await savedObjectsClient.bulkCreate(
+      const result = await permittedSavedObjectedClient.bulkCreate(
         [{ type: 'dashboard', attributes: {}, id: objectId }],
         {
           workspaces: ['workspace-1'],
         }
       );
       expect(result.saved_objects.length).toEqual(1);
-      await savedObjectsClient.delete('dashboard', objectId);
+      await permittedSavedObjectedClient.delete('dashboard', objectId);
     });
   });
 
   describe('update', () => {
     it('should throw forbidden error when data not permitted', async () => {
-      const savedObjectsClient = osd.coreStart.savedObjects.getScopedClient(
-        httpServerMock.createOpenSearchDashboardsRequest()
-      );
       let error;
       try {
-        await savedObjectsClient.update('dashboard', 'inner-workspace-dashboard-1', {});
+        await notPermittedSavedObjectedClient.update(
+          'dashboard',
+          'inner-workspace-dashboard-1',
+          {}
+        );
       } catch (e) {
         error = e;
       }
@@ -389,7 +355,7 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
 
       error = undefined;
       try {
-        await savedObjectsClient.update('dashboard', 'acl-controlled-dashboard-2', {});
+        await notPermittedSavedObjectedClient.update('dashboard', 'acl-controlled-dashboard-2', {});
       } catch (e) {
         error = e;
       }
@@ -398,30 +364,22 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
     });
 
     it('should update saved objects for permitted workspaces', async () => {
-      jest.spyOn(utilsExports, 'getPrincipalsFromRequest').mockReturnValue({
-        users: ['foo'],
-      });
-      const savedObjectsClient = osd.coreStart.savedObjects.getScopedClient(
-        httpServerMock.createOpenSearchDashboardsRequest()
-      );
-
       expect(
-        (await savedObjectsClient.update('dashboard', 'inner-workspace-dashboard-1', {})).error
+        (await permittedSavedObjectedClient.update('dashboard', 'inner-workspace-dashboard-1', {}))
+          .error
       ).toBeUndefined();
       expect(
-        (await savedObjectsClient.update('dashboard', 'acl-controlled-dashboard-2', {})).error
+        (await permittedSavedObjectedClient.update('dashboard', 'acl-controlled-dashboard-2', {}))
+          .error
       ).toBeUndefined();
     });
   });
 
   describe('bulkUpdate', () => {
     it('should throw forbidden error when data not permitted', async () => {
-      const savedObjectsClient = osd.coreStart.savedObjects.getScopedClient(
-        httpServerMock.createOpenSearchDashboardsRequest()
-      );
       let error;
       try {
-        await savedObjectsClient.bulkUpdate(
+        await notPermittedSavedObjectedClient.bulkUpdate(
           [{ type: 'dashboard', id: 'inner-workspace-dashboard-1', attributes: {} }],
           {}
         );
@@ -433,7 +391,7 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
 
       error = undefined;
       try {
-        await savedObjectsClient.bulkUpdate(
+        await notPermittedSavedObjectedClient.bulkUpdate(
           [{ type: 'dashboard', id: 'acl-controlled-dashboard-2', attributes: {} }],
           {}
         );
@@ -445,23 +403,16 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
     });
 
     it('should bulk update saved objects for permitted workspaces', async () => {
-      jest.spyOn(utilsExports, 'getPrincipalsFromRequest').mockReturnValue({
-        users: ['foo'],
-      });
-      const savedObjectsClient = osd.coreStart.savedObjects.getScopedClient(
-        httpServerMock.createOpenSearchDashboardsRequest()
-      );
-
       expect(
         (
-          await savedObjectsClient.bulkUpdate([
+          await permittedSavedObjectedClient.bulkUpdate([
             { type: 'dashboard', id: 'inner-workspace-dashboard-1', attributes: {} },
           ])
         ).saved_objects.length
       ).toEqual(1);
       expect(
         (
-          await savedObjectsClient.bulkUpdate([
+          await permittedSavedObjectedClient.bulkUpdate([
             { type: 'dashboard', id: 'inner-workspace-dashboard-1', attributes: {} },
           ])
         ).saved_objects.length
@@ -471,12 +422,9 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
 
   describe('delete', () => {
     it('should throw forbidden error when data not permitted', async () => {
-      const savedObjectsClient = osd.coreStart.savedObjects.getScopedClient(
-        httpServerMock.createOpenSearchDashboardsRequest()
-      );
       let error;
       try {
-        await savedObjectsClient.delete('dashboard', 'inner-workspace-dashboard-1');
+        await notPermittedSavedObjectedClient.delete('dashboard', 'inner-workspace-dashboard-1');
       } catch (e) {
         error = e;
       }
@@ -485,7 +433,7 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
 
       error = undefined;
       try {
-        await savedObjectsClient.delete('dashboard', 'acl-controlled-dashboard-2');
+        await notPermittedSavedObjectedClient.delete('dashboard', 'acl-controlled-dashboard-2');
       } catch (e) {
         error = e;
       }
@@ -494,13 +442,6 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
     });
 
     it('should be able to delete permitted data', async () => {
-      jest.spyOn(utilsExports, 'getPrincipalsFromRequest').mockReturnValue({
-        users: ['foo'],
-      });
-      const savedObjectsClient = osd.coreStart.savedObjects.getScopedClient(
-        httpServerMock.createOpenSearchDashboardsRequest()
-      );
-
       const createResult = await repositoryKit.create(
         internalSavedObjectsRepository,
         'dashboard',
@@ -510,11 +451,11 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
         }
       );
 
-      await savedObjectsClient.delete('dashboard', createResult.id);
+      await permittedSavedObjectedClient.delete('dashboard', createResult.id);
 
       let error;
       try {
-        error = await savedObjectsClient.get('dashboard', createResult.id);
+        error = await permittedSavedObjectedClient.get('dashboard', createResult.id);
       } catch (e) {
         error = e;
       }
@@ -522,13 +463,6 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
     });
 
     it('should be able to delete acl controlled permitted data', async () => {
-      jest.spyOn(utilsExports, 'getPrincipalsFromRequest').mockReturnValue({
-        users: ['foo'],
-      });
-      const savedObjectsClient = osd.coreStart.savedObjects.getScopedClient(
-        httpServerMock.createOpenSearchDashboardsRequest()
-      );
-
       const createResult = await repositoryKit.create(
         internalSavedObjectsRepository,
         'dashboard',
@@ -541,11 +475,11 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
         }
       );
 
-      await savedObjectsClient.delete('dashboard', createResult.id);
+      await permittedSavedObjectedClient.delete('dashboard', createResult.id);
 
       let error;
       try {
-        error = await savedObjectsClient.get('dashboard', createResult.id);
+        error = await permittedSavedObjectedClient.get('dashboard', createResult.id);
       } catch (e) {
         error = e;
       }
@@ -555,12 +489,9 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
 
   describe('addToWorkspaces', () => {
     it('should throw forbidden error when workspace not permitted', async () => {
-      const savedObjectsClient = osd.coreStart.savedObjects.getScopedClient(
-        httpServerMock.createOpenSearchDashboardsRequest()
-      );
       let error;
       try {
-        await savedObjectsClient.addToWorkspaces(
+        await notPermittedSavedObjectedClient.addToWorkspaces(
           [{ type: 'dashboard', id: 'acl-controlled-dashboard-2' }],
           ['workspace-1']
         );
@@ -572,12 +503,6 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
     });
 
     it('should throw forbidden error when object ACL not permitted', async () => {
-      jest.spyOn(utilsExports, 'getPrincipalsFromRequest').mockReturnValue({
-        users: ['foo'],
-      });
-      const savedObjectsClient = osd.coreStart.savedObjects.getScopedClient(
-        httpServerMock.createOpenSearchDashboardsRequest()
-      );
       const createResult = await repositoryKit.create(
         internalSavedObjectsRepository,
         'dashboard',
@@ -590,7 +515,7 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
       );
       let error;
       try {
-        await savedObjectsClient.addToWorkspaces(
+        await permittedSavedObjectedClient.addToWorkspaces(
           [{ type: 'dashboard', id: createResult.id }],
           ['workspace-1']
         );
@@ -602,12 +527,6 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
     });
 
     it('should be able to add to target workspaces', async () => {
-      jest.spyOn(utilsExports, 'getPrincipalsFromRequest').mockReturnValue({
-        users: ['foo'],
-      });
-      const savedObjectsClient = osd.coreStart.savedObjects.getScopedClient(
-        httpServerMock.createOpenSearchDashboardsRequest()
-      );
       const createResult = await repositoryKit.create(
         internalSavedObjectsRepository,
         'dashboard',
@@ -620,12 +539,12 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
           },
         }
       );
-      await savedObjectsClient.addToWorkspaces(
+      await permittedSavedObjectedClient.addToWorkspaces(
         [{ type: 'dashboard', id: createResult.id }],
         ['workspace-1']
       );
 
-      const result = await savedObjectsClient.find({
+      const result = await permittedSavedObjectedClient.find({
         type: 'dashboard',
         workspaces: ['workspace-1'],
         perPage: 999,
@@ -638,13 +557,9 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
 
   describe('deleteByWorkspace', () => {
     it('should throw forbidden error when workspace not permitted', async () => {
-      const savedObjectsClient = osd.coreStart.savedObjects.getScopedClient(
-        httpServerMock.createOpenSearchDashboardsRequest()
-      );
-
       let error;
       try {
-        await savedObjectsClient.deleteByWorkspace('workspace-1');
+        await notPermittedSavedObjectedClient.deleteByWorkspace('workspace-1');
       } catch (e) {
         error = e;
       }
@@ -652,14 +567,7 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
       expect(SavedObjectsErrorHelpers.isForbiddenError(error)).toBe(true);
     });
 
-    it('should delete workspace 2 inner data when workspace permitted', async () => {
-      const savedObjectsClient = osd.coreStart.savedObjects.getScopedClient(
-        httpServerMock.createOpenSearchDashboardsRequest()
-      );
-      jest.spyOn(utilsExports, 'getPrincipalsFromRequest').mockReturnValue({
-        users: ['foo'],
-      });
-
+    it('should delete workspace inner data when workspace permitted', async () => {
       await repositoryKit.create(
         internalSavedObjectsRepository,
         'workspace',
@@ -682,7 +590,7 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
         }
       );
 
-      await savedObjectsClient.deleteByWorkspace('workspace-3');
+      await permittedSavedObjectedClient.deleteByWorkspace('workspace-3');
 
       // Wait for delete be effected
       await new Promise((resolve) => {
@@ -691,7 +599,7 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
 
       expect(
         (
-          await savedObjectsClient.find({
+          await permittedSavedObjectedClient.find({
             type: 'dashboard',
             workspaces: ['workspace-3'],
             perPage: 999,
