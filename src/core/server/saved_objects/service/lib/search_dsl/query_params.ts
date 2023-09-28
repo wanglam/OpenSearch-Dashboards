@@ -145,7 +145,7 @@ function getClauseForWorkspace(workspace: string) {
 
   return {
     bool: {
-      must: [{ term: { workspaces: workspace } }],
+      must: [{ term: { 'workspaces.keyword': workspace } }],
     },
   };
 }
@@ -297,7 +297,7 @@ export function getQueryParams({
     if (ACLSearchParams.workspaces) {
       shouldClause.push({
         terms: {
-          workspaces: ACLSearchParams.workspaces,
+          'workspaces.keyword': ACLSearchParams.workspaces,
         },
       });
     }
