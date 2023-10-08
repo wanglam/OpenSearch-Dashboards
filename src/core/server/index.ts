@@ -218,6 +218,7 @@ export {
   SessionStorageFactory,
   DestructiveRouteMethod,
   SafeRouteMethod,
+  ensureRawRequest,
 } from './http';
 
 export {
@@ -320,6 +321,10 @@ export {
   importSavedObjectsFromStream,
   resolveSavedObjectsImportErrors,
   SavedObjectsDeleteByWorkspaceOptions,
+  ACL,
+  Principals,
+  TransformedPermission,
+  PrincipalType,
 } from './saved_objects';
 
 export {
