@@ -117,3 +117,8 @@ export type IResponse<T> =
       success: false;
       error?: string;
     };
+
+export interface AuthInfo {
+  backend_roles?: string[];
+  user_name?: string;
+}
