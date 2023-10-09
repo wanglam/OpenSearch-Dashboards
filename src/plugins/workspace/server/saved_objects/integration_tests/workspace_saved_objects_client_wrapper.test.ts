@@ -67,6 +67,7 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
           workspace: {
             enabled: true,
           },
+          migrations: { skip: false },
         },
       },
     });
