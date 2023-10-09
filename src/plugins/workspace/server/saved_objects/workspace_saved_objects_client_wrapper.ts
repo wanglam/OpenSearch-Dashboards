@@ -141,8 +141,6 @@ export class WorkspaceSavedObjectsClientWrapper {
     objectPermissionModes: WorkspacePermissionMode[],
     validateAllWorkspaces = true
   ) {
-    const { id, type } = savedObject;
-
     // Advanced settings have no permissions and workspaces, so we need to skip it.
     if (!savedObject.workspaces && !savedObject.permissions) {
       return true;
@@ -167,11 +165,11 @@ export class WorkspaceSavedObjectsClientWrapper {
     }
     // Check permission based on object's ACL(defined by permissions attribute)
     if (savedObject.permissions) {
-      hasPermission = await this.validateObjectsPermissions(
-        [{ type, id }],
-        request,
-        objectPermissionModes
-      );
+      hasPermission = await this.permissionControl.inMemoryValidate({
+        savedObject,
+        principals: getPrincipalsFromRequest(request),
+        permissionModes: objectPermissionModes,
+      });
     }
     return hasPermission;
   }
