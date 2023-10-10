@@ -44,21 +44,8 @@ export class SavedObjectsPermissionControl {
     this._getScopedClient = getScopedClient;
   }
 
-  private convertToSavedObjectsBasicInfo(
-    savedObject: Pick<SavedObject<unknown>, 'id' | 'type' | 'workspaces' | 'permissions'>
-  ) {
-    return {
-      id: savedObject.id,
-      type: savedObject.type,
-      workspaces: savedObject.workspaces,
-      permissions: savedObject.permissions,
-    };
-  }
-
   private logNotPermitted(
-    savedObjectsOrSavedObject:
-      | Array<Pick<SavedObject<unknown>, 'id' | 'type' | 'workspaces' | 'permissions'>>
-      | Pick<SavedObject<unknown>, 'id' | 'type' | 'workspaces' | 'permissions'>,
+    savedObjects: Array<Pick<SavedObject<unknown>, 'id' | 'type' | 'workspaces' | 'permissions'>>,
     principals: Principals,
     permissionModes: SavedObjectsPermissionModes
   ) {
@@ -66,34 +53,42 @@ export class SavedObjectsPermissionControl {
       `Authorization failed, principals: ${JSON.stringify(
         principals
       )} has no [${permissionModes}] permissions on the requested saved object: ${JSON.stringify(
-        Array.isArray(savedObjectsOrSavedObject)
-          ? savedObjectsOrSavedObject.map(this.convertToSavedObjectsBasicInfo)
-          : this.convertToSavedObjectsBasicInfo(savedObjectsOrSavedObject)
+        savedObjects.map((savedObject) => ({
+          id: savedObject.id,
+          type: savedObject.type,
+          workspaces: savedObject.workspaces,
+          permissions: savedObject.permissions,
+        }))
       )}`
     );
   }
 
-  public inMemoryValidate({
-    savedObject,
-    principals,
-    permissionModes,
-    shouldLogNotPermitted = true,
-  }: {
-    savedObject: Pick<SavedObject<unknown>, 'id' | 'type' | 'workspaces' | 'permissions'>;
-    principals: Principals;
-    permissionModes: SavedObjectsPermissionModes;
-    shouldLogNotPermitted?: boolean;
-  }) {
-    // for object that doesn't contain ACL like config, return true
-    if (!savedObject.permissions) {
-      return true;
+  public validateSavedObjectsACL(
+    savedObjects: Array<Pick<SavedObject<unknown>, 'id' | 'type' | 'workspaces' | 'permissions'>>,
+    principals: Principals,
+    permissionModes: SavedObjectsPermissionModes
+  ) {
+    const notPermittedSavedObjects: Array<Pick<
+      SavedObject<unknown>,
+      'id' | 'type' | 'workspaces' | 'permissions'
+    >> = [];
+    const hasAllPermission = savedObjects.every((savedObject) => {
+      // for object that doesn't contain ACL like config, return true
+      if (!savedObject.permissions) {
+        return true;
+      }
+
+      const aclInstance = new ACL(savedObject.permissions);
+      const hasPermission = aclInstance.hasPermission(permissionModes, principals);
+      if (!hasPermission) {
+        notPermittedSavedObjects.push(savedObject);
+      }
+      return hasPermission;
+    });
+    if (!hasAllPermission) {
+      this.logNotPermitted(notPermittedSavedObjects, principals, permissionModes);
     }
-    const aclInstance = new ACL(savedObject.permissions);
-    const hasPermission = aclInstance.hasPermission(permissionModes, principals);
-    if (!hasPermission && shouldLogNotPermitted) {
-      this.logNotPermitted(savedObject, principals, permissionModes);
-    }
-    return hasPermission;
+    return hasAllPermission;
   }
 
   public async validate(
@@ -134,25 +129,9 @@ export class SavedObjectsPermissionControl {
     }
 
     const principals = getPrincipalsFromRequest(request);
-    const notPermittedSavedObjects: Array<SavedObject<unknown>> = [];
-    const hasAllPermission = savedObjectsGet.every((savedObject) => {
-      const hasPermission = this.inMemoryValidate({
-        savedObject,
-        permissionModes,
-        principals,
-        shouldLogNotPermitted: false,
-      });
-      if (!hasPermission) {
-        notPermittedSavedObjects.push(savedObject);
-      }
-      return hasPermission;
-    });
-    if (!hasAllPermission) {
-      this.logNotPermitted(notPermittedSavedObjects, principals, permissionModes);
-    }
     return {
       success: true,
-      result: hasAllPermission,
+      result: this.validateSavedObjectsACL(savedObjectsGet, principals, permissionModes),
     };
   }
 

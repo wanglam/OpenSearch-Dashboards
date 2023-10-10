@@ -165,11 +165,11 @@ export class WorkspaceSavedObjectsClientWrapper {
     }
     // Check permission based on object's ACL(defined by permissions attribute)
     if (savedObject.permissions) {
-      hasPermission = await this.permissionControl.inMemoryValidate({
-        savedObject,
-        principals: getPrincipalsFromRequest(request),
-        permissionModes: objectPermissionModes,
-      });
+      hasPermission = await this.permissionControl.validateSavedObjectsACL(
+        [savedObject],
+        getPrincipalsFromRequest(request),
+        objectPermissionModes
+      );
     }
     return hasPermission;
   }
