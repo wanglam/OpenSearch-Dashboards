@@ -352,7 +352,7 @@ export {
 } from './metrics';
 
 export { AppCategory, WorkspaceAttribute } from '../types';
-export { DEFAULT_APP_CATEGORIES, WORKSPACE_TYPE } from '../utils';
+export { DEFAULT_APP_CATEGORIES, WORKSPACE_TYPE, WorkspacePermissionMode } from '../utils';
 
 export {
   SavedObject,
