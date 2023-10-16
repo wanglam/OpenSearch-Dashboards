@@ -29,6 +29,9 @@ describe('workspace service', () => {
         osd: {
           workspace: {
             enabled: true,
+            permission: {
+              enabled: false,
+            },
           },
           migrations: { skip: false },
         },
