@@ -27,6 +27,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+import { Permissions } from '../server/saved_objects/permission_control/acl';
 
 import { Permissions } from '../server/saved_objects/permission_control/acl';
 
@@ -117,6 +118,7 @@ export interface SavedObject<T = unknown> {
   originId?: string;
   /** Workspaces that this saved object exists in. */
   workspaces?: string[];
+  /** ACL description of this saved object */
   permissions?: Permissions;
 }
 
