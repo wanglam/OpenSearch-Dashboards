@@ -16,10 +16,15 @@ import { WorkspaceClient } from './workspace_client';
 import { registerRoutes } from './routes';
 import { WorkspaceSavedObjectsClientWrapper } from './saved_objects';
 import { cleanWorkspaceId, getWorkspaceIdFromUrl } from '../../../core/server/utils';
+import {
+  SavedObjectsPermissionControl,
+  SavedObjectsPermissionControlContract,
+} from './permission_control/client';
 
 export class WorkspacePlugin implements Plugin<{}, {}> {
   private readonly logger: Logger;
   private client?: IWorkspaceClientImpl;
+  private permissionControl?: SavedObjectsPermissionControlContract;
 
   private proxyWorkspaceTrafficToRealHandler(setupDeps: CoreSetup) {
     /**
@@ -49,7 +54,11 @@ export class WorkspacePlugin implements Plugin<{}, {}> {
     await this.client.setup(core);
 
     this.proxyWorkspaceTrafficToRealHandler(core);
-    const workspaceSavedObjectsClientWrapper = new WorkspaceSavedObjectsClientWrapper();
+    this.permissionControl = new SavedObjectsPermissionControl(this.logger);
+
+    const workspaceSavedObjectsClientWrapper = new WorkspaceSavedObjectsClientWrapper(
+      this.permissionControl
+    );
 
     core.savedObjects.addClientWrapper(
       0,
@@ -70,6 +79,7 @@ export class WorkspacePlugin implements Plugin<{}, {}> {
 
   public start(core: CoreStart) {
     this.logger.debug('Starting Workspace service');
+    this.permissionControl?.setup(core.savedObjects.getScopedClient);
     this.client?.setSavedObjects(core.savedObjects);
 
     return {
