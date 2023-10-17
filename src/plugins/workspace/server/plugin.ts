@@ -20,11 +20,16 @@ import { registerRoutes } from './routes';
 import { WorkspaceSavedObjectsClientWrapper } from './saved_objects';
 import { cleanWorkspaceId, getWorkspaceIdFromUrl } from '../../../core/server/utils';
 import { WorkspaceConflictSavedObjectsClientWrapper } from './saved_objects/saved_objects_wrapper_for_check_workspace_conflict';
+import {
+  SavedObjectsPermissionControl,
+  SavedObjectsPermissionControlContract,
+} from './permission_control/client';
 
 export class WorkspacePlugin implements Plugin<{}, {}> {
   private readonly logger: Logger;
   private client?: IWorkspaceClientImpl;
   private workspaceConflictControl?: WorkspaceConflictSavedObjectsClientWrapper;
+  private permissionControl?: SavedObjectsPermissionControlContract;
 
   private proxyWorkspaceTrafficToRealHandler(setupDeps: CoreSetup) {
     /**
@@ -62,7 +67,11 @@ export class WorkspacePlugin implements Plugin<{}, {}> {
       this.workspaceConflictControl.wrapperFactory
     );
 
-    const workspaceSavedObjectsClientWrapper = new WorkspaceSavedObjectsClientWrapper();
+    this.permissionControl = new SavedObjectsPermissionControl(this.logger);
+
+    const workspaceSavedObjectsClientWrapper = new WorkspaceSavedObjectsClientWrapper(
+      this.permissionControl
+    );
 
     core.savedObjects.addClientWrapper(
       0,
@@ -85,6 +94,7 @@ export class WorkspacePlugin implements Plugin<{}, {}> {
 
   public start(core: CoreStart) {
     this.logger.debug('Starting Workspace service');
+    this.permissionControl?.setup(core.savedObjects.getScopedClient);
     this.client?.setSavedObjects(core.savedObjects);
     this.workspaceConflictControl?.setSerializer(core.savedObjects.createSerializer());
 
