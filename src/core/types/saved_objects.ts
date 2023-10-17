@@ -29,8 +29,6 @@
  */
 import { Permissions } from '../server/saved_objects/permission_control/acl';
 
-import { Permissions } from '../server/saved_objects/permission_control/acl';
-
 /**
  * Don't use this type, it's simply a helper type for {@link SavedObjectAttribute}
  *
