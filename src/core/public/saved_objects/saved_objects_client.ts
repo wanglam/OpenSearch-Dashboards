@@ -348,7 +348,10 @@ export class SavedObjectsClient {
       workspaces: 'workspaces',
     };
 
-    const renamedQuery = renameKeys<SavedObjectsFindOptions, any>(renameMap, options);
+    const renamedQuery = renameKeys<Omit<SavedObjectsFindOptions, 'ACLSearchParams'>, any>(
+      renameMap,
+      options
+    );
     const query = pick.apply(null, [renamedQuery, ...Object.values<string>(renameMap)]) as Partial<
       Record<string, any>
     >;
