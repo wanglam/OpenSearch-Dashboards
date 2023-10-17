@@ -823,6 +823,7 @@ export class SavedObjectsRepository {
       filter,
       preference,
       workspaces,
+      ACLSearchParams,
     } = options;
 
     if (!type && !typeToNamespacesMap) {
@@ -897,6 +898,7 @@ export class SavedObjectsRepository {
           hasReference,
           kueryNode,
           workspaces,
+          ACLSearchParams,
         }),
       },
     };

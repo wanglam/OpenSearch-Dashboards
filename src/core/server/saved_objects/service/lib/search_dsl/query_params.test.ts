@@ -646,6 +646,79 @@ describe('#getQueryParams', () => {
         });
       });
     });
+
+    describe('when using ACLSearchParams search', () => {
+      it('no ACLSearchParams provided', () => {
+        const result: Result = getQueryParams({
+          registry,
+          ACLSearchParams: {},
+        });
+        expect(result.query.bool.filter[1]).toEqual(undefined);
+      });
+
+      it('workspaces provided in ACLSearchParams', () => {
+        const result: Result = getQueryParams({
+          registry,
+          ACLSearchParams: {
+            workspaces: ['foo'],
+          },
+        });
+        expect(result.query.bool.filter[1]).toEqual({
+          bool: { should: [{ terms: { workspaces: ['foo'] } }] },
+        });
+      });
+
+      it('principals and permissionModes provided in ACLSearchParams', () => {
+        const result: Result = getQueryParams({
+          registry,
+          ACLSearchParams: {
+            principals: {
+              users: ['user-foo'],
+              groups: ['group-foo'],
+            },
+            permissionModes: ['read'],
+          },
+        });
+        expect(result.query.bool.filter[1]).toEqual({
+          bool: {
+            should: [
+              {
+                bool: {
+                  filter: [
+                    {
+                      bool: {
+                        should: [
+                          {
+                            terms: {
+                              'permissions.read.users': ['user-foo'],
+                            },
+                          },
+                          {
+                            term: {
+                              'permissions.read.users': '*',
+                            },
+                          },
+                          {
+                            terms: {
+                              'permissions.read.groups': ['group-foo'],
+                            },
+                          },
+                          {
+                            term: {
+                              'permissions.read.groups': '*',
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        });
+      });
+    });
   });
 
   describe('namespaces property', () => {
