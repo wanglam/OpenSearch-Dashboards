@@ -75,6 +75,7 @@ export function getSearchDsl(
     hasReference,
     kueryNode,
     workspaces,
+    ACLSearchParams,
   } = options;
 
   if (!type) {
