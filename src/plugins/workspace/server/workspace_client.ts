@@ -39,6 +39,43 @@ import {
   WORKSPACE_UPDATE_APP_ID,
 } from '../common/constants';
 
+const validatePermissionModesCombinations = [
+  [WorkspacePermissionMode.LibraryRead, WorkspacePermissionMode.Read], // Read
+  [WorkspacePermissionMode.LibraryWrite, WorkspacePermissionMode.Read], // Write
+  [WorkspacePermissionMode.LibraryWrite, WorkspacePermissionMode.Write], // Admin
+];
+
+const isValidatePermissionModesCombination = (permissionModes: string[]) =>
+  validatePermissionModesCombinations.some(
+    (combination) =>
+      combination.length === permissionModes.length &&
+      combination.every((mode) => permissionModes.includes(mode))
+  );
+const isValidatePermissions = (permissions: Permissions) => {
+  const userOrGroupKey2PermissionModes = permissions
+    ? Object.keys(permissions).reduce<{
+        [key: string]: string[];
+      }>((previousValue, permissionMode) => {
+        permissions[permissionMode].users?.forEach((user) => {
+          const key = `user-${user}`;
+          previousValue[key] = [...(previousValue[key] || []), permissionMode];
+        });
+        permissions[permissionMode].groups?.forEach((user) => {
+          const key = `group-${user}`;
+          previousValue[key] = [...(previousValue[key] || []), permissionMode];
+        });
+        return previousValue;
+      }, {})
+    : {};
+
+  for (const key in userOrGroupKey2PermissionModes) {
+    if (!isValidatePermissionModesCombination(userOrGroupKey2PermissionModes[key])) {
+      return false;
+    }
+  }
+  return true;
+};
+
 const WORKSPACE_ID_SIZE = 6;
 
 const DUPLICATE_WORKSPACE_NAME_ERROR = i18n.translate('workspace.duplicate.name.error', {
@@ -47,6 +84,10 @@ const DUPLICATE_WORKSPACE_NAME_ERROR = i18n.translate('workspace.duplicate.name.
 
 const RESERVED_WORKSPACE_NAME_ERROR = i18n.translate('workspace.reserved.name.error', {
   defaultMessage: 'reserved workspace name cannot be changed',
+});
+
+const INVALID_PERMISSION_MODES_COMBINATION = i18n.translate('workspace.invalid.permission.error', {
+  defaultMessage: 'Invalid workspace permission mode combination',
 });
 
 export class WorkspaceClientWithSavedObject implements IWorkspaceDBImpl {
@@ -207,6 +248,11 @@ export class WorkspaceClientWithSavedObject implements IWorkspaceDBImpl {
       if (existingWorkspaceRes && existingWorkspaceRes.total > 0) {
         throw new Error(DUPLICATE_WORKSPACE_NAME_ERROR);
       }
+
+      if (permissions && !isValidatePermissions(permissions)) {
+        throw new Error(INVALID_PERMISSION_MODES_COMBINATION);
+      }
+
       const result = await client.create<Omit<WorkspaceAttribute, 'id'>>(
         WORKSPACE_TYPE,
         attributes,
@@ -357,6 +403,10 @@ export class WorkspaceClientWithSavedObject implements IWorkspaceDBImpl {
         if (existingWorkspaceRes && existingWorkspaceRes.total > 0) {
           throw new Error(DUPLICATE_WORKSPACE_NAME_ERROR);
         }
+      }
+
+      if (permissions && !isValidatePermissions(permissions)) {
+        throw new Error(INVALID_PERMISSION_MODES_COMBINATION);
       }
 
       await client.create<Omit<WorkspaceAttribute, 'id'>>(WORKSPACE_TYPE, attributes, {

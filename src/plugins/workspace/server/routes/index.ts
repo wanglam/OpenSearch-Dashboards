@@ -22,8 +22,6 @@ const workspacePermissionMode = schema.oneOf([
   schema.literal(WorkspacePermissionMode.Write),
   schema.literal(WorkspacePermissionMode.LibraryRead),
   schema.literal(WorkspacePermissionMode.LibraryWrite),
-  schema.literal(WorkspacePermissionMode.Read),
-  schema.literal(WorkspacePermissionMode.Write),
 ]);
 
 const workspacePermission = schema.oneOf([
@@ -47,9 +45,6 @@ const workspaceAttributesSchema = schema.object({
   icon: schema.maybe(schema.string()),
   reserved: schema.maybe(schema.boolean()),
   defaultVISTheme: schema.maybe(schema.string()),
-  permissions: schema.maybe(
-    schema.oneOf([workspacePermission, schema.arrayOf(workspacePermission)])
-  ),
 });
 
 const convertToACL = (
@@ -180,31 +175,29 @@ export function registerRoutes({
       validate: {
         body: schema.object({
           attributes: workspaceAttributesSchema,
+          permissions: schema.maybe(
+            schema.oneOf([workspacePermission, schema.arrayOf(workspacePermission)])
+          ),
         }),
       },
     },
     router.handleLegacyErrors(async (context, req, res) => {
-      const { attributes } = req.body;
+      const { attributes, permissions: permissionsInRequest } = req.body;
       const rawRequest = ensureRawRequest(req);
       const authInfo = rawRequest?.auth?.credentials?.authInfo as { user_name?: string } | null;
-      const { permissions: permissionsInAttributes, ...others } = attributes;
       let permissions: WorkspaceRoutePermissionItem[] = [];
-      if (permissionsInAttributes) {
-        permissions = Array.isArray(permissionsInAttributes)
-          ? permissionsInAttributes
-          : [permissionsInAttributes];
+      if (permissionsInRequest) {
+        permissions = Array.isArray(permissionsInRequest)
+          ? permissionsInRequest
+          : [permissionsInRequest];
       }
 
+      // Assign workspace owner to current user
       if (!!authInfo?.user_name) {
         permissions.push({
           type: 'user',
           userId: authInfo.user_name,
-          modes: [WorkspacePermissionMode.LibraryWrite],
-        });
-        permissions.push({
-          type: 'user',
-          userId: authInfo.user_name,
-          modes: [WorkspacePermissionMode.Write],
+          modes: [WorkspacePermissionMode.LibraryWrite, WorkspacePermissionMode.Write],
         });
       }
 
@@ -215,7 +208,7 @@ export function registerRoutes({
           logger,
         },
         {
-          ...others,
+          ...attributes,
           ...(permissions.length ? { permissions: convertToACL(permissions) } : {}),
         }
       );
@@ -231,13 +224,15 @@ export function registerRoutes({
         }),
         body: schema.object({
           attributes: workspaceAttributesSchema,
+          permissions: schema.maybe(
+            schema.oneOf([workspacePermission, schema.arrayOf(workspacePermission)])
+          ),
         }),
       },
     },
     router.handleLegacyErrors(async (context, req, res) => {
       const { id } = req.params;
-      const { attributes } = req.body;
-      const { permissions, ...others } = attributes;
+      const { attributes, permissions } = req.body;
       let finalPermissions: WorkspaceRoutePermissionItem[] = [];
       if (permissions) {
         finalPermissions = Array.isArray(permissions) ? permissions : [permissions];
@@ -251,7 +246,7 @@ export function registerRoutes({
         },
         id,
         {
-          ...others,
+          ...attributes,
           ...(finalPermissions.length ? { permissions: convertToACL(finalPermissions) } : {}),
         }
       );
