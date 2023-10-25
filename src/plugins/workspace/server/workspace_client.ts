@@ -30,6 +30,7 @@ import {
   IResponse,
   IRequestDetail,
   WorkspaceAttributeWithPermission,
+  WorkspacePermissionItem,
 } from './types';
 import { workspace } from './saved_objects';
 import { generateRandomId, getPrincipalsFromRequest } from './utils';
@@ -45,35 +46,83 @@ const validatePermissionModesCombinations = [
   [WorkspacePermissionMode.LibraryWrite, WorkspacePermissionMode.Write], // Admin
 ];
 
-const isValidatePermissionModesCombination = (permissionModes: string[]) =>
+const isValidPermissionModesCombination = (permissionModes: string[]) =>
   validatePermissionModesCombinations.some(
     (combination) =>
       combination.length === permissionModes.length &&
       combination.every((mode) => permissionModes.includes(mode))
   );
-const isValidatePermissions = (permissions: Permissions) => {
-  const userOrGroupKey2PermissionModes = permissions
-    ? Object.keys(permissions).reduce<{
-        [key: string]: string[];
-      }>((previousValue, permissionMode) => {
-        permissions[permissionMode].users?.forEach((user) => {
-          const key = `user-${user}`;
-          previousValue[key] = [...(previousValue[key] || []), permissionMode];
-        });
-        permissions[permissionMode].groups?.forEach((user) => {
-          const key = `group-${user}`;
-          previousValue[key] = [...(previousValue[key] || []), permissionMode];
-        });
-        return previousValue;
-      }, {})
-    : {};
-
-  for (const key in userOrGroupKey2PermissionModes) {
-    if (!isValidatePermissionModesCombination(userOrGroupKey2PermissionModes[key])) {
-      return false;
+const validatePermissions = (permissions: WorkspacePermissionItem[]) => {
+  const existsUsersOrGroups: { [key: string]: boolean } = {};
+  for (const permission of permissions) {
+    const key = `${permission.type}${permission.type === 'user' ? `-${permission.userId}` : ''}${
+      permission.type === 'group' ? `-${permission.group}` : ''
+    }`;
+    if (existsUsersOrGroups[key]) {
+      throw new Error(DUPLICATE_PERMISSION_SETTING);
+    }
+    existsUsersOrGroups[key] = true;
+    if (!isValidPermissionModesCombination(permission.modes)) {
+      throw new Error(INVALID_PERMISSION_MODES_COMBINATION);
     }
   }
-  return true;
+};
+
+const convertToACL = (
+  workspacePermissions: WorkspacePermissionItem | WorkspacePermissionItem[]
+) => {
+  workspacePermissions = Array.isArray(workspacePermissions)
+    ? workspacePermissions
+    : [workspacePermissions];
+
+  const acl = new ACL();
+
+  workspacePermissions.forEach((permission) => {
+    switch (permission.type) {
+      case 'user':
+        acl.addPermission(permission.modes, { users: [permission.userId] });
+        return;
+      case 'group':
+        acl.addPermission(permission.modes, { groups: [permission.group] });
+        return;
+    }
+  });
+
+  return acl.getPermissions() || {};
+};
+
+const isValidWorkspacePermissionMode = (mode: string): mode is WorkspacePermissionMode =>
+  Object.values(WorkspacePermissionMode).some((modeValue) => modeValue === mode);
+
+const isWorkspacePermissionItem = (
+  test: WorkspacePermissionItem | null
+): test is WorkspacePermissionItem => test !== null;
+
+const convertFromACL = (permissions: Permissions) => {
+  const acl = new ACL(permissions);
+
+  return acl
+    .toFlatList()
+    .map(({ name, permissions: modes, type }) => {
+      const validModes = modes.filter(isValidWorkspacePermissionMode);
+      switch (type) {
+        case 'users':
+          return {
+            type: 'user',
+            modes: validModes,
+            userId: name,
+          } as const;
+        case 'groups':
+          return {
+            type: 'group',
+            modes: validModes,
+            group: name,
+          } as const;
+        default:
+          return null;
+      }
+    })
+    .filter(isWorkspacePermissionItem);
 };
 
 const WORKSPACE_ID_SIZE = 6;
@@ -84,6 +133,10 @@ const DUPLICATE_WORKSPACE_NAME_ERROR = i18n.translate('workspace.duplicate.name.
 
 const RESERVED_WORKSPACE_NAME_ERROR = i18n.translate('workspace.reserved.name.error', {
   defaultMessage: 'reserved workspace name cannot be changed',
+});
+
+const DUPLICATE_PERMISSION_SETTING = i18n.translate('workspace.invalid.permission.error', {
+  defaultMessage: 'Duplicate permission setting',
 });
 
 const INVALID_PERMISSION_MODES_COMBINATION = i18n.translate('workspace.invalid.permission.error', {
@@ -119,7 +172,7 @@ export class WorkspaceClientWithSavedObject implements IWorkspaceDBImpl {
   ): WorkspaceAttributeWithPermission {
     return {
       ...savedObject.attributes,
-      permissions: savedObject.permissions || {},
+      permissions: savedObject.permissions ? convertFromACL(savedObject.permissions) : undefined,
       id: savedObject.id,
     };
   }
@@ -249,8 +302,8 @@ export class WorkspaceClientWithSavedObject implements IWorkspaceDBImpl {
         throw new Error(DUPLICATE_WORKSPACE_NAME_ERROR);
       }
 
-      if (permissions && !isValidatePermissions(permissions)) {
-        throw new Error(INVALID_PERMISSION_MODES_COMBINATION);
+      if (permissions) {
+        validatePermissions(permissions);
       }
 
       const result = await client.create<Omit<WorkspaceAttribute, 'id'>>(
@@ -258,7 +311,7 @@ export class WorkspaceClientWithSavedObject implements IWorkspaceDBImpl {
         attributes,
         {
           id,
-          permissions,
+          permissions: permissions ? convertToACL(permissions) : undefined,
         }
       );
       return {
@@ -405,13 +458,13 @@ export class WorkspaceClientWithSavedObject implements IWorkspaceDBImpl {
         }
       }
 
-      if (permissions && !isValidatePermissions(permissions)) {
-        throw new Error(INVALID_PERMISSION_MODES_COMBINATION);
+      if (permissions) {
+        validatePermissions(permissions);
       }
 
       await client.create<Omit<WorkspaceAttribute, 'id'>>(WORKSPACE_TYPE, attributes, {
         id,
-        permissions,
+        permissions: permissions ? convertToACL(permissions) : undefined,
         overwrite: true,
         version: workspaceInDB.version,
       });

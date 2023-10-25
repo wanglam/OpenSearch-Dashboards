@@ -6,14 +6,8 @@
 import { schema } from '@osd/config-schema';
 import { ensureRawRequest } from '../../../../core/server';
 
-import {
-  ACL,
-  Permissions,
-  CoreSetup,
-  Logger,
-  WorkspacePermissionMode,
-} from '../../../../core/server';
-import { IWorkspaceDBImpl, WorkspaceRoutePermissionItem } from '../types';
+import { CoreSetup, Logger, WorkspacePermissionMode } from '../../../../core/server';
+import { IWorkspaceDBImpl, WorkspacePermissionItem } from '../types';
 
 export const WORKSPACES_API_BASE_URL = '/api/workspaces';
 
@@ -46,39 +40,6 @@ const workspaceAttributesSchema = schema.object({
   reserved: schema.maybe(schema.boolean()),
   defaultVISTheme: schema.maybe(schema.string()),
 });
-
-const convertToACL = (
-  workspacePermissions: WorkspaceRoutePermissionItem | WorkspaceRoutePermissionItem[]
-) => {
-  workspacePermissions = Array.isArray(workspacePermissions)
-    ? workspacePermissions
-    : [workspacePermissions];
-
-  const acl = new ACL();
-
-  workspacePermissions.forEach((permission) => {
-    switch (permission.type) {
-      case 'user':
-        acl.addPermission(permission.modes, { users: [permission.userId] });
-        return;
-      case 'group':
-        acl.addPermission(permission.modes, { groups: [permission.group] });
-        return;
-    }
-  });
-
-  return acl.getPermissions() || {};
-};
-
-const convertFromACL = (permissions: Permissions) => {
-  const acl = new ACL(permissions);
-
-  return acl.toFlatList().map(({ name, permissions: modes, type }) => ({
-    type: type === 'users' ? 'user' : 'group',
-    modes,
-    ...{ [type === 'users' ? 'userId' : 'group']: name },
-  }));
-};
 
 export function registerRoutes({
   client,
@@ -118,18 +79,7 @@ export function registerRoutes({
         return res.ok({ body: result });
       }
       return res.ok({
-        body: {
-          ...result,
-          result: {
-            ...result.result,
-            workspaces: result.result.workspaces.map((workspace) => ({
-              ...workspace,
-              ...(workspace.permissions
-                ? { permissions: convertFromACL(workspace.permissions) }
-                : {}),
-            })),
-          },
-        },
+        body: result,
       });
     })
   );
@@ -157,15 +107,7 @@ export function registerRoutes({
       }
 
       return res.ok({
-        body: {
-          ...result,
-          result: {
-            ...result.result,
-            ...(result.result.permissions
-              ? { permissions: convertFromACL(result.result.permissions) }
-              : {}),
-          },
-        },
+        body: result,
       });
     })
   );
@@ -185,7 +127,7 @@ export function registerRoutes({
       const { attributes, permissions: permissionsInRequest } = req.body;
       const rawRequest = ensureRawRequest(req);
       const authInfo = rawRequest?.auth?.credentials?.authInfo as { user_name?: string } | null;
-      let permissions: WorkspaceRoutePermissionItem[] = [];
+      let permissions: WorkspacePermissionItem[] = [];
       if (permissionsInRequest) {
         permissions = Array.isArray(permissionsInRequest)
           ? permissionsInRequest
@@ -209,7 +151,7 @@ export function registerRoutes({
         },
         {
           ...attributes,
-          ...(permissions.length ? { permissions: convertToACL(permissions) } : {}),
+          ...(permissions.length ? { permissions } : {}),
         }
       );
       return res.ok({ body: result });
@@ -233,7 +175,7 @@ export function registerRoutes({
     router.handleLegacyErrors(async (context, req, res) => {
       const { id } = req.params;
       const { attributes, permissions } = req.body;
-      let finalPermissions: WorkspaceRoutePermissionItem[] = [];
+      let finalPermissions: WorkspacePermissionItem[] = [];
       if (permissions) {
         finalPermissions = Array.isArray(permissions) ? permissions : [permissions];
       }
@@ -247,7 +189,7 @@ export function registerRoutes({
         id,
         {
           ...attributes,
-          ...(finalPermissions.length ? { permissions: convertToACL(finalPermissions) } : {}),
+          ...(finalPermissions.length ? { finalPermissions } : {}),
         }
       );
       return res.ok({ body: result });
