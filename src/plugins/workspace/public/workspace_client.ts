@@ -177,7 +177,7 @@ export class WorkspaceClient {
    */
   public async create(
     attributes: Omit<WorkspaceAttribute, 'id'>,
-    permissions: WorkspaceRoutePermissionItem[]
+    permissions?: WorkspaceRoutePermissionItem[]
   ): Promise<IResponse<WorkspaceAttribute>> {
     const path = this.getPath();
 
@@ -265,7 +265,7 @@ export class WorkspaceClient {
   public async update(
     id: string,
     attributes: Partial<WorkspaceAttribute>,
-    permissions: WorkspaceRoutePermissionItem[]
+    permissions?: WorkspaceRoutePermissionItem[]
   ): Promise<IResponse<boolean>> {
     const path = this.getPath(id);
     const body = {
