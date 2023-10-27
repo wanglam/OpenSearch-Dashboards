@@ -6,8 +6,6 @@
 import { WorkspaceAttribute } from 'src/core/types';
 import { omit } from 'lodash';
 import * as osdTestServer from '../../../../core/test_helpers/osd_server';
-import { WorkspacePermissionItem } from '../types';
-import { WorkspacePermissionMode } from '../../../../core/server';
 import { WORKSPACE_TYPE } from '../../../../core/server';
 
 const testWorkspace: WorkspaceAttribute = {
