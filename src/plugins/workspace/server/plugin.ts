@@ -34,6 +34,7 @@ export class WorkspacePlugin implements Plugin<{}, {}> {
   private workspaceConflictControl?: WorkspaceConflictSavedObjectsClientWrapper;
   private permissionControl?: SavedObjectsPermissionControlContract;
   private readonly config$: Observable<WorkspacePluginConfigType>;
+  private workspaceSavedObjectsClientWrapper?: WorkspaceSavedObjectsClientWrapper;
 
   private proxyWorkspaceTrafficToRealHandler(setupDeps: CoreSetup) {
     /**
@@ -79,14 +80,14 @@ export class WorkspacePlugin implements Plugin<{}, {}> {
     if (isPermissionControlEnabled) {
       this.permissionControl = new SavedObjectsPermissionControl(this.logger);
 
-      const workspaceSavedObjectsClientWrapper = new WorkspaceSavedObjectsClientWrapper(
+      this.workspaceSavedObjectsClientWrapper = new WorkspaceSavedObjectsClientWrapper(
         this.permissionControl
       );
 
       core.savedObjects.addClientWrapper(
         0,
         WORKSPACE_SAVED_OBJECTS_CLIENT_WRAPPER_ID,
-        workspaceSavedObjectsClientWrapper.wrapperFactory
+        this.workspaceSavedObjectsClientWrapper.wrapperFactory
       );
     }
 
@@ -113,6 +114,7 @@ export class WorkspacePlugin implements Plugin<{}, {}> {
     this.permissionControl?.setup(core.savedObjects.getScopedClient);
     this.client?.setSavedObjects(core.savedObjects);
     this.workspaceConflictControl?.setSerializer(core.savedObjects.createSerializer());
+    this.workspaceSavedObjectsClientWrapper?.setScopedClient(core.savedObjects.getScopedClient);
 
     return {
       client: this.client as IWorkspaceClientImpl,
