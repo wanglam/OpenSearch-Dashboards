@@ -4,13 +4,16 @@
  */
 
 import { i18n } from '@osd/i18n';
-import { OpenSearchDashboardsRequest, Principals, SavedObject } from '../../../../core/server';
 import {
   ACL,
   TransformedPermission,
   SavedObjectsBulkGetObject,
   SavedObjectsServiceStart,
   Logger,
+  OpenSearchDashboardsRequest,
+  Principals,
+  SavedObject,
+  WORKSPACE_TYPE,
 } from '../../../../core/server';
 import { WORKSPACE_SAVED_OBJECTS_CLIENT_WRAPPER_ID } from '../../common/constants';
 import { getPrincipalsFromRequest } from '../utils';
@@ -28,6 +31,7 @@ export class SavedObjectsPermissionControl {
   private getScopedClient(request: OpenSearchDashboardsRequest) {
     return this._getScopedClient?.(request, {
       excludedWrappers: [WORKSPACE_SAVED_OBJECTS_CLIENT_WRAPPER_ID],
+      includedHiddenTypes: [WORKSPACE_TYPE],
     });
   }
 
