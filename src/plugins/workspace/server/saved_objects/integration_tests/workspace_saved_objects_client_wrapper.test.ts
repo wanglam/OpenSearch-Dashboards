@@ -3,15 +3,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ISavedObjectsRepository, SavedObjectsClientContract } from 'src/core/server';
-
 import {
   createTestServers,
   TestOpenSearchUtils,
   TestOpenSearchDashboardsUtils,
   TestUtils,
 } from '../../../../../core/test_helpers/osd_server';
-import { SavedObjectsErrorHelpers } from '../../../../../core/server';
+import {
+  SavedObjectsErrorHelpers,
+  WORKSPACE_TYPE,
+  ISavedObjectsRepository,
+  SavedObjectsClientContract,
+} from '../../../../../core/server';
 import { httpServerMock } from '../../../../../../src/core/server/mocks';
 import * as utilsExports from '../../utils';
 
@@ -77,7 +80,9 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
     opensearchServer = await servers.startOpenSearch();
     osd = await servers.startOpenSearchDashboards();
 
-    internalSavedObjectsRepository = osd.coreStart.savedObjects.createInternalRepository();
+    internalSavedObjectsRepository = osd.coreStart.savedObjects.createInternalRepository([
+      WORKSPACE_TYPE,
+    ]);
 
     await repositoryKit.create(
       internalSavedObjectsRepository,
