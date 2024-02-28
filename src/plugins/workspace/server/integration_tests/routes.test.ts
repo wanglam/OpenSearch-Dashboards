@@ -80,6 +80,26 @@ describe('workspace service', () => {
       expect(result.body.success).toEqual(true);
       expect(typeof result.body.result.id).toBe('string');
     });
+    it('create with permissions', async () => {
+      await osdTestServer.request
+        .post(root, `/api/workspaces`)
+        .send({
+          attributes: omitId(testWorkspace),
+          permissions: [{ type: 'invalid-type', userId: 'foo', modes: ['library_read', 'read'] }],
+        })
+        .expect(400);
+
+      const result: any = await osdTestServer.request
+        .post(root, `/api/workspaces`)
+        .send({
+          attributes: omitId(testWorkspace),
+          permissions: [{ type: 'user', userId: 'foo', modes: ['library_read', 'read'] }],
+        })
+        .expect(200);
+
+      expect(result.body.success).toEqual(true);
+      expect(typeof result.body.result.id).toBe('string');
+    });
     it('get', async () => {
       const result = await osdTestServer.request
         .post(root, `/api/workspaces`)

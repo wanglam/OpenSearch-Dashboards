@@ -9,6 +9,7 @@ import {
   RequestHandlerContext,
   SavedObjectsFindResponse,
   CoreSetup,
+  WorkspacePermissionMode,
   WorkspaceAttribute,
   SavedObjectsServiceStart,
 } from '../../../core/server';
@@ -117,3 +118,12 @@ export type IResponse<T> =
       success: false;
       error?: string;
     };
+
+export type WorkspacePermissionItem = {
+  modes: Array<
+    | WorkspacePermissionMode.LibraryRead
+    | WorkspacePermissionMode.LibraryWrite
+    | WorkspacePermissionMode.Read
+    | WorkspacePermissionMode.Write
+  >;
+} & ({ type: 'user'; userId: string } | { type: 'group'; group: string });
