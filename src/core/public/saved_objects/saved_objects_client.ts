@@ -45,7 +45,7 @@ import { HttpFetchOptions, HttpSetup } from '../http';
 
 type SavedObjectsFindOptions = Omit<
   SavedObjectFindOptionsServer,
-  'sortOrder' | 'rootSearchFields' | 'typeToNamespacesMap'
+  'sortOrder' | 'rootSearchFields' | 'typeToNamespacesMap' | 'ACLSearchParams'
 >;
 
 type PromiseType<T extends Promise<any>> = T extends Promise<infer U> ? U : never;
@@ -392,17 +392,14 @@ export class SavedObjectsClient {
       finalWorkspaces = Array.from(new Set([currentWorkspaceId]));
     }
 
-    const renamedQuery = renameKeys<Omit<SavedObjectsFindOptions, 'ACLSearchParams'>, any>(
-      renameMap,
-      {
-        ...options,
-        ...(finalWorkspaces
-          ? {
-              workspaces: finalWorkspaces,
-            }
-          : {}),
-      }
-    );
+    const renamedQuery = renameKeys<SavedObjectsFindOptions, any>(renameMap, {
+      ...options,
+      ...(finalWorkspaces
+        ? {
+            workspaces: finalWorkspaces,
+          }
+        : {}),
+    });
     const query = pick.apply(null, [renamedQuery, ...Object.values<string>(renameMap)]) as Partial<
       Record<string, any>
     >;
