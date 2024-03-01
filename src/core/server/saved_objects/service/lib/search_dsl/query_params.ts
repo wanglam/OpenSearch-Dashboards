@@ -282,7 +282,7 @@ export function getQueryParams({
 
   if (ACLSearchParams) {
     const shouldClause: any = [];
-    if (ACLSearchParams.permissionModes && ACLSearchParams.principals) {
+    if (ACLSearchParams.permissionModes?.length && ACLSearchParams.principals) {
       const permissionDSL = ACL.generateGetPermittedSavedObjectsQueryDSL(
         ACLSearchParams.permissionModes,
         ACLSearchParams.principals
