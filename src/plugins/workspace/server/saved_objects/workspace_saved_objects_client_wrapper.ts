@@ -4,7 +4,6 @@
  */
 
 import { i18n } from '@osd/i18n';
-import { intersection } from 'lodash';
 
 import {
   OpenSearchDashboardsRequest,
@@ -53,6 +52,20 @@ const generateSavedObjectsPermissionError = () =>
       })
     )
   );
+
+const intersection = <T extends string>(...args: T[][]) => {
+  const occursCountMap: { [key: string]: number } = {};
+  for (let i = 0; i < args.length; i++) {
+    new Set(args[i]).forEach((key) => {
+      occursCountMap[key] = (occursCountMap[key] || 0) + 1;
+    });
+  }
+  return Object.keys(occursCountMap).filter((key) => occursCountMap[key] === args.length);
+};
+
+const getDefaultValuesForEmpty = <T>(values: T[] | undefined, defaultValues: T[]) => {
+  return !values || values.length === 0 ? defaultValues : values;
+};
 
 export class WorkspaceSavedObjectsClientWrapper {
   private getScopedClient?: SavedObjectsServiceStart['getScopedClient'];
@@ -145,7 +158,12 @@ export class WorkspaceSavedObjectsClientWrapper {
     objectPermissionModes: WorkspacePermissionMode[],
     validateAllWorkspaces = true
   ) {
-    // Advanced settings have no permissions and workspaces, so we need to skip it.
+    /**
+     *
+     * If savedObject doesn't have workspaces or permissions attributes, we don't know how to
+     * validate it in current client wrapper. We need to skip it.
+     *
+     **/
     if (!savedObject.workspaces && !savedObject.permissions) {
       return true;
     }
@@ -210,7 +228,11 @@ export class WorkspaceSavedObjectsClientWrapper {
       return await wrapperOptions.client.delete(type, id, options);
     };
 
-    // validate `objectToUpdate` if can update with workspace permission, which is used for update and bulkUpdate
+    /**
+     * validate if can update`objectToUpdate`, means a user should either
+     * have `Write` permission on the `objectToUpdate` itself or `LibraryWrite` permission
+     * to any of the workspaces the `objectToUpdate` associated with.
+     **/
     const validateUpdateWithWorkspacePermission = async <T = unknown>(
       objectToUpdate: SavedObject<T>
     ): Promise<boolean> => {
@@ -272,9 +294,9 @@ export class WorkspaceSavedObjectsClientWrapper {
 
       /**
        *
-       * If target workspaces parameter exists, we don't need to do permission validation again.
-       * The bulk create method in repository doesn't allow extends workspaces with override.
-       * If target workspaces parameter doesn't exists, we need to check if has permission to object's workspaces or ACL.
+       * If target workspaces parameter doesn't exists and `overwrite` is true, we need to check
+       * if it has permission to the object itself(defined by the object ACL) or it has permission
+       * to any of the workspaces that the object associates with.
        *
        */
       if (!hasTargetWorkspaces && options.overwrite) {
@@ -330,9 +352,9 @@ export class WorkspaceSavedObjectsClientWrapper {
 
       /**
        *
-       * If target workspaces parameter exists, we don't need to do permission validation again.
-       * The create method in repository doesn't allow extends workspaces with override.
-       * If target workspaces parameter doesn't exists, we need to check if has permission to object's workspaces or ACL.
+       * If target workspaces parameter doesn't exists, `options.id` was exists and `overwrite` is true,
+       * we need to check if it has permission to the object itself(defined by the object ACL) or
+       * it has permission to any of the workspaces that the object associates with.
        *
        */
       if (
@@ -406,11 +428,16 @@ export class WorkspaceSavedObjectsClientWrapper {
       }
 
       if (this.isRelatedToWorkspace(options.type)) {
-        // Find all "read" saved objects by object's ACL for default
-        options.ACLSearchParams.permissionModes = options.ACLSearchParams.permissionModes ?? [
-          WorkspacePermissionMode.Read,
-          WorkspacePermissionMode.Write,
-        ];
+        /**
+         *
+         * This case is for finding workspace saved objects, will use passed permissionModes
+         * and override passed principals from request to get all readable workspaces.
+         *
+         */
+        options.ACLSearchParams.permissionModes = getDefaultValuesForEmpty(
+          options.ACLSearchParams.permissionModes,
+          [WorkspacePermissionMode.Read, WorkspacePermissionMode.Write]
+        );
         options.ACLSearchParams.principals = principals;
       } else {
         /**
@@ -430,12 +457,15 @@ export class WorkspaceSavedObjectsClientWrapper {
                * For outside passed permission modes, it may contains other permissions. Add a intersection
                * here to make sure only Library related permission modes will be used.
                */
-              permissionModes: options.ACLSearchParams.permissionModes
-                ? intersection(options.ACLSearchParams.permissionModes, [
-                    WorkspacePermissionMode.LibraryRead,
-                    WorkspacePermissionMode.LibraryWrite,
-                  ])
-                : [WorkspacePermissionMode.LibraryRead, WorkspacePermissionMode.LibraryWrite],
+              permissionModes: getDefaultValuesForEmpty(
+                options.ACLSearchParams.permissionModes
+                  ? intersection(options.ACLSearchParams.permissionModes, [
+                      WorkspacePermissionMode.LibraryRead,
+                      WorkspacePermissionMode.LibraryWrite,
+                    ])
+                  : [],
+                [WorkspacePermissionMode.LibraryRead, WorkspacePermissionMode.LibraryWrite]
+              ),
             },
           })
         ).saved_objects.map((item) => item.id);
@@ -471,10 +501,10 @@ export class WorkspaceSavedObjectsClientWrapper {
            */
           options.workspaces = undefined;
           options.ACLSearchParams.workspaces = permittedWorkspaceIds;
-          options.ACLSearchParams.permissionModes = options.ACLSearchParams.permissionModes ?? [
-            WorkspacePermissionMode.Read,
-            WorkspacePermissionMode.Write,
-          ];
+          options.ACLSearchParams.permissionModes = getDefaultValuesForEmpty(
+            options.ACLSearchParams.permissionModes,
+            [WorkspacePermissionMode.Read, WorkspacePermissionMode.Write]
+          );
           options.ACLSearchParams.principals = principals;
         }
       }

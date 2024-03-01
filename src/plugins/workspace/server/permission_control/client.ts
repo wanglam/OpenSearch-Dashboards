@@ -105,7 +105,8 @@ export class SavedObjectsPermissionControl {
   }
 
   /**
-   * In batch validate case, the logic is a.withPermission && b.withPermission
+   * In batch validate case, the function will get permissions of all passed saved objects,
+   * check if has permissions to operate every passed saved objects.
    * @param request
    * @param savedObjects
    * @param permissionModes
@@ -143,7 +144,7 @@ export class SavedObjectsPermissionControl {
         permissions?: Permissions;
       }
     > = [];
-    const hasAllPermission = savedObjectsGet.every((item) => {
+    const hasPermissionToAllObjects = savedObjectsGet.every((item) => {
       // for object that doesn't contain ACL like config, return true
       if (!item.permissions) {
         return true;
@@ -160,7 +161,7 @@ export class SavedObjectsPermissionControl {
       }
       return hasPermission;
     });
-    if (!hasAllPermission) {
+    if (!hasPermissionToAllObjects) {
       this.logger.debug(
         `Authorization failed, principals: ${JSON.stringify(
           principals
@@ -171,7 +172,7 @@ export class SavedObjectsPermissionControl {
     }
     return {
       success: true,
-      result: hasAllPermission,
+      result: hasPermissionToAllObjects,
     };
   }
 
