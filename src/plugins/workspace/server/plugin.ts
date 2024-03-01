@@ -62,9 +62,9 @@ export class WorkspacePlugin implements Plugin<{}, {}> {
 
     await this.client.setup(core);
 
+    this.proxyWorkspaceTrafficToRealHandler(core);
     this.logger.info('Workspace permission control enabled:' + isPermissionControlEnabled);
     if (isPermissionControlEnabled) {
-      this.proxyWorkspaceTrafficToRealHandler(core);
       this.permissionControl = new SavedObjectsPermissionControl(this.logger);
 
       this.workspaceSavedObjectsClientWrapper = new WorkspaceSavedObjectsClientWrapper(
