@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { WorkspacePermissionMode } from '../../../core/public';
+import { WorkspacePermissionMode } from '../common/constants';
 import { httpServiceMock, workspacesServiceMock } from '../../../core/public/mocks';
 import { WorkspaceClient } from './workspace_client';
 

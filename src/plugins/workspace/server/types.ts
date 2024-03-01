@@ -9,10 +9,10 @@ import {
   RequestHandlerContext,
   SavedObjectsFindResponse,
   CoreSetup,
-  WorkspacePermissionMode,
   WorkspaceAttribute,
   SavedObjectsServiceStart,
 } from '../../../core/server';
+import { WorkspacePermissionMode } from '../common/constants';
 
 export interface WorkspaceFindOptions {
   page?: number;
