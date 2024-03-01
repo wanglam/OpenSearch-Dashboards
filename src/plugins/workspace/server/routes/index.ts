@@ -4,12 +4,8 @@
  */
 
 import { schema } from '@osd/config-schema';
-import {
-  CoreSetup,
-  Logger,
-  WorkspacePermissionMode,
-  ensureRawRequest,
-} from '../../../../core/server';
+import { CoreSetup, Logger, ensureRawRequest } from '../../../../core/server';
+import { WorkspacePermissionMode } from '../../common/constants';
 import { IWorkspaceClientImpl, WorkspacePermissionItem } from '../types';
 
 const WORKSPACES_API_BASE_URL = '/api/workspaces';

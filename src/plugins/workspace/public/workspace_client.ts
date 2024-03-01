@@ -9,8 +9,8 @@ import {
   HttpSetup,
   WorkspaceAttribute,
   WorkspacesSetup,
-  WorkspacePermissionMode,
 } from '../../../core/public';
+import { WorkspacePermissionMode } from '../common/constants';
 
 const WORKSPACES_API_BASE_URL = '/api/workspaces';
 
