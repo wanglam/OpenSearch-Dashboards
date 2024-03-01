@@ -14,6 +14,7 @@ import {
   Principals,
   SavedObject,
   WORKSPACE_TYPE,
+  Permissions,
 } from '../../../../core/server';
 import { WORKSPACE_SAVED_OBJECTS_CLIENT_WRAPPER_ID } from '../../common/constants';
 import { getPrincipalsFromRequest } from '../utils';
@@ -84,7 +85,7 @@ export class SavedObjectsPermissionControl {
       SavedObject<unknown>,
       'id' | 'type' | 'workspaces' | 'permissions'
     >> = [];
-    const hasAllPermission = savedObjects.every((savedObject) => {
+    const hasPermissionToAllObjects = savedObjects.every((savedObject) => {
       // for object that doesn't contain ACL like config, return true
       if (!savedObject.permissions) {
         return true;
@@ -97,10 +98,10 @@ export class SavedObjectsPermissionControl {
       }
       return hasPermission;
     });
-    if (!hasAllPermission) {
+    if (!hasPermissionToAllObjects) {
       this.logNotPermitted(notPermittedSavedObjects, principals, permissionModes);
     }
-    return hasAllPermission;
+    return hasPermissionToAllObjects;
   }
 
   /**
@@ -136,7 +137,12 @@ export class SavedObjectsPermissionControl {
     }
 
     const principals = getPrincipalsFromRequest(request);
-    let savedObjectsBasicInfo: any[] = [];
+    const deniedObjects: Array<
+      Pick<SavedObjectsBulkGetObject, 'id' | 'type'> & {
+        workspaces?: string[];
+        permissions?: Permissions;
+      }
+    > = [];
     const hasAllPermission = savedObjectsGet.every((item) => {
       // for object that doesn't contain ACL like config, return true
       if (!item.permissions) {
@@ -145,15 +151,12 @@ export class SavedObjectsPermissionControl {
       const aclInstance = new ACL(item.permissions);
       const hasPermission = aclInstance.hasPermission(permissionModes, principals);
       if (!hasPermission) {
-        savedObjectsBasicInfo = [
-          ...savedObjectsBasicInfo,
-          {
-            id: item.id,
-            type: item.type,
-            workspaces: item.workspaces,
-            permissions: item.permissions,
-          },
-        ];
+        deniedObjects.push({
+          id: item.id,
+          type: item.type,
+          workspaces: item.workspaces,
+          permissions: item.permissions,
+        });
       }
       return hasPermission;
     });
@@ -162,7 +165,7 @@ export class SavedObjectsPermissionControl {
         `Authorization failed, principals: ${JSON.stringify(
           principals
         )} has no [${permissionModes}] permissions on the requested saved object: ${JSON.stringify(
-          savedObjectsBasicInfo
+          deniedObjects
         )}`
       );
     }

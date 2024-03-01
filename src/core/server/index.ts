@@ -327,6 +327,7 @@ export {
   Principals,
   TransformedPermission,
   PrincipalType,
+  Permissions,
 } from './saved_objects';
 
 export {

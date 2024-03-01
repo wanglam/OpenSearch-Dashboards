@@ -6,7 +6,7 @@
 import { schema } from '@osd/config-schema';
 import { CoreSetup, Logger, ensureRawRequest } from '../../../../core/server';
 import { WorkspacePermissionMode } from '../../common/constants';
-import { IWorkspaceClientImpl, WorkspacePermissionItem } from '../types';
+import { AuthInfo, IWorkspaceClientImpl, WorkspacePermissionItem } from '../types';
 
 const WORKSPACES_API_BASE_URL = '/api/workspaces';
 
@@ -125,7 +125,7 @@ export function registerRoutes({
     router.handleLegacyErrors(async (context, req, res) => {
       const { attributes, permissions: permissionsInRequest } = req.body;
       const rawRequest = ensureRawRequest(req);
-      const authInfo = rawRequest?.auth?.credentials?.authInfo as { user_name?: string } | null;
+      const authInfo = rawRequest?.auth?.credentials?.authInfo as AuthInfo | null;
       let permissions: WorkspacePermissionItem[] = [];
       if (permissionsInRequest) {
         permissions = Array.isArray(permissionsInRequest)
