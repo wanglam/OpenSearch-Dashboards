@@ -15,6 +15,7 @@ import {
   SavedObject,
   WORKSPACE_TYPE,
   Permissions,
+  HttpAuth,
 } from '../../../../core/server';
 import { WORKSPACE_SAVED_OBJECTS_CLIENT_WRAPPER_ID } from '../../common/constants';
 import { getPrincipalsFromRequest } from '../utils';
@@ -29,6 +30,7 @@ export type SavedObjectsPermissionModes = string[];
 export class SavedObjectsPermissionControl {
   private readonly logger: Logger;
   private _getScopedClient?: SavedObjectsServiceStart['getScopedClient'];
+  private auth?: HttpAuth;
   private getScopedClient(request: OpenSearchDashboardsRequest) {
     return this._getScopedClient?.(request, {
       excludedWrappers: [WORKSPACE_SAVED_OBJECTS_CLIENT_WRAPPER_ID],
@@ -46,8 +48,9 @@ export class SavedObjectsPermissionControl {
   ) {
     return (await this.getScopedClient?.(request)?.bulkGet(savedObjects))?.saved_objects || [];
   }
-  public async setup(getScopedClient: SavedObjectsServiceStart['getScopedClient']) {
+  public async setup(getScopedClient: SavedObjectsServiceStart['getScopedClient'], auth: HttpAuth) {
     this._getScopedClient = getScopedClient;
+    this.auth = auth;
   }
   public async validate(
     request: OpenSearchDashboardsRequest,
@@ -74,6 +77,10 @@ export class SavedObjectsPermissionControl {
         }))
       )}`
     );
+  }
+
+  public getPrincipalsFromRequest(request: OpenSearchDashboardsRequest) {
+    return getPrincipalsFromRequest(request, this.auth);
   }
 
   public validateSavedObjectsACL(
@@ -137,7 +144,7 @@ export class SavedObjectsPermissionControl {
       };
     }
 
-    const principals = getPrincipalsFromRequest(request);
+    const principals = this.getPrincipalsFromRequest(request);
     const deniedObjects: Array<
       Pick<SavedObjectsBulkGetObject, 'id' | 'type'> & {
         workspaces?: string[];

@@ -220,7 +220,6 @@ export {
   SessionStorageFactory,
   DestructiveRouteMethod,
   SafeRouteMethod,
-  ensureRawRequest,
 } from './http';
 
 export {

@@ -5,7 +5,8 @@
 
 import crypto from 'crypto';
 import {
-  ensureRawRequest,
+  AuthStatus,
+  HttpAuth,
   OpenSearchDashboardsRequest,
   Principals,
   PrincipalType,
@@ -19,25 +20,27 @@ export const generateRandomId = (size: number) => {
   return crypto.randomBytes(size).toString('base64url').slice(0, size);
 };
 
-export const getPrincipalsFromRequest = (request: OpenSearchDashboardsRequest): Principals => {
-  const rawRequest = ensureRawRequest(request);
-  const authInfo = rawRequest?.auth?.credentials?.authInfo as AuthInfo | null;
+export const getPrincipalsFromRequest = (
+  request: OpenSearchDashboardsRequest,
+  auth?: HttpAuth
+): Principals => {
   const payload: Principals = {};
-  if (!authInfo) {
+  const authInfoResp = auth?.get(request);
+  if (authInfoResp?.status === AuthStatus.unknown) {
     /**
      * Login user have access to all the workspaces when no authentication is presented.
-     * The logic will be used when users create workspaces with authentication enabled but turn off authentication for any reason.
      */
     return payload;
   }
-  if (!authInfo?.backend_roles?.length && !authInfo.user_name) {
+
+  if (authInfoResp?.status === AuthStatus.unauthenticated) {
     /**
-     * It means OSD can not recognize who the user is even if authentication is enabled,
-     * use a fake user that won't be granted permission explicitly.
+     * use a fake user that won't be granted permission explicitly when authenticated error.
      */
     payload[PrincipalType.Users] = [`_user_fake_${Date.now()}_`];
     return payload;
   }
+  const authInfo = authInfoResp?.state as AuthInfo | null;
   if (authInfo?.backend_roles) {
     payload[PrincipalType.Groups] = authInfo.backend_roles;
   }

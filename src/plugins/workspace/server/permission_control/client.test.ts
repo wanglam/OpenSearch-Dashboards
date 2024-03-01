@@ -5,9 +5,18 @@
 
 import { loggerMock } from '@osd/logging/target/mocks';
 import { SavedObjectsPermissionControl } from './client';
-import { httpServerMock, savedObjectsClientMock } from '../../../../core/server/mocks';
+import {
+  httpServerMock,
+  httpServiceMock,
+  savedObjectsClientMock,
+} from '../../../../core/server/mocks';
+import * as utilsExports from '../utils';
 
-describe('workspace utils', () => {
+describe('PermissionControl', () => {
+  jest.spyOn(utilsExports, 'getPrincipalsFromRequest').mockImplementation(() => ({
+    users: ['bar'],
+  }));
+  const mockAuth = httpServiceMock.createAuth();
   it('should return principals when calling getPrincipalsOfObjects', async () => {
     const permissionControlClient = new SavedObjectsPermissionControl(loggerMock.create());
     const getScopedClient = jest.fn();
@@ -27,7 +36,7 @@ describe('workspace utils', () => {
       });
       return clientMock;
     });
-    permissionControlClient.setup(getScopedClient);
+    permissionControlClient.setup(getScopedClient, mockAuth);
     const result = await permissionControlClient.getPrincipalsOfObjects(
       httpServerMock.createOpenSearchDashboardsRequest(),
       []
@@ -50,7 +59,7 @@ describe('workspace utils', () => {
     getScopedClient.mockImplementation((request) => {
       return clientMock;
     });
-    permissionControlClient.setup(getScopedClient);
+    permissionControlClient.setup(getScopedClient, mockAuth);
     clientMock.bulkGet.mockResolvedValue({
       saved_objects: [],
     });
@@ -69,7 +78,7 @@ describe('workspace utils', () => {
     getScopedClient.mockImplementation((request) => {
       return clientMock;
     });
-    permissionControlClient.setup(getScopedClient);
+    permissionControlClient.setup(getScopedClient, mockAuth);
 
     clientMock.bulkGet.mockResolvedValue({
       saved_objects: [
@@ -102,7 +111,7 @@ describe('workspace utils', () => {
     getScopedClient.mockImplementation((request) => {
       return clientMock;
     });
-    permissionControlClient.setup(getScopedClient);
+    permissionControlClient.setup(getScopedClient, mockAuth);
 
     clientMock.bulkGet.mockResolvedValue({
       saved_objects: [
@@ -126,19 +135,23 @@ describe('workspace utils', () => {
       ],
     });
     const batchValidateResult = await permissionControlClient.batchValidate(
-      httpServerMock.createOpenSearchDashboardsRequest({
-        auth: {
-          credentials: {
-            authInfo: {
-              user_name: 'bar',
-            },
-          },
-        } as any,
-      }),
+      httpServerMock.createOpenSearchDashboardsRequest(),
       [],
       ['read']
     );
     expect(batchValidateResult.success).toEqual(true);
     expect(batchValidateResult.result).toEqual(true);
+  });
+
+  describe('getPrincipalsFromRequest', () => {
+    const permissionControlClient = new SavedObjectsPermissionControl(loggerMock.create());
+    const getScopedClient = jest.fn();
+    permissionControlClient.setup(getScopedClient, mockAuth);
+
+    it('should return normally when calling getPrincipalsFromRequest', () => {
+      const mockRequest = httpServerMock.createOpenSearchDashboardsRequest();
+      const result = permissionControlClient.getPrincipalsFromRequest(mockRequest);
+      expect(result.users).toEqual(['bar']);
+    });
   });
 });
