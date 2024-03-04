@@ -496,7 +496,6 @@ export class WorkspaceSavedObjectsClientWrapper {
            * Select all the docs that
            * 1. ACL matches read / write / user passed permission OR
            * 2. workspaces matches library_read or library_write OR
-           * 3. Advanced settings
            */
           options.workspaces = undefined;
           options.ACLSearchParams.workspaces = permittedWorkspaceIds;
