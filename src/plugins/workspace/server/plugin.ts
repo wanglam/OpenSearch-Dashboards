@@ -95,6 +95,7 @@ export class WorkspacePlugin implements Plugin<{}, {}> {
       http: core.http,
       logger: this.logger,
       client: this.client as IWorkspaceClientImpl,
+      permissionControlClient: this.permissionControl,
     });
 
     core.capabilities.registerProvider(() => ({
@@ -111,7 +112,7 @@ export class WorkspacePlugin implements Plugin<{}, {}> {
 
   public start(core: CoreStart) {
     this.logger.debug('Starting Workspace service');
-    this.permissionControl?.setup(core.savedObjects.getScopedClient);
+    this.permissionControl?.setup(core.savedObjects.getScopedClient, core.http.auth);
     this.client?.setSavedObjects(core.savedObjects);
     this.workspaceConflictControl?.setSerializer(core.savedObjects.createSerializer());
     this.workspaceSavedObjectsClientWrapper?.setScopedClient(core.savedObjects.getScopedClient);

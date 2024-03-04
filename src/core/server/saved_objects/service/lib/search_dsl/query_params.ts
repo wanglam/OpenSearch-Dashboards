@@ -287,7 +287,7 @@ export function getQueryParams({
 
   if (ACLSearchParams) {
     const shouldClause: any = [];
-    if (ACLSearchParams.permissionModes && ACLSearchParams.principals) {
+    if (ACLSearchParams.permissionModes?.length && ACLSearchParams.principals) {
       const permissionDSL = ACL.generateGetPermittedSavedObjectsQueryDSL(
         ACLSearchParams.permissionModes,
         ACLSearchParams.principals
@@ -295,7 +295,7 @@ export function getQueryParams({
       shouldClause.push(permissionDSL.query);
     }
 
-    if (ACLSearchParams.workspaces) {
+    if (ACLSearchParams.workspaces?.length) {
       shouldClause.push({
         terms: {
           workspaces: ACLSearchParams.workspaces,
@@ -306,7 +306,28 @@ export function getQueryParams({
     if (shouldClause.length) {
       bool.filter.push({
         bool: {
-          should: shouldClause,
+          should: [
+            /**
+             * Return those objects without workspaces field and permissions field to keep find find API backward compatible
+             */
+            {
+              bool: {
+                must_not: [
+                  {
+                    exists: {
+                      field: 'workspaces',
+                    },
+                  },
+                  {
+                    exists: {
+                      field: 'permissions',
+                    },
+                  },
+                ],
+              },
+            },
+            ...shouldClause,
+          ],
         },
       });
     }

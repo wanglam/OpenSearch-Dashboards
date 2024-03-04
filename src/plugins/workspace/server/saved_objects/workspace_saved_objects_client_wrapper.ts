@@ -28,7 +28,6 @@ import {
   SavedObjectsClientContract,
 } from '../../../../core/server';
 import { SavedObjectsPermissionControlContract } from '../permission_control/client';
-import { getPrincipalsFromRequest } from '../utils';
 import {
   WORKSPACE_SAVED_OBJECTS_CLIENT_WRAPPER_ID,
   WorkspacePermissionMode,
@@ -190,7 +189,7 @@ export class WorkspaceSavedObjectsClientWrapper {
     if (savedObject.permissions) {
       hasPermission = await this.permissionControl.validateSavedObjectsACL(
         [savedObject],
-        getPrincipalsFromRequest(request),
+        this.permissionControl.getPrincipalsFromRequest(request),
         objectPermissionModes
       );
     }
@@ -422,7 +421,7 @@ export class WorkspaceSavedObjectsClientWrapper {
     const findWithWorkspacePermissionControl = async <T = unknown>(
       options: SavedObjectsFindOptions
     ) => {
-      const principals = getPrincipalsFromRequest(wrapperOptions.request);
+      const principals = this.permissionControl.getPrincipalsFromRequest(wrapperOptions.request);
       if (!options.ACLSearchParams) {
         options.ACLSearchParams = {};
       }
@@ -497,7 +496,6 @@ export class WorkspaceSavedObjectsClientWrapper {
            * Select all the docs that
            * 1. ACL matches read / write / user passed permission OR
            * 2. workspaces matches library_read or library_write OR
-           * 3. Advanced settings
            */
           options.workspaces = undefined;
           options.ACLSearchParams.workspaces = permittedWorkspaceIds;

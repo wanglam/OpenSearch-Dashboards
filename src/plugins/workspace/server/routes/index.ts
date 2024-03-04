@@ -4,9 +4,10 @@
  */
 
 import { schema } from '@osd/config-schema';
-import { CoreSetup, Logger, ensureRawRequest } from '../../../../core/server';
+import { CoreSetup, Logger } from '../../../../core/server';
 import { WorkspacePermissionMode } from '../../common/constants';
-import { AuthInfo, IWorkspaceClientImpl, WorkspacePermissionItem } from '../types';
+import { IWorkspaceClientImpl, WorkspacePermissionItem } from '../types';
+import { SavedObjectsPermissionControlContract } from '../permission_control/client';
 
 const WORKSPACES_API_BASE_URL = '/api/workspaces';
 
@@ -44,10 +45,12 @@ export function registerRoutes({
   client,
   logger,
   http,
+  permissionControlClient,
 }: {
   client: IWorkspaceClientImpl;
   logger: Logger;
   http: CoreSetup['http'];
+  permissionControlClient?: SavedObjectsPermissionControlContract;
 }) {
   const router = http.createRouter();
   router.post(
@@ -124,8 +127,7 @@ export function registerRoutes({
     },
     router.handleLegacyErrors(async (context, req, res) => {
       const { attributes, permissions: permissionsInRequest } = req.body;
-      const rawRequest = ensureRawRequest(req);
-      const authInfo = rawRequest?.auth?.credentials?.authInfo as AuthInfo | null;
+      const authInfo = permissionControlClient?.getPrincipalsFromRequest(req);
       let permissions: WorkspacePermissionItem[] = [];
       if (permissionsInRequest) {
         permissions = Array.isArray(permissionsInRequest)
@@ -134,10 +136,10 @@ export function registerRoutes({
       }
 
       // Assign workspace owner to current user
-      if (!!authInfo?.user_name) {
+      if (!!authInfo?.users?.length) {
         permissions.push({
           type: 'user',
-          userId: authInfo.user_name,
+          userId: authInfo.users[0],
           modes: [WorkspacePermissionMode.LibraryWrite, WorkspacePermissionMode.Write],
         });
       }
