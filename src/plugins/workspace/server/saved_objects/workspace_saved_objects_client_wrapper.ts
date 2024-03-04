@@ -159,8 +159,10 @@ export class WorkspaceSavedObjectsClientWrapper {
   ) {
     /**
      *
-     * If savedObject doesn't have workspaces or permissions attributes, we don't know how to
-     * validate it in current client wrapper. We need to skip it.
+     * Checks if the provided saved object lacks both workspaces and permissions.
+     * If a saved object lacks both attributes, it implies that the object is neither associated
+     * with any workspaces nor has permissions defined by itself. Such objects are considered "public"
+     * and will be excluded from permission checks.
      *
      **/
     if (!savedObject.workspaces && !savedObject.permissions) {
@@ -288,7 +290,7 @@ export class WorkspaceSavedObjectsClientWrapper {
           [WorkspacePermissionMode.LibraryWrite]
         ))
       ) {
-        throw generateSavedObjectsPermissionError();
+        throw generateWorkspacePermissionError();
       }
 
       /**
@@ -471,20 +473,14 @@ export class WorkspaceSavedObjectsClientWrapper {
 
         if (options.workspaces) {
           const permittedWorkspaces = options.workspaces.filter((item) =>
-            (permittedWorkspaceIds || []).includes(item)
+            permittedWorkspaceIds.includes(item)
           );
           if (!permittedWorkspaces.length) {
             /**
              * If user does not have any one workspace access
              * deny the request
              */
-            throw SavedObjectsErrorHelpers.decorateNotAuthorizedError(
-              new Error(
-                i18n.translate('workspace.permission.invalidate', {
-                  defaultMessage: 'Invalid workspace permission',
-                })
-              )
-            );
+            throw generateWorkspacePermissionError();
           }
 
           /**

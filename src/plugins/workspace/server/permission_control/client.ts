@@ -112,8 +112,8 @@ export class SavedObjectsPermissionControl {
   }
 
   /**
-   * In batch validate case, the function will get permissions of all passed saved objects,
-   * check if has permissions to operate every passed saved objects.
+   * Performs batch validation to check if the current request has access to specified saved objects
+   * with the given permission modes.
    * @param request
    * @param savedObjects
    * @param permissionModes
