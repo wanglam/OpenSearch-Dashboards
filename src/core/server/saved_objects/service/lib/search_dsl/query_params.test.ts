@@ -664,7 +664,27 @@ describe('#getQueryParams', () => {
           },
         });
         expect(result.query.bool.filter[1]).toEqual({
-          bool: { should: [{ terms: { workspaces: ['foo'] } }] },
+          bool: {
+            should: [
+              {
+                bool: {
+                  must_not: [
+                    {
+                      exists: {
+                        field: 'workspaces',
+                      },
+                    },
+                    {
+                      exists: {
+                        field: 'permissions',
+                      },
+                    },
+                  ],
+                },
+              },
+              { terms: { workspaces: ['foo'] } },
+            ],
+          },
         });
       });
 
@@ -682,6 +702,22 @@ describe('#getQueryParams', () => {
         expect(result.query.bool.filter[1]).toEqual({
           bool: {
             should: [
+              {
+                bool: {
+                  must_not: [
+                    {
+                      exists: {
+                        field: 'workspaces',
+                      },
+                    },
+                    {
+                      exists: {
+                        field: 'permissions',
+                      },
+                    },
+                  ],
+                },
+              },
               {
                 bool: {
                   filter: [
