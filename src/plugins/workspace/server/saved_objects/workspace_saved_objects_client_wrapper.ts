@@ -480,7 +480,13 @@ export class WorkspaceSavedObjectsClientWrapper {
              * If user does not have any one workspace access
              * deny the request
              */
-            throw generateWorkspacePermissionError();
+            throw SavedObjectsErrorHelpers.decorateNotAuthorizedError(
+              new Error(
+                i18n.translate('workspace.permission.invalidate', {
+                  defaultMessage: 'Invalid workspace permission',
+                })
+              )
+            );
           }
 
           /**
