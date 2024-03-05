@@ -33,19 +33,20 @@ export const getPrincipalsFromRequest = (
     return payload;
   }
 
-  if (authInfoResp?.status === AuthStatus.unauthenticated) {
-    /**
-     * use a fake user that won't be granted permission explicitly when authenticated error.
-     */
-    payload[PrincipalType.Users] = [`_user_fake_${Date.now()}_`];
+  if (authInfoResp?.status === AuthStatus.authenticated) {
+    const authInfo = authInfoResp?.state as AuthInfo | null;
+    if (authInfo?.backend_roles) {
+      payload[PrincipalType.Groups] = authInfo.backend_roles;
+    }
+    if (authInfo?.user_name) {
+      payload[PrincipalType.Users] = [authInfo.user_name];
+    }
     return payload;
   }
-  const authInfo = authInfoResp?.state as AuthInfo | null;
-  if (authInfo?.backend_roles) {
-    payload[PrincipalType.Groups] = authInfo.backend_roles;
+
+  if (authInfoResp?.status === AuthStatus.unauthenticated) {
+    throw new Error('NOT_AUTHORIZED');
   }
-  if (authInfo?.user_name) {
-    payload[PrincipalType.Users] = [authInfo.user_name];
-  }
-  return payload;
+
+  throw new Error('UNEXPECTED_AUTHORIZATION_STATUS');
 };
