@@ -499,8 +499,8 @@ export class WorkspaceSavedObjectsClientWrapper {
            * 1. ACL matches read / write / user passed permission OR
            * 2. workspaces matches library_read or library_write OR
            */
-          options.workspaces = undefined;
-          options.ACLSearchParams.workspaces = permittedWorkspaceIds;
+          options.workspaces = permittedWorkspaceIds;
+          options.workspacesSearchOperator = 'OR';
           options.ACLSearchParams.permissionModes = getDefaultValuesForEmpty(
             options.ACLSearchParams.permissionModes,
             [WorkspacePermissionMode.Read, WorkspacePermissionMode.Write]

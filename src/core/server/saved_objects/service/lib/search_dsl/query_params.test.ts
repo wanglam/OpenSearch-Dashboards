@@ -656,12 +656,11 @@ describe('#getQueryParams', () => {
         expect(result.query.bool.filter[1]).toEqual(undefined);
       });
 
-      it('workspaces provided in ACLSearchParams', () => {
+      it('workspacesSearchOperator prvided as OR', () => {
         const result: Result = getQueryParams({
           registry,
-          ACLSearchParams: {
-            workspaces: ['foo'],
-          },
+          workspaces: ['foo'],
+          workspacesSearchOperator: 'OR',
         });
         expect(result.query.bool.filter[1]).toEqual({
           bool: {
@@ -682,7 +681,24 @@ describe('#getQueryParams', () => {
                   ],
                 },
               },
-              { terms: { workspaces: ['foo'] } },
+              {
+                bool: {
+                  minimum_should_match: 1,
+                  should: [
+                    {
+                      bool: {
+                        must: [
+                          {
+                            term: {
+                              workspaces: 'foo',
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
             ],
           },
         });

@@ -54,6 +54,7 @@ interface GetSearchDslOptions {
   };
   kueryNode?: KueryNode;
   workspaces?: string[];
+  workspacesSearchOperator?: 'AND' | 'OR';
   ACLSearchParams?: SavedObjectsFindOptions['ACLSearchParams'];
 }
 
@@ -75,6 +76,7 @@ export function getSearchDsl(
     hasReference,
     kueryNode,
     workspaces,
+    workspacesSearchOperator,
     ACLSearchParams,
   } = options;
 
@@ -99,6 +101,7 @@ export function getSearchDsl(
       hasReference,
       kueryNode,
       workspaces,
+      workspacesSearchOperator,
       ACLSearchParams,
     }),
     ...getSortingParams(mappings, type, sortField, sortOrder),

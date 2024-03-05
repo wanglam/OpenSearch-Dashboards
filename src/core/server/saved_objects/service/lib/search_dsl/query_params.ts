@@ -168,6 +168,7 @@ interface QueryParams {
   hasReference?: HasReferenceQueryParams;
   kueryNode?: KueryNode;
   workspaces?: string[];
+  workspacesSearchOperator?: 'AND' | 'OR';
   ACLSearchParams?: SavedObjectsFindOptions['ACLSearchParams'];
 }
 
@@ -226,6 +227,7 @@ export function getQueryParams({
   hasReference,
   kueryNode,
   workspaces,
+  workspacesSearchOperator = 'AND',
   ACLSearchParams,
 }: QueryParams) {
   const types = getTypes(
@@ -251,17 +253,6 @@ export function getQueryParams({
     ],
   };
 
-  if (workspaces) {
-    bool.filter.push({
-      bool: {
-        should: workspaces.map((workspace) => {
-          return getClauseForWorkspace(workspace);
-        }),
-        minimum_should_match: 1,
-      },
-    });
-  }
-
   if (search) {
     const useMatchPhrasePrefix = shouldUseMatchPhrasePrefix(search);
     const simpleQueryStringClause = getSimpleQueryStringClause({
@@ -283,59 +274,70 @@ export function getQueryParams({
     }
   }
 
-  const result = { query: { bool } };
+  const ACLSearchParamsShouldClause: any = [];
 
   if (ACLSearchParams) {
-    const shouldClause: any = [];
     if (ACLSearchParams.permissionModes?.length && ACLSearchParams.principals) {
       const permissionDSL = ACL.generateGetPermittedSavedObjectsQueryDSL(
         ACLSearchParams.permissionModes,
         ACLSearchParams.principals
       );
-      shouldClause.push(permissionDSL.query);
+      ACLSearchParamsShouldClause.push(permissionDSL.query);
     }
-
-    if (ACLSearchParams.workspaces?.length) {
-      shouldClause.push({
-        terms: {
-          workspaces: ACLSearchParams.workspaces,
-        },
-      });
-    }
-
-    if (shouldClause.length) {
-      bool.filter.push({
-        bool: {
-          should: [
-            /**
-             * Return those objects without workspaces field and permissions field to keep find find API backward compatible
-             */
-            {
-              bool: {
-                must_not: [
-                  {
-                    exists: {
-                      field: 'workspaces',
-                    },
-                  },
-                  {
-                    exists: {
-                      field: 'permissions',
-                    },
-                  },
-                ],
-              },
-            },
-            ...shouldClause,
-          ],
-        },
-      });
-    }
-
-    return result;
   }
 
-  return result;
+  if (workspaces?.length) {
+    if (workspacesSearchOperator === 'OR') {
+      ACLSearchParamsShouldClause.push({
+        bool: {
+          should: workspaces.map((workspace) => {
+            return getClauseForWorkspace(workspace);
+          }),
+          minimum_should_match: 1,
+        },
+      });
+    } else {
+      bool.filter.push({
+        bool: {
+          should: workspaces.map((workspace) => {
+            return getClauseForWorkspace(workspace);
+          }),
+          minimum_should_match: 1,
+        },
+      });
+    }
+  }
+
+  if (ACLSearchParamsShouldClause.length) {
+    bool.filter.push({
+      bool: {
+        should: [
+          /**
+           * Return those objects without workspaces field and permissions field to keep find find API backward compatible
+           */
+          {
+            bool: {
+              must_not: [
+                {
+                  exists: {
+                    field: 'workspaces',
+                  },
+                },
+                {
+                  exists: {
+                    field: 'permissions',
+                  },
+                },
+              ],
+            },
+          },
+          ...ACLSearchParamsShouldClause,
+        ],
+      },
+    });
+  }
+
+  return { query: { bool } };
 }
 
 // we only want to add match_phrase_prefix clauses

@@ -556,8 +556,9 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
         });
         expect(clientMock.find).toHaveBeenCalledWith({
           type: 'dashboard',
+          workspaces: ['workspace-1'],
+          workspacesSearchOperator: 'OR',
           ACLSearchParams: {
-            workspaces: ['workspace-1'],
             permissionModes: ['read', 'write'],
             principals: { users: ['user-1'] },
           },

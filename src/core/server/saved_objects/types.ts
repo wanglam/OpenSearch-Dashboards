@@ -113,11 +113,12 @@ export interface SavedObjectsFindOptions {
   preference?: string;
   /** If specified, will only retrieve objects that are in the workspaces */
   workspaces?: string[];
+  /** By default the operator will be 'AND' */
+  workspacesSearchOperator?: 'AND' | 'OR';
   /**
    * The params here will be combined with bool clause and is used for filtering with ACL structure.
    */
   ACLSearchParams?: {
-    workspaces?: string[];
     principals?: Principals;
     permissionModes?: string[];
   };

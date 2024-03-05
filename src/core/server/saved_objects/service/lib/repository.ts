@@ -823,6 +823,7 @@ export class SavedObjectsRepository {
       filter,
       preference,
       workspaces,
+      workspacesSearchOperator,
       ACLSearchParams,
     } = options;
 
@@ -898,6 +899,7 @@ export class SavedObjectsRepository {
           hasReference,
           kueryNode,
           workspaces,
+          workspacesSearchOperator,
           ACLSearchParams,
         }),
       },
