@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { httpServerMock } from '../../../core/server/mocks';
+import { AuthStatus } from '../../../core/server';
+import { httpServerMock, httpServiceMock } from '../../../core/server/mocks';
 import { generateRandomId, getPrincipalsFromRequest } from './utils';
 
 describe('workspace utils', () => {
@@ -27,30 +28,28 @@ describe('workspace utils', () => {
   });
 
   it('should return normally when request has authentication', () => {
-    const mockRequest = httpServerMock.createOpenSearchDashboardsRequest({
-      auth: {
-        credentials: {
-          authInfo: {
-            backend_roles: ['foo'],
-            user_name: 'bar',
-          },
-        },
-      } as any,
+    const mockRequest = httpServerMock.createOpenSearchDashboardsRequest();
+    const mockAuth = httpServiceMock.createAuth();
+    mockAuth.get.mockReturnValueOnce({
+      status: AuthStatus.authenticated,
+      state: {
+        user_name: 'bar',
+        backend_roles: ['foo'],
+      },
     });
-    const result = getPrincipalsFromRequest(mockRequest);
+    const result = getPrincipalsFromRequest(mockRequest, mockAuth);
     expect(result.users).toEqual(['bar']);
     expect(result.groups).toEqual(['foo']);
   });
 
   it('should return a fake user when there is auth field but no backend_roles or user name', () => {
-    const mockRequest = httpServerMock.createOpenSearchDashboardsRequest({
-      auth: {
-        credentials: {
-          authInfo: {},
-        },
-      } as any,
+    const mockRequest = httpServerMock.createOpenSearchDashboardsRequest();
+    const mockAuth = httpServiceMock.createAuth();
+    mockAuth.get.mockReturnValueOnce({
+      status: AuthStatus.unauthenticated,
+      state: {},
     });
-    const result = getPrincipalsFromRequest(mockRequest);
+    const result = getPrincipalsFromRequest(mockRequest, mockAuth);
     expect(result.users?.[0].startsWith('_user_fake_')).toEqual(true);
     expect(result.groups).toEqual(undefined);
   });
