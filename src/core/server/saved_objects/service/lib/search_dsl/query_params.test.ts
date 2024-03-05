@@ -656,7 +656,7 @@ describe('#getQueryParams', () => {
         expect(result.query.bool.filter[1]).toEqual(undefined);
       });
 
-      it('workspacesSearchOperator prvided as OR', () => {
+      it('workspacesSearchOperator prvided as "OR"', () => {
         const result: Result = getQueryParams({
           registry,
           workspaces: ['foo'],
