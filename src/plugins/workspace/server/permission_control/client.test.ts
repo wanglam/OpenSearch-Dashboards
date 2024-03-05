@@ -17,40 +17,6 @@ describe('PermissionControl', () => {
     users: ['bar'],
   }));
   const mockAuth = httpServiceMock.createAuth();
-  it('should return principals when calling getPrincipalsOfObjects', async () => {
-    const permissionControlClient = new SavedObjectsPermissionControl(loggerMock.create());
-    const getScopedClient = jest.fn();
-    getScopedClient.mockImplementation((request) => {
-      const clientMock = savedObjectsClientMock.create();
-      clientMock.bulkGet.mockResolvedValue({
-        saved_objects: [
-          {
-            id: 'foo',
-            permissions: {
-              read: {
-                users: ['foo_user'],
-              },
-            },
-          },
-        ],
-      });
-      return clientMock;
-    });
-    permissionControlClient.setup(getScopedClient, mockAuth);
-    const result = await permissionControlClient.getPrincipalsOfObjects(
-      httpServerMock.createOpenSearchDashboardsRequest(),
-      []
-    );
-    expect(result).toEqual({
-      foo: [
-        {
-          type: 'users',
-          name: 'foo_user',
-          permissions: ['read'],
-        },
-      ],
-    });
-  });
 
   it('validate should return error when no saved objects can be found', async () => {
     const permissionControlClient = new SavedObjectsPermissionControl(loggerMock.create());

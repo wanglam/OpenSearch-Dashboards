@@ -79,7 +79,6 @@ const generateWorkspaceSavedObjectsClientWrapper = () => {
     }),
     validateSavedObjectsACL: jest.fn(),
     batchValidate: jest.fn(),
-    getPrincipalsOfObjects: jest.fn(),
     getPrincipalsFromRequest: jest.fn().mockImplementation(() => ({ users: ['user-1'] })),
   };
   const wrapper = new WorkspaceSavedObjectsClientWrapper(permissionControlMock);

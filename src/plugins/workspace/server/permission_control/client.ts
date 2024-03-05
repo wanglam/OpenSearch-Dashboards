@@ -182,17 +182,4 @@ export class SavedObjectsPermissionControl {
       result: hasPermissionToAllObjects,
     };
   }
-
-  public async getPrincipalsOfObjects(
-    request: OpenSearchDashboardsRequest,
-    savedObjects: SavedObjectsBulkGetObject[]
-  ): Promise<Record<string, TransformedPermission>> {
-    const detailedSavedObjects = await this.bulkGetSavedObjects(request, savedObjects);
-    return detailedSavedObjects.reduce((total, current) => {
-      return {
-        ...total,
-        [current.id]: new ACL(current.permissions).toFlatList(),
-      };
-    }, {});
-  }
 }
