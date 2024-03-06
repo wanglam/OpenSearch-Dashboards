@@ -496,7 +496,7 @@ export class WorkspaceSavedObjectsClientWrapper {
         } else {
           /**
            * If no workspaces present, find all the docs that
-           * ACL matches read / write / user passed permission OR
+           * ACL matches read / write / user passed permission
            */
           options.ACLSearchParams.permissionModes = getDefaultValuesForEmpty(
             options.ACLSearchParams.permissionModes,
