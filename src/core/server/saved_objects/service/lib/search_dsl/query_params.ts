@@ -313,7 +313,7 @@ export function getQueryParams({
       bool: {
         should: [
           /**
-           * Return those objects without workspaces field and permissions field to keep find find API backward compatible
+           * Return those objects without workspaces field and permissions field to keep find API backward compatible
            */
           {
             bool: {
