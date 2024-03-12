@@ -20,5 +20,3 @@ export enum WorkspacePermissionMode {
   LibraryRead = 'library_read',
   LibraryWrite = 'library_write',
 }
-export const WORKSPACE_OP_TYPE_CREATE = 'create';
-export const WORKSPACE_OP_TYPE_UPDATE = 'update';

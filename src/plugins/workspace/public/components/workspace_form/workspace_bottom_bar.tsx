@@ -15,12 +15,12 @@ import {
 import { i18n } from '@osd/i18n';
 import React, { useState } from 'react';
 import { ApplicationStart } from 'opensearch-dashboards/public';
-import { WORKSPACE_OP_TYPE_CREATE, WORKSPACE_OP_TYPE_UPDATE } from '../../../common/constants';
+import { WorkspaceOperationType } from '../workspace_form';
 import { WorkspaceCancelModal } from './workspace_cancel_modal';
 
 interface WorkspaceBottomBarProps {
   formId: string;
-  opType?: string;
+  operationType?: WorkspaceOperationType;
   numberOfErrors: number;
   application: ApplicationStart;
   numberOfUnSavedChanges?: number;
@@ -28,7 +28,7 @@ interface WorkspaceBottomBarProps {
 
 export const WorkspaceBottomBar = ({
   formId,
-  opType,
+  operationType,
   numberOfErrors,
   numberOfUnSavedChanges,
   application,
@@ -45,16 +45,22 @@ export const WorkspaceBottomBar = ({
         <EuiFlexGroup justifyContent="spaceBetween" alignItems="center">
           <EuiFlexItem grow={false}>
             <EuiFlexGroup gutterSize="s">
-              {opType === WORKSPACE_OP_TYPE_UPDATE ? (
+              {operationType === WorkspaceOperationType.Update ? (
                 <EuiText textAlign="left">
                   {i18n.translate('workspace.form.bottomBar.unsavedChanges', {
-                    defaultMessage: `${numberOfUnSavedChanges} Unsaved change(s)`,
+                    defaultMessage: '{numberOfUnSavedChanges} Unsaved change(s)',
+                    values: {
+                      numberOfUnSavedChanges,
+                    },
                   })}
                 </EuiText>
               ) : (
                 <EuiText textAlign="left">
                   {i18n.translate('workspace.form.bottomBar.errors', {
-                    defaultMessage: `${numberOfErrors} Error(s)`,
+                    defaultMessage: '{numberOfErrors} Error(s)',
+                    values: {
+                      numberOfErrors,
+                    },
                   })}
                 </EuiText>
               )}
@@ -72,7 +78,7 @@ export const WorkspaceBottomBar = ({
                 })}
               </EuiButtonEmpty>
               <EuiSpacer />
-              {opType === WORKSPACE_OP_TYPE_CREATE && (
+              {operationType === WorkspaceOperationType.Create && (
                 <EuiButton
                   fill
                   type="submit"
@@ -85,7 +91,7 @@ export const WorkspaceBottomBar = ({
                   })}
                 </EuiButton>
               )}
-              {opType === WORKSPACE_OP_TYPE_UPDATE && (
+              {operationType === WorkspaceOperationType.Update && (
                 <EuiButton form={formId} type="submit" fill color="primary">
                   {i18n.translate('workspace.form.bottomBar.saveChanges', {
                     defaultMessage: 'Save changes',

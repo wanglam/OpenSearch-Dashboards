@@ -44,14 +44,6 @@ const WorkspaceCreator = (props: any) => {
         getUrlForApp: jest.fn(),
         applications$: new BehaviorSubject<Map<string, PublicAppInfo>>(PublicAPPInfoMap as any),
       },
-      http: {
-        ...mockCoreStart.http,
-        basePath: {
-          ...mockCoreStart.http.basePath,
-          remove: jest.fn(),
-          prepend: jest.fn(),
-        },
-      },
       notifications: {
         ...mockCoreStart.notifications,
         toasts: {

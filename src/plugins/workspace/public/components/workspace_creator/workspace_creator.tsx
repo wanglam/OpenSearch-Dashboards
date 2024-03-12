@@ -7,8 +7,8 @@ import React, { useCallback } from 'react';
 import { EuiPage, EuiPageBody, EuiPageHeader, EuiPageContent, EuiSpacer } from '@elastic/eui';
 import { i18n } from '@osd/i18n';
 import { useOpenSearchDashboards } from '../../../../opensearch_dashboards_react/public';
-import { WorkspaceForm, WorkspaceFormSubmitData } from './workspace_form';
-import { WORKSPACE_OVERVIEW_APP_ID, WORKSPACE_OP_TYPE_CREATE } from '../../../common/constants';
+import { WorkspaceForm, WorkspaceFormSubmitData, WorkspaceOperationType } from '../workspace_form';
+import { WORKSPACE_OVERVIEW_APP_ID } from '../../../common/constants';
 import { formatUrlWithWorkspaceId } from '../../../../../core/public/utils';
 import { WorkspaceClient } from '../../workspace_client';
 
@@ -40,13 +40,17 @@ export const WorkspaceCreator = () => {
           }),
         });
         if (application && http) {
-          window.location.href = formatUrlWithWorkspaceId(
-            application.getUrlForApp(WORKSPACE_OVERVIEW_APP_ID, {
-              absolute: true,
-            }),
-            result.result.id,
-            http.basePath
-          );
+          const newWorkspaceId = result.result.id;
+          // Redirect page after one second, leave one second time to show create successful toast.
+          window.setTimeout(() => {
+            window.location.href = formatUrlWithWorkspaceId(
+              application.getUrlForApp(WORKSPACE_OVERVIEW_APP_ID, {
+                absolute: true,
+              }),
+              newWorkspaceId,
+              http.basePath
+            );
+          }, 1000);
         }
         return;
       }
@@ -77,7 +81,7 @@ export const WorkspaceCreator = () => {
             <WorkspaceForm
               application={application}
               onSubmit={handleWorkspaceFormSubmit}
-              opType={WORKSPACE_OP_TYPE_CREATE}
+              operationType={WorkspaceOperationType.Create}
               permissionEnabled={isPermissionEnabled}
               permissionLastAdminItemDeletable
             />
