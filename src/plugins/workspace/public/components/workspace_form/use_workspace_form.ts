@@ -186,41 +186,43 @@ export const useWorkspaceForm = ({ application, defaultValues, onSubmit }: Works
 
   const handleFeatureGroupChange = useCallback<EuiCheckboxProps['onChange']>(
     (e) => {
-      for (const featureOrGroup of featureOrGroups) {
-        if (isWorkspaceFeatureGroup(featureOrGroup) && featureOrGroup.name === e.target.id) {
-          const groupFeatureIds = featureOrGroup.features.map((feature) => feature.id);
-          setSelectedFeatureIds((previousData) => {
-            const notExistsIds = groupFeatureIds.filter((id) => !previousData.includes(id));
-            if (notExistsIds.length > 0) {
-              return getFinalFeatureIdsByDependency(
-                notExistsIds,
-                featureDependencies,
-                previousData
-              );
-            }
-            let groupRemainFeatureIds = groupFeatureIds;
-            const outGroupFeatureIds = previousData.filter(
-              (featureId) => !groupFeatureIds.includes(featureId)
-            );
-
-            while (true) {
-              const lastRemainFeatures = groupRemainFeatureIds.length;
-              groupRemainFeatureIds = groupRemainFeatureIds.filter((featureId) =>
-                isFeatureDependBySelectedFeatures(
-                  featureId,
-                  [...outGroupFeatureIds, ...groupRemainFeatureIds],
-                  featureDependencies
-                )
-              );
-              if (lastRemainFeatures === groupRemainFeatureIds.length) {
-                break;
-              }
-            }
-
-            return [...outGroupFeatureIds, ...groupRemainFeatureIds];
-          });
-        }
+      const featureOrGroup = featureOrGroups.find(
+        (item) => isWorkspaceFeatureGroup(item) && item.name === e.target.id
+      );
+      if (!featureOrGroup || !isWorkspaceFeatureGroup(featureOrGroup)) {
+        return;
       }
+      const groupFeatureIds = featureOrGroup.features.map((feature) => feature.id);
+      setSelectedFeatureIds((previousData) => {
+        const notExistsIds = groupFeatureIds.filter((id) => !previousData.includes(id));
+        // Check all not selected features if not been selected in current group.
+        if (notExistsIds.length > 0) {
+          return getFinalFeatureIdsByDependency(notExistsIds, featureDependencies, previousData);
+        }
+        // Need to un-check all features, if all features in group has been selected
+        let groupRemainFeatureIds = groupFeatureIds;
+        const outGroupFeatureIds = previousData.filter(
+          (featureId) => !groupFeatureIds.includes(featureId)
+        );
+
+        while (true) {
+          const lastRemainFeatures = groupRemainFeatureIds.length;
+          // Remove not depend by others feature in changed feature group.
+          groupRemainFeatureIds = groupRemainFeatureIds.filter((featureId) =>
+            isFeatureDependBySelectedFeatures(
+              featureId,
+              [...outGroupFeatureIds, ...groupRemainFeatureIds],
+              featureDependencies
+            )
+          );
+          // If no more features can be removed, the loop can be break.
+          if (lastRemainFeatures === groupRemainFeatureIds.length) {
+            break;
+          }
+        }
+
+        return [...outGroupFeatureIds, ...groupRemainFeatureIds];
+      });
     },
     [featureOrGroups, featureDependencies]
   );
