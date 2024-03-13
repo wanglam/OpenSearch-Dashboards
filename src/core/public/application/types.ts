@@ -249,6 +249,21 @@ export interface App<HistoryLocationState = unknown> {
   /**
    * The dependencies of one application, required feature will be automatic select and can't
    * be unselect in the workspace configuration.
+   *
+   * @example
+   * ```ts
+   * core.application.register({
+   *   id: 'my_app',
+   *   title: 'My App',
+   *   dependencies: {
+   *     "app1": "required",
+   *     "app2": "optional",
+   *   },
+   * })
+   *
+   * // 'app1' will be automatic select when 'my_app' was been selected in workspace configuration
+   * // 'app2' will not be automatic select
+   * ```
    */
   dependencies?: {
     [key: string]: {
