@@ -4,39 +4,19 @@
  */
 
 import React, { useCallback, useState, FormEventHandler, useRef, useMemo, useEffect } from 'react';
-import { groupBy } from 'lodash';
-import {
-  htmlIdGenerator,
-  EuiCheckboxGroupProps,
-  EuiCheckboxProps,
-  EuiFieldTextProps,
-  EuiColorPickerProps,
-} from '@elastic/eui';
+import { htmlIdGenerator, EuiFieldTextProps, EuiColorPickerProps } from '@elastic/eui';
 import { i18n } from '@osd/i18n';
-import { AppNavLinkStatus, DEFAULT_APP_CATEGORIES } from '../../../../../core/public';
 import { useApplications } from '../../hooks';
-import {
-  isFeatureDependBySelectedFeatures,
-  getFinalFeatureIdsByDependency,
-  generateFeatureDependencyMap,
-} from '../utils/feature';
 import { featureMatchesConfig } from '../../utils';
 
 import { WorkspacePermissionItemType, WorkspaceFormTabs } from './constants';
-import {
-  WorkspaceFeature,
-  WorkspaceFeatureGroup,
-  WorkspacePermissionSetting,
-  WorkspaceFormProps,
-  WorkspaceFormErrors,
-} from './types';
+import { WorkspacePermissionSetting, WorkspaceFormProps, WorkspaceFormErrors } from './types';
 import {
   appendDefaultFeatureIds,
   getNumberOfErrors,
   isUserOrGroupPermissionSettingDuplicated,
   isValidNameOrDescription,
   isValidWorkspacePermissionSetting,
-  isWorkspaceFeatureGroup,
 } from './utils';
 
 const workspaceHtmlIdGenerator = htmlIdGenerator();
@@ -61,11 +41,6 @@ export const useWorkspaceForm = ({ application, defaultValues, onSubmit }: Works
 
   const defaultFeaturesRef = useRef(defaultFeatures);
   defaultFeaturesRef.current = defaultFeatures;
-
-  useEffect(() => {
-    // When applications changed, reset form feature selection to original value
-    setSelectedFeatureIds(appendDefaultFeatureIds(defaultFeaturesRef.current));
-  }, [applications]);
 
   const [selectedFeatureIds, setSelectedFeatureIds] = useState(
     appendDefaultFeatureIds(defaultFeatures)
@@ -92,140 +67,9 @@ export const useWorkspaceForm = ({ application, defaultValues, onSubmit }: Works
   const getFormDataRef = useRef(getFormData);
   getFormDataRef.current = getFormData;
 
-  const featureOrGroups = useMemo(() => {
-    const transformedApplications = applications.map((app) => {
-      if (app.category?.id === DEFAULT_APP_CATEGORIES.opensearchDashboards.id) {
-        return {
-          ...app,
-          category: {
-            ...app.category,
-            label: i18n.translate('core.ui.libraryNavList.label', {
-              defaultMessage: 'Library',
-            }),
-          },
-        };
-      }
-      return app;
-    });
-    const category2Applications = groupBy(transformedApplications, 'category.label');
-    return Object.keys(category2Applications).reduce<
-      Array<WorkspaceFeature | WorkspaceFeatureGroup>
-    >((previousValue, currentKey) => {
-      const apps = category2Applications[currentKey];
-      const features = apps
-        .filter(
-          ({ navLinkStatus, chromeless, category }) =>
-            navLinkStatus !== AppNavLinkStatus.hidden &&
-            !chromeless &&
-            category?.id !== DEFAULT_APP_CATEGORIES.management.id
-        )
-        .map(({ id, title, dependencies }) => ({
-          id,
-          name: title,
-          dependencies,
-        }));
-      if (features.length === 0) {
-        return previousValue;
-      }
-      if (currentKey === 'undefined') {
-        return [...previousValue, ...features];
-      }
-      return [
-        ...previousValue,
-        {
-          name: apps[0].category?.label || '',
-          features,
-        },
-      ];
-    }, []);
-  }, [applications]);
-
-  const allFeatures = useMemo(
-    () =>
-      featureOrGroups.reduce<WorkspaceFeature[]>(
-        (previousData, currentData) => [
-          ...previousData,
-          ...(isWorkspaceFeatureGroup(currentData) ? currentData.features : [currentData]),
-        ],
-        []
-      ),
-    [featureOrGroups]
-  );
-
-  const featureDependencies = useMemo(() => generateFeatureDependencyMap(allFeatures), [
-    allFeatures,
-  ]);
-
   if (!formIdRef.current) {
     formIdRef.current = workspaceHtmlIdGenerator();
   }
-
-  const handleFeatureChange = useCallback<EuiCheckboxGroupProps['onChange']>(
-    (featureId) => {
-      setSelectedFeatureIds((previousData) => {
-        if (!previousData.includes(featureId)) {
-          return getFinalFeatureIdsByDependency([featureId], featureDependencies, previousData);
-        }
-
-        if (isFeatureDependBySelectedFeatures(featureId, previousData, featureDependencies)) {
-          return previousData;
-        }
-
-        return previousData.filter((selectedId) => selectedId !== featureId);
-      });
-    },
-    [featureDependencies]
-  );
-
-  const handleFeatureCheckboxChange = useCallback<EuiCheckboxProps['onChange']>(
-    (e) => {
-      handleFeatureChange(e.target.id);
-    },
-    [handleFeatureChange]
-  );
-
-  const handleFeatureGroupChange = useCallback<EuiCheckboxProps['onChange']>(
-    (e) => {
-      const featureOrGroup = featureOrGroups.find(
-        (item) => isWorkspaceFeatureGroup(item) && item.name === e.target.id
-      );
-      if (!featureOrGroup || !isWorkspaceFeatureGroup(featureOrGroup)) {
-        return;
-      }
-      const groupFeatureIds = featureOrGroup.features.map((feature) => feature.id);
-      setSelectedFeatureIds((previousData) => {
-        const notExistsIds = groupFeatureIds.filter((id) => !previousData.includes(id));
-        // Check all not selected features if not been selected in current group.
-        if (notExistsIds.length > 0) {
-          return getFinalFeatureIdsByDependency(notExistsIds, featureDependencies, previousData);
-        }
-        // Need to un-check all features, if all features in group has been selected
-        let groupRemainFeatureIds = groupFeatureIds;
-        const outGroupFeatureIds = previousData.filter(
-          (featureId) => !groupFeatureIds.includes(featureId)
-        );
-
-        while (true) {
-          const lastRemainFeatures = groupRemainFeatureIds.length;
-          // Remove not depend by others feature in changed feature group.
-          groupRemainFeatureIds = groupRemainFeatureIds.filter((featureId) =>
-            isFeatureDependBySelectedFeatures(
-              featureId,
-              [...outGroupFeatureIds, ...groupRemainFeatureIds],
-              featureDependencies
-            )
-          );
-          // If no more features can be removed, the loop can be break.
-          if (lastRemainFeatures === groupRemainFeatureIds.length) {
-            break;
-          }
-        }
-
-        return [...outGroupFeatureIds, ...groupRemainFeatureIds];
-      });
-    },
-    [featureOrGroups, featureDependencies]
-  );
 
   const handleFormSubmit = useCallback<FormEventHandler>(
     (e) => {
@@ -352,28 +196,35 @@ export const useWorkspaceForm = ({ application, defaultValues, onSubmit }: Works
     setSelectedTab(WorkspaceFormTabs.UsersAndPermissions);
   }, []);
 
-  const handleDefaultVISThemeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleDefaultVISThemeChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     setDefaultVISTheme(e.target.value);
-  };
+  }, []);
+
+  const handleFeaturesChange = useCallback((featureIds: string[]) => {
+    setSelectedFeatureIds(featureIds);
+  }, []);
+
+  useEffect(() => {
+    // When applications changed, reset form feature selection to original value
+    setSelectedFeatureIds(appendDefaultFeatureIds(defaultFeaturesRef.current));
+  }, [applications]);
 
   return {
     formId: formIdRef.current,
     formData: getFormData(),
     formErrors,
     selectedTab,
+    applications,
     numberOfErrors,
-    featureOrGroups,
     handleFormSubmit,
     handleIconChange,
     handleColorChange,
-    handleFeatureChange,
+    handleFeaturesChange,
     handleNameInputChange,
     handleTabFeatureClick,
     setPermissionSettings,
-    handleFeatureGroupChange,
     handleTabPermissionClick,
     handleDefaultVISThemeChange,
-    handleFeatureCheckboxChange,
     handleDescriptionInputChange,
   };
 };

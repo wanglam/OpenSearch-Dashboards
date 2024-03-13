@@ -13,12 +13,8 @@ import {
   EuiFieldText,
   EuiSelect,
   EuiText,
-  EuiFlexItem,
-  EuiCheckbox,
-  EuiCheckboxGroup,
   EuiColorPicker,
   EuiHorizontalRule,
-  EuiFlexGroup,
   EuiTab,
   EuiTabs,
 } from '@elastic/eui';
@@ -30,7 +26,7 @@ import { WorkspacePermissionSettingPanel } from './workspace_permission_setting_
 import { WorkspaceFormProps } from './types';
 import { WorkspaceFormTabs } from './constants';
 import { useWorkspaceForm } from './use_workspace_form';
-import { isDefaultCheckedFeatureId, isWorkspaceFeatureGroup } from './utils';
+import { WorkspaceFeatureSelector } from './workspace_feature_selector';
 
 const defaultVISThemeOptions = [{ value: 'categorical', text: 'Categorical' }];
 
@@ -47,19 +43,17 @@ export const WorkspaceForm = (props: WorkspaceFormProps) => {
     formData,
     formErrors,
     selectedTab,
+    applications,
     numberOfErrors,
-    featureOrGroups,
     handleFormSubmit,
     handleIconChange,
     handleColorChange,
-    handleFeatureChange,
+    handleFeaturesChange,
     handleNameInputChange,
     handleTabFeatureClick,
     setPermissionSettings,
-    handleFeatureGroupChange,
     handleTabPermissionClick,
     handleDefaultVISThemeChange,
-    handleFeatureCheckboxChange,
     handleDescriptionInputChange,
   } = useWorkspaceForm(props);
   const workspaceDetailsTitle = i18n.translate('workspace.form.workspaceDetails.title', {
@@ -71,17 +65,6 @@ export const WorkspaceForm = (props: WorkspaceFormProps) => {
   const usersAndPermissionsTitle = i18n.translate('workspace.form.usersAndPermissions.title', {
     defaultMessage: 'Users & Permissions',
   });
-  const libraryCategoryLabel = i18n.translate('core.ui.libraryNavList.label', {
-    defaultMessage: 'Library',
-  });
-  const categoryToDescription: { [key: string]: string } = {
-    [libraryCategoryLabel]: i18n.translate(
-      'workspace.form.featureVisibility.libraryCategory.Description',
-      {
-        defaultMessage: 'Workspace-owned library items',
-      }
-    ),
-  };
 
   return (
     <EuiForm id={formId} onSubmit={handleFormSubmit} component="form">
@@ -204,75 +187,11 @@ export const WorkspaceForm = (props: WorkspaceFormProps) => {
           </EuiTitle>
           <EuiHorizontalRule margin="xs" />
           <EuiSpacer size="s" />
-          {featureOrGroups.map((featureOrGroup) => {
-            const features = isWorkspaceFeatureGroup(featureOrGroup) ? featureOrGroup.features : [];
-            const selectedIds = formData.features.filter((id) =>
-              (isWorkspaceFeatureGroup(featureOrGroup)
-                ? featureOrGroup.features
-                : [featureOrGroup]
-              ).find((item) => item.id === id)
-            );
-            const featureOrGroupId = isWorkspaceFeatureGroup(featureOrGroup)
-              ? featureOrGroup.name
-              : featureOrGroup.id;
-            return (
-              <EuiFlexGroup key={featureOrGroup.name}>
-                <EuiFlexItem>
-                  <div>
-                    <EuiText>
-                      <strong>{featureOrGroup.name}</strong>
-                    </EuiText>
-                    {isWorkspaceFeatureGroup(featureOrGroup) && (
-                      <EuiText>{categoryToDescription[featureOrGroup.name] ?? ''}</EuiText>
-                    )}
-                  </div>
-                </EuiFlexItem>
-                <EuiFlexItem>
-                  <EuiCheckbox
-                    id={featureOrGroupId}
-                    onChange={
-                      isWorkspaceFeatureGroup(featureOrGroup)
-                        ? handleFeatureGroupChange
-                        : handleFeatureCheckboxChange
-                    }
-                    label={`${featureOrGroup.name}${
-                      features.length > 0 ? ` (${selectedIds.length}/${features.length})` : ''
-                    }`}
-                    checked={selectedIds.length > 0}
-                    disabled={
-                      !isWorkspaceFeatureGroup(featureOrGroup) &&
-                      isDefaultCheckedFeatureId(featureOrGroup.id)
-                    }
-                    indeterminate={
-                      isWorkspaceFeatureGroup(featureOrGroup) &&
-                      selectedIds.length > 0 &&
-                      selectedIds.length < features.length
-                    }
-                    data-test-subj={`workspaceForm-workspaceFeatureVisibility-${featureOrGroupId}`}
-                  />
-                  {isWorkspaceFeatureGroup(featureOrGroup) && (
-                    <EuiCheckboxGroup
-                      options={featureOrGroup.features.map((item) => ({
-                        id: item.id,
-                        label: item.name,
-                        disabled: isDefaultCheckedFeatureId(item.id),
-                      }))}
-                      idToSelectedMap={selectedIds.reduce(
-                        (previousValue, currentValue) => ({
-                          ...previousValue,
-                          [currentValue]: true,
-                        }),
-                        {}
-                      )}
-                      onChange={handleFeatureChange}
-                      style={{ marginLeft: 40 }}
-                      data-test-subj={`workspaceForm-workspaceFeatureVisibility-featureWithCategory-${featureOrGroupId}`}
-                    />
-                  )}
-                </EuiFlexItem>
-              </EuiFlexGroup>
-            );
-          })}
+          <WorkspaceFeatureSelector
+            applications={applications}
+            selectedFeatures={formData.features}
+            onChange={handleFeaturesChange}
+          />
         </EuiPanel>
       )}
 
