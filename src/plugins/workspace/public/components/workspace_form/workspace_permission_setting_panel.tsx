@@ -164,24 +164,34 @@ export const WorkspacePermissionSettingPanel = ({
   permissionSettings,
   lastAdminItemDeletable,
 }: WorkspacePermissionSettingPanelProps) => {
-  const [userPermissionSettings, setUserPermissionSettings] = useState<
-    Array<Partial<WorkspacePermissionSetting>>
-  >(
-    permissionSettings?.filter(
-      (permissionSettingItem) => permissionSettingItem.type === WorkspacePermissionItemType.User
-    ) ?? []
+  const userPermissionSettings = useMemo(
+    () =>
+      permissionSettings?.filter(
+        (permissionSettingItem) => permissionSettingItem.type === WorkspacePermissionItemType.User
+      ) ?? [],
+    [permissionSettings]
   );
-  const [groupPermissionSettings, setGroupPermissionSettings] = useState<
-    Array<Partial<WorkspacePermissionSetting>>
-  >(
-    permissionSettings?.filter(
-      (permissionSettingItem) => permissionSettingItem.type === WorkspacePermissionItemType.Group
-    ) ?? []
+  const groupPermissionSettings = useMemo(
+    () =>
+      permissionSettings?.filter(
+        (permissionSettingItem) => permissionSettingItem.type === WorkspacePermissionItemType.Group
+      ) ?? [],
+    [permissionSettings]
   );
 
-  useEffect(() => {
-    onChange?.([...userPermissionSettings, ...groupPermissionSettings]);
-  }, [onChange, userPermissionSettings, groupPermissionSettings]);
+  const handleUserPermissionSettingsChange = useCallback(
+    (newSettings) => {
+      onChange?.([...newSettings, ...groupPermissionSettings]);
+    },
+    [groupPermissionSettings, onChange]
+  );
+
+  const handleGroupPermissionSettingsChange = useCallback(
+    (newSettings) => {
+      onChange?.([...userPermissionSettings, ...newSettings]);
+    },
+    [userPermissionSettings, onChange]
+  );
 
   const nonDeletableIndex = useMemo(() => {
     let userNonDeletableIndex = -1;
@@ -215,7 +225,7 @@ export const WorkspacePermissionSettingPanel = ({
           defaultMessage: 'User',
         })}
         errors={errors}
-        onChange={setUserPermissionSettings}
+        onChange={handleUserPermissionSettingsChange}
         nonDeletableIndex={userNonDeletableIndex}
         permissionSettings={userPermissionSettings}
         type={WorkspacePermissionItemType.User}
@@ -226,7 +236,7 @@ export const WorkspacePermissionSettingPanel = ({
           defaultMessage: 'User Groups',
         })}
         errors={errors}
-        onChange={setGroupPermissionSettings}
+        onChange={handleGroupPermissionSettingsChange}
         nonDeletableIndex={groupNonDeletableIndex}
         permissionSettings={groupPermissionSettings}
         type={WorkspacePermissionItemType.Group}
