@@ -145,22 +145,12 @@ describe('WorkspaceCreator', () => {
     fireEvent.input(colorSelector, {
       target: { value: '#000000' },
     });
-    const iconSelector = getByTestId('workspaceForm-workspaceDetails-iconSelector');
-    fireEvent.click(iconSelector);
-    fireEvent.click(getByTestId('workspaceForm-workspaceDetails-iconSelector-Glasses'));
-    const defaultVISThemeSelector = getByTestId(
-      'workspaceForm-workspaceDetails-defaultVISThemeSelector'
-    );
-    fireEvent.click(defaultVISThemeSelector);
-    fireEvent.change(defaultVISThemeSelector, { target: { value: 'categorical' } });
     fireEvent.click(getByTestId('workspaceForm-bottomBar-createButton'));
     expect(workspaceClientCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         name: 'test workspace name',
-        icon: 'Glasses',
         color: '#000000',
         description: 'test workspace description',
-        defaultVISTheme: 'categorical',
       }),
       expect.any(Array)
     );

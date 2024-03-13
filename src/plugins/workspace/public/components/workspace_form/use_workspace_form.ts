@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useState, FormEventHandler, useRef, useMemo, useEffect } from 'react';
+import { useCallback, useState, FormEventHandler, useRef, useMemo, useEffect } from 'react';
 import { htmlIdGenerator, EuiFieldTextProps, EuiColorPickerProps } from '@elastic/eui';
 import { i18n } from '@osd/i18n';
 import { useApplications } from '../../hooks';
@@ -26,8 +26,6 @@ export const useWorkspaceForm = ({ application, defaultValues, onSubmit }: Works
   const [name, setName] = useState(defaultValues?.name);
   const [description, setDescription] = useState(defaultValues?.description);
   const [color, setColor] = useState(defaultValues?.color);
-  const [icon, setIcon] = useState(defaultValues?.icon);
-  const [defaultVISTheme, setDefaultVISTheme] = useState(defaultValues?.defaultVISTheme);
 
   const [selectedTab, setSelectedTab] = useState(WorkspaceFormTabs.FeatureVisibility);
   const [numberOfErrors, setNumberOfErrors] = useState(0);
@@ -60,8 +58,6 @@ export const useWorkspaceForm = ({ application, defaultValues, onSubmit }: Works
     description,
     features: selectedFeatureIds,
     color,
-    icon,
-    defaultVISTheme,
     permissions: permissionSettings,
   });
   const getFormDataRef = useRef(getFormData);
@@ -184,20 +180,12 @@ export const useWorkspaceForm = ({ application, defaultValues, onSubmit }: Works
     setColor(text);
   }, []);
 
-  const handleIconChange = useCallback((newIcon: string) => {
-    setIcon(newIcon);
-  }, []);
-
   const handleTabFeatureClick = useCallback(() => {
     setSelectedTab(WorkspaceFormTabs.FeatureVisibility);
   }, []);
 
   const handleTabPermissionClick = useCallback(() => {
     setSelectedTab(WorkspaceFormTabs.UsersAndPermissions);
-  }, []);
-
-  const handleDefaultVISThemeChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setDefaultVISTheme(e.target.value);
   }, []);
 
   const handleFeaturesChange = useCallback((featureIds: string[]) => {
@@ -217,14 +205,12 @@ export const useWorkspaceForm = ({ application, defaultValues, onSubmit }: Works
     applications,
     numberOfErrors,
     handleFormSubmit,
-    handleIconChange,
     handleColorChange,
     handleFeaturesChange,
     handleNameInputChange,
     handleTabFeatureClick,
     setPermissionSettings,
     handleTabPermissionClick,
-    handleDefaultVISThemeChange,
     handleDescriptionInputChange,
   };
 };

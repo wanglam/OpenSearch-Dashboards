@@ -11,7 +11,6 @@ import {
   EuiForm,
   EuiFormRow,
   EuiFieldText,
-  EuiSelect,
   EuiText,
   EuiColorPicker,
   EuiHorizontalRule,
@@ -21,14 +20,11 @@ import {
 import { i18n } from '@osd/i18n';
 
 import { WorkspaceBottomBar } from './workspace_bottom_bar';
-import { WorkspaceIconSelector } from './workspace_icon_selector';
 import { WorkspacePermissionSettingPanel } from './workspace_permission_setting_panel';
 import { WorkspaceFormProps } from './types';
 import { WorkspaceFormTabs } from './constants';
 import { useWorkspaceForm } from './use_workspace_form';
 import { WorkspaceFeatureSelector } from './workspace_feature_selector';
-
-const defaultVISThemeOptions = [{ value: 'categorical', text: 'Categorical' }];
 
 export const WorkspaceForm = (props: WorkspaceFormProps) => {
   const {
@@ -46,14 +42,12 @@ export const WorkspaceForm = (props: WorkspaceFormProps) => {
     applications,
     numberOfErrors,
     handleFormSubmit,
-    handleIconChange,
     handleColorChange,
     handleFeaturesChange,
     handleNameInputChange,
     handleTabFeatureClick,
     setPermissionSettings,
     handleTabPermissionClick,
-    handleDefaultVISThemeChange,
     handleDescriptionInputChange,
   } = useWorkspaceForm(props);
   const workspaceDetailsTitle = i18n.translate('workspace.form.workspaceDetails.title', {
@@ -131,34 +125,6 @@ export const WorkspaceForm = (props: WorkspaceFormProps) => {
               data-test-subj="workspaceForm-workspaceDetails-colorPicker"
             />
           </div>
-        </EuiFormRow>
-        <EuiFormRow
-          label={i18n.translate('workspace.form.workspaceDetails.icon.label', {
-            defaultMessage: 'Icon',
-          })}
-          isInvalid={!!formErrors.icon}
-          error={formErrors.icon}
-        >
-          <WorkspaceIconSelector
-            value={formData.icon}
-            onChange={handleIconChange}
-            color={formData.color}
-          />
-        </EuiFormRow>
-        <EuiFormRow
-          label={i18n.translate('workspace.form.workspaceDetails.defaultVisualizationTheme.label', {
-            defaultMessage: 'Default visualization theme',
-          })}
-          isInvalid={!!formErrors.defaultVISTheme}
-          error={formErrors.defaultVISTheme}
-        >
-          <EuiSelect
-            hasNoInitialSelection
-            value={formData.defaultVISTheme}
-            options={defaultVISThemeOptions}
-            onChange={handleDefaultVISThemeChange}
-            data-test-subj="workspaceForm-workspaceDetails-defaultVISThemeSelector"
-          />
         </EuiFormRow>
       </EuiPanel>
       <EuiSpacer />
