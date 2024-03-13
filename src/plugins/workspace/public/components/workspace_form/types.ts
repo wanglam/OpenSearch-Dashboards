@@ -26,7 +26,7 @@ export interface WorkspaceFormData extends WorkspaceFormSubmitData {
   reserved?: boolean;
 }
 
-export interface WorkspaceFeature extends Pick<App, 'dependencies'> {
+export interface WorkspaceFeature {
   id: string;
   name: string;
 }

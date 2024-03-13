@@ -24,11 +24,6 @@ import {
 
 import { WorkspaceFeature, WorkspaceFeatureGroup } from './types';
 import { isDefaultCheckedFeatureId, isWorkspaceFeatureGroup } from './utils';
-import {
-  generateFeatureDependencyMap,
-  getFinalFeatureIdsByDependency,
-  isFeatureDependBySelectedFeatures,
-} from '../utils/feature';
 
 const libraryCategoryLabel = i18n.translate('core.ui.libraryNavList.label', {
   defaultMessage: 'Library',
@@ -70,10 +65,9 @@ export const WorkspaceFeatureSelector = ({
             !chromeless &&
             category?.id !== DEFAULT_APP_CATEGORIES.management.id
         )
-        .map(({ id, title, dependencies }) => ({
+        .map(({ id, title }) => ({
           id,
           name: title,
-          dependencies,
         }));
       if (features.length === 0) {
         return previousValue;
@@ -91,36 +85,15 @@ export const WorkspaceFeatureSelector = ({
     }, []);
   }, [applications]);
 
-  const allFeatures = useMemo(
-    () =>
-      featureOrGroups.reduce<WorkspaceFeature[]>(
-        (previousData, currentData) => [
-          ...previousData,
-          ...(isWorkspaceFeatureGroup(currentData) ? currentData.features : [currentData]),
-        ],
-        []
-      ),
-    [featureOrGroups]
-  );
-
-  const featureDependencies = useMemo(() => generateFeatureDependencyMap(allFeatures), [
-    allFeatures,
-  ]);
-
   const handleFeatureChange = useCallback<EuiCheckboxGroupProps['onChange']>(
     (featureId) => {
       if (!selectedFeatures.includes(featureId)) {
-        onChange(
-          getFinalFeatureIdsByDependency([featureId], featureDependencies, selectedFeatures)
-        );
-        return;
-      }
-      if (isFeatureDependBySelectedFeatures(featureId, selectedFeatures, featureDependencies)) {
+        onChange([...selectedFeatures, featureId]);
         return;
       }
       onChange(selectedFeatures.filter((selectedId) => selectedId !== featureId));
     },
-    [featureDependencies, selectedFeatures, onChange]
+    [selectedFeatures, onChange]
   );
 
   const handleFeatureCheckboxChange = useCallback<EuiCheckboxProps['onChange']>(
@@ -143,20 +116,13 @@ export const WorkspaceFeatureSelector = ({
       const notExistsIds = groupFeatureIds.filter((id) => !selectedFeatures.includes(id));
       // Check all not selected features if not been selected in current group.
       if (notExistsIds.length > 0) {
-        onChange(
-          getFinalFeatureIdsByDependency(notExistsIds, featureDependencies, selectedFeatures)
-        );
+        onChange([...selectedFeatures, ...notExistsIds]);
         return;
       }
       // Need to un-check these features, if all features in group has been selected
-      onChange(
-        getFinalFeatureIdsByDependency(
-          selectedFeatures.filter((featureId) => !groupFeatureIds.includes(featureId)),
-          featureDependencies
-        )
-      );
+      onChange(selectedFeatures.filter((featureId) => !groupFeatureIds.includes(featureId)));
     },
-    [featureOrGroups, featureDependencies, selectedFeatures, onChange]
+    [featureOrGroups, selectedFeatures, onChange]
   );
 
   return (
