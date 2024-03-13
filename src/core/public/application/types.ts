@@ -256,8 +256,12 @@ export interface App<HistoryLocationState = unknown> {
    *   id: 'my_app',
    *   title: 'My App',
    *   dependencies: {
-   *     "app1": "required",
-   *     "app2": "optional",
+   *     app1: {
+   *       type: "required",
+   *     },
+   *     app2: {
+   *       type: "optional",
+   *     },
    *   },
    * })
    *
