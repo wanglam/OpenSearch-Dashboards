@@ -11,8 +11,12 @@ import {
   CoreSetup,
   WorkspaceAttribute,
   SavedObjectsServiceStart,
+  Permissions,
 } from '../../../core/server';
-import { WorkspacePermissionMode } from '../common/constants';
+
+export interface WorkspaceAttributeWithPermission extends WorkspaceAttribute {
+  permissions?: Permissions;
+}
 
 export interface WorkspaceFindOptions {
   page?: number;
@@ -53,7 +57,7 @@ export interface IWorkspaceClientImpl {
    */
   create(
     requestDetail: IRequestDetail,
-    payload: Omit<WorkspaceAttribute, 'id'>
+    payload: Omit<WorkspaceAttributeWithPermission, 'id'>
   ): Promise<IResponse<{ id: WorkspaceAttribute['id'] }>>;
   /**
    * List workspaces
@@ -91,7 +95,7 @@ export interface IWorkspaceClientImpl {
   update(
     requestDetail: IRequestDetail,
     id: string,
-    payload: Omit<WorkspaceAttribute, 'id'>
+    payload: Omit<WorkspaceAttributeWithPermission, 'id'>
   ): Promise<IResponse<boolean>>;
   /**
    * Delete a given workspace
@@ -124,11 +128,10 @@ export interface AuthInfo {
   user_name?: string;
 }
 
-export type WorkspacePermissionItem = {
-  modes: Array<
-    | WorkspacePermissionMode.LibraryRead
-    | WorkspacePermissionMode.LibraryWrite
-    | WorkspacePermissionMode.Read
-    | WorkspacePermissionMode.Write
-  >;
-} & ({ type: 'user'; userId: string } | { type: 'group'; group: string });
+export interface WorkspacePluginSetup {
+  client: IWorkspaceClientImpl;
+}
+
+export interface WorkspacePluginStart {
+  client: IWorkspaceClientImpl;
+}
