@@ -5,8 +5,9 @@
 
 import { schema } from '@osd/config-schema';
 import { CoreSetup, Logger, PrincipalType, ACL } from '../../../../core/server';
+import { WorkspaceAttributeWithPermission } from '../../../../core/types';
 import { WorkspacePermissionMode } from '../../common/constants';
-import { IWorkspaceClientImpl, WorkspaceAttributeWithPermission } from '../types';
+import { IWorkspaceClientImpl } from '../types';
 import { SavedObjectsPermissionControlContract } from '../permission_control/client';
 
 const WORKSPACES_API_BASE_URL = '/api/workspaces';

@@ -11,12 +11,8 @@ import {
   CoreSetup,
   WorkspaceAttribute,
   SavedObjectsServiceStart,
-  Permissions,
 } from '../../../core/server';
-
-export interface WorkspaceAttributeWithPermission extends WorkspaceAttribute {
-  permissions?: Permissions;
-}
+import { WorkspaceAttributeWithPermission } from '../../../core/types';
 
 export interface WorkspaceFindOptions {
   page?: number;
@@ -72,7 +68,7 @@ export interface IWorkspaceClientImpl {
   ): Promise<
     IResponse<
       {
-        workspaces: WorkspaceAttribute[];
+        workspaces: WorkspaceAttributeWithPermission[];
       } & Pick<SavedObjectsFindResponse, 'page' | 'per_page' | 'total'>
     >
   >;
@@ -80,10 +76,13 @@ export interface IWorkspaceClientImpl {
    * Get the detail of a given workspace id
    * @param requestDetail {@link IRequestDetail}
    * @param id workspace id
-   * @returns a Promise with the detail of {@link WorkspaceAttribute}
+   * @returns a Promise with the detail of {@link WorkspaceAttributeWithPermission}
    * @public
    */
-  get(requestDetail: IRequestDetail, id: string): Promise<IResponse<WorkspaceAttribute>>;
+  get(
+    requestDetail: IRequestDetail,
+    id: string
+  ): Promise<IResponse<WorkspaceAttributeWithPermission>>;
   /**
    * Update the detail of a given workspace
    * @param requestDetail {@link IRequestDetail}

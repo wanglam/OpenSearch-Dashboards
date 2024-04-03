@@ -17,13 +17,8 @@ import {
   WORKSPACE_TYPE,
   Logger,
 } from '../../../core/server';
-import {
-  IWorkspaceClientImpl,
-  WorkspaceFindOptions,
-  IResponse,
-  IRequestDetail,
-  WorkspaceAttributeWithPermission,
-} from './types';
+import { WorkspaceAttributeWithPermission } from '../../../core/types';
+import { IWorkspaceClientImpl, WorkspaceFindOptions, IResponse, IRequestDetail } from './types';
 import { workspace } from './saved_objects';
 import { generateRandomId } from './utils';
 import { WORKSPACE_SAVED_OBJECTS_CLIENT_WRAPPER_ID } from '../common/constants';
@@ -67,10 +62,11 @@ export class WorkspaceClient implements IWorkspaceClientImpl {
   }
   private getFlattenedResultWithSavedObject(
     savedObject: SavedObject<WorkspaceAttribute>
-  ): WorkspaceAttribute {
+  ): WorkspaceAttributeWithPermission {
     return {
       ...savedObject.attributes,
       id: savedObject.id,
+      permissions: savedObject.permissions,
     };
   }
   private formatError(error: Error | any): string {
@@ -217,7 +213,7 @@ export class WorkspaceClient implements IWorkspaceClientImpl {
   public async get(
     requestDetail: IRequestDetail,
     id: string
-  ): Promise<IResponse<WorkspaceAttribute>> {
+  ): ReturnType<IWorkspaceClientImpl['get']> {
     try {
       const result = await this.getSavedObjectClientsFromRequestDetail(requestDetail).get<
         WorkspaceAttribute
