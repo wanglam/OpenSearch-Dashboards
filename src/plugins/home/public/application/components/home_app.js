@@ -70,7 +70,6 @@ export function ImportSampleDataApp() {
     <I18nProvider>
       <Router>
         <Switch>
-          <Route path="/tutorial_directory/:tab?" render={renderTutorialDirectory} />
           <Route path="*" exact={true} component={renderTutorialDirectory} />
         </Switch>
       </Router>

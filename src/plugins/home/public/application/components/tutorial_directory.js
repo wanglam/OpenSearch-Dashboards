@@ -93,12 +93,12 @@ class TutorialDirectoryUi extends React.Component {
 
   async componentDidMount() {
     this._isMounted = true;
-    const { chrome, application } = getServices();
+    const { chrome, homeLink } = getServices();
 
     chrome.setBreadcrumbs([
       {
         text: homeTitle,
-        onClick: () => application.navigateToApp('home'),
+        href: homeLink || '#/',
       },
       { text: addDataTitle },
     ]);

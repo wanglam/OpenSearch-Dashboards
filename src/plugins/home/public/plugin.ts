@@ -51,7 +51,10 @@ import {
   SectionTypeServiceSetup,
 } from './services';
 import { ConfigSchema } from '../config';
-import { setServices } from './application/opensearch_dashboards_services';
+import {
+  HomeOpenSearchDashboardsServices,
+  setServices,
+} from './application/opensearch_dashboards_services';
 import { DataPublicPluginStart } from '../../data/public';
 import { TelemetryPluginStart } from '../../telemetry/public';
 import { UsageCollectionSetup } from '../../usage_collection/public';
@@ -93,7 +96,9 @@ export class HomePublicPlugin
     core: CoreSetup<HomePluginStartDependencies>,
     { urlForwarding, usageCollection }: HomePluginSetupDependencies
   ): HomePublicPluginSetup {
-    const setCommonService = async () => {
+    const setCommonService = async (
+      homeOpenSearchDashboardsServices?: Partial<HomeOpenSearchDashboardsServices>
+    ) => {
       const trackUiMetric = usageCollection
         ? usageCollection.reportUiStats.bind(usageCollection, 'OpenSearch_Dashboards_home')
         : () => {};
@@ -125,6 +130,7 @@ export class HomePublicPlugin
         dataSource,
         workspaces: coreStart.workspaces,
         sectionTypes: this.sectionTypeService,
+        ...homeOpenSearchDashboardsServices,
       });
     };
     core.application.register({
@@ -149,7 +155,9 @@ export class HomePublicPlugin
       navLinkStatus: AppNavLinkStatus.hidden,
       mount: async (params: AppMountParameters) => {
         const [coreStart] = await core.getStartServices();
-        setCommonService();
+        setCommonService({
+          homeLink: coreStart.application.getUrlForApp('home'),
+        });
         coreStart.chrome.docTitle.change(
           i18n.translate('home.tutorialDirectory.featureCatalogueTitle', {
             defaultMessage: 'Add sample data',
