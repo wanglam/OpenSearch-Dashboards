@@ -147,6 +147,8 @@ export class HomePublicPlugin
         return await renderApp(params.element, coreStart, params.history);
       },
     });
+
+    // Register import sample data as a standalone app so that it is available inside workspace.
     core.application.register({
       id: IMPORT_SAMPLE_DATA_APP_ID,
       title: i18n.translate('home.tutorialDirectory.featureCatalogueTitle', {
