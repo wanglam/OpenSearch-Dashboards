@@ -51,6 +51,33 @@ const RedirectToDefaultApp = () => {
   return null;
 };
 
+const renderTutorialDirectory = (props) => {
+  const { addBasePath, environmentService } = getServices();
+  const environment = environmentService.getEnvironment();
+  const isCloudEnabled = environment.cloud;
+
+  return (
+    <TutorialDirectory
+      addBasePath={addBasePath}
+      openTab={props.match.params.tab}
+      isCloudEnabled={isCloudEnabled}
+    />
+  );
+};
+
+export function ImportSampleDataApp() {
+  return (
+    <I18nProvider>
+      <Router>
+        <Switch>
+          <Route path="/tutorial_directory/:tab?" render={renderTutorialDirectory} />
+          <Route path="*" exact={true} component={renderTutorialDirectory} />
+        </Switch>
+      </Router>
+    </I18nProvider>
+  );
+}
+
 export function HomeApp({ directories, solutions }) {
   const {
     savedObjectsClient,
@@ -62,16 +89,6 @@ export function HomeApp({ directories, solutions }) {
   } = getServices();
   const environment = environmentService.getEnvironment();
   const isCloudEnabled = environment.cloud;
-
-  const renderTutorialDirectory = (props) => {
-    return (
-      <TutorialDirectory
-        addBasePath={addBasePath}
-        openTab={props.match.params.tab}
-        isCloudEnabled={isCloudEnabled}
-      />
-    );
-  };
 
   const renderTutorial = (props) => {
     return (
