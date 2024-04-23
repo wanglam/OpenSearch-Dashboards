@@ -77,7 +77,6 @@ export interface HomeOpenSearchDashboardsServices {
   dataSource?: DataSourcePluginStart;
   workspaces: WorkspacesStart;
   sectionTypes: SectionTypeService;
-  homeLink?: string;
 }
 
 let services: HomeOpenSearchDashboardsServices | null = null;

@@ -61,16 +61,27 @@ const renderTutorialDirectory = (props) => {
       addBasePath={addBasePath}
       openTab={props.match.params.tab}
       isCloudEnabled={isCloudEnabled}
+      homeLink={props.homeLink}
     />
   );
 };
 
 export function ImportSampleDataApp() {
+  const { application } = getServices();
   return (
     <I18nProvider>
       <Router>
         <Switch>
-          <Route path="*" exact={true} component={renderTutorialDirectory} />
+          <Route
+            path="*"
+            exact={true}
+            component={(props) =>
+              renderTutorialDirectory({
+                ...props,
+                homeLink: application.getUrlForApp('home'),
+              })
+            }
+          />
         </Switch>
       </Router>
     </I18nProvider>

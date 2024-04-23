@@ -157,9 +157,7 @@ export class HomePublicPlugin
       navLinkStatus: AppNavLinkStatus.hidden,
       mount: async (params: AppMountParameters) => {
         const [coreStart] = await core.getStartServices();
-        setCommonService({
-          homeLink: coreStart.application.getUrlForApp('home'),
-        });
+        setCommonService();
         coreStart.chrome.docTitle.change(
           i18n.translate('home.tutorialDirectory.featureCatalogueTitle', {
             defaultMessage: 'Add sample data',

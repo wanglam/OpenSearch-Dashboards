@@ -93,7 +93,8 @@ class TutorialDirectoryUi extends React.Component {
 
   async componentDidMount() {
     this._isMounted = true;
-    const { chrome, homeLink } = getServices();
+    const { chrome } = getServices();
+    const { homeLink } = this.props;
 
     chrome.setBreadcrumbs([
       {
