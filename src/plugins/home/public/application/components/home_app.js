@@ -61,13 +61,12 @@ const renderTutorialDirectory = (props) => {
       addBasePath={addBasePath}
       openTab={props.match.params.tab}
       isCloudEnabled={isCloudEnabled}
-      homeLink={props.homeLink}
+      withoutHomeBreadCrumb={props.withoutHomeBreadCrumb}
     />
   );
 };
 
 export function ImportSampleDataApp() {
-  const { application } = getServices();
   return (
     <I18nProvider>
       <Router>
@@ -78,7 +77,9 @@ export function ImportSampleDataApp() {
             component={(props) =>
               renderTutorialDirectory({
                 ...props,
-                homeLink: application.getUrlForApp('home'),
+                // For standalone import sample data application
+                // home breadcrumb should not be appended as it is not a sub app of home
+                withoutHomeBreadCrumb: true,
               })
             }
           />

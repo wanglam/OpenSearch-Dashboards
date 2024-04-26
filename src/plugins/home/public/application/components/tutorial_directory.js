@@ -94,15 +94,16 @@ class TutorialDirectoryUi extends React.Component {
   async componentDidMount() {
     this._isMounted = true;
     const { chrome } = getServices();
-    const { homeLink } = this.props;
-
-    chrome.setBreadcrumbs([
-      {
+    const { withoutHomeBreadCrumb } = this.props;
+    const breadcrumbs = [{ text: addDataTitle }];
+    if (!withoutHomeBreadCrumb) {
+      breadcrumbs.splice(0, 0, {
         text: homeTitle,
-        href: homeLink || '#/',
-      },
-      { text: addDataTitle },
-    ]);
+        href: '#/',
+      });
+    }
+
+    chrome.setBreadcrumbs(breadcrumbs);
 
     const tutorialConfigs = await getTutorials();
 
@@ -324,6 +325,7 @@ TutorialDirectoryUi.propTypes = {
   addBasePath: PropTypes.func.isRequired,
   openTab: PropTypes.string,
   isCloudEnabled: PropTypes.bool.isRequired,
+  withoutHomeBreadCrumb: PropTypes.bool,
 };
 
 export const TutorialDirectory = injectI18n(TutorialDirectoryUi);
