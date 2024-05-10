@@ -16,6 +16,7 @@ import { Services } from './types';
 import { WorkspaceCreatorProps } from './components/workspace_creator/workspace_creator';
 import { WorkspaceOverviewApp } from './components/workspace_overview_app';
 import { WorkspaceOverviewProps } from './components/workspace_overview/workspace_overview';
+import { WorkspacePresets, WorkspacePresetsProps } from './components/workspace_presets';
 
 export const renderCreatorApp = (
   { element }: AppMountParameters,
@@ -86,6 +87,23 @@ export const renderOverviewApp = (
   ReactDOM.render(
     <OpenSearchDashboardsContextProvider services={services}>
       <WorkspaceOverviewApp {...props} />
+    </OpenSearchDashboardsContextProvider>,
+    element
+  );
+
+  return () => {
+    ReactDOM.unmountComponentAtNode(element);
+  };
+};
+
+export const renderWorkspacePresetsApp = (
+  { element }: AppMountParameters,
+  services: Services,
+  props: WorkspacePresetsProps
+) => {
+  ReactDOM.render(
+    <OpenSearchDashboardsContextProvider services={services}>
+      <WorkspacePresets {...props} />
     </OpenSearchDashboardsContextProvider>,
     element
   );

@@ -303,6 +303,17 @@ export class WorkspacePlugin implements Plugin<{}, {}, WorkspacePluginSetupDeps>
       workspaceAvailability: WorkspaceAvailability.outsideWorkspace,
     });
 
+    // workspace presets
+    core.application.register({
+      id: 'workspace_presets',
+      title: '',
+      navLinkStatus: AppNavLinkStatus.hidden,
+      async mount(params: AppMountParameters) {
+        const { renderWorkspacePresetsApp } = await import('./application');
+        return mountWorkspaceApp(params, renderWorkspacePresetsApp);
+      },
+    });
+
     /**
      * register workspace column into saved objects table
      */
