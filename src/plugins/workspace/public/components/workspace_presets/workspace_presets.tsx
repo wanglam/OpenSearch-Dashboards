@@ -19,7 +19,7 @@ import { BehaviorSubject, of } from 'rxjs';
 import { PublicAppInfo } from 'opensearch-dashboards/public';
 import { useObservable } from 'react-use';
 
-import { workspacePresetData } from './workspace_preset_data';
+import { workspacePresetData, CUSTOM_PRESET_ID } from './workspace_preset_data';
 import {
   isWorkspaceFeatureGroup,
   convertApplicationsToFeaturesOrGroups,
@@ -70,11 +70,15 @@ export const WorkspacePresets = ({ workspaceConfigurableApps$ }: WorkspacePreset
             <EuiFlexItem key={item.id}>
               <EuiCheckableCard
                 style={{ height: '100%' }}
-                id={htmlIdGenerator(item.id)()}
+                id={htmlIdGenerator()()}
                 label={item.title}
                 checked={item.id === selectedPreset}
                 onChange={() => {
                   setSelectedPreset(item.id);
+                  if (item.id !== CUSTOM_PRESET_ID) {
+                    const apps = configurableApps?.filter((app) => item.features?.includes(app.id));
+                    setSelectedFeatures(apps?.map((item) => item.id) || []);
+                  }
                 }}
                 className="workspace-preset-use-case-item"
               >
@@ -92,18 +96,19 @@ export const WorkspacePresets = ({ workspaceConfigurableApps$ }: WorkspacePreset
                 {group.features.map((feature) => (
                   <EuiFlexItem key={feature.id}>
                     <EuiCheckableCard
-                      id={feature.id}
+                      id={htmlIdGenerator()()}
                       label={feature.name}
                       checkableType="checkbox"
                       checked={selectedFeatures.includes(feature.id)}
                       onChange={() => {
-                        console.log(feature.id);
-                        // setSelectedFeatures((previousSelectedFeatures) => {
-                        //   if (previousSelectedFeatures.includes(feature.id)) {
-                        //     return previousSelectedFeatures.filter((item) => item != feature.id);
-                        //   }
-                        //   return [...previousSelectedFeatures, feature.id];
-                        // });
+                        setSelectedFeatures(
+                          selectedFeatures.includes(feature.id)
+                            ? selectedFeatures.filter((item) => item != feature.id)
+                            : [...selectedFeatures, feature.id]
+                        );
+                        if (selectedPreset !== CUSTOM_PRESET_ID) {
+                          setSelectedPreset(CUSTOM_PRESET_ID);
+                        }
                       }}
                     />
                   </EuiFlexItem>
