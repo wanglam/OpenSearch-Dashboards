@@ -24,8 +24,9 @@ import {
   isWorkspaceFeatureGroup,
   convertApplicationsToFeaturesOrGroups,
 } from '../workspace_form/utils';
-import './workspace_presets.scss';
 import { WorkspaceFeature, WorkspaceFeatureGroup } from '../workspace_form/types';
+import { WorkspacePreviewMenuPanel } from './workspace_preview_menu_panel';
+import './workspace_presets.scss';
 
 const EMPTY_ARRAY: PublicAppInfo[] = [];
 
@@ -61,10 +62,14 @@ export const WorkspacePresets = ({ workspaceConfigurableApps$ }: WorkspacePreset
           <h2>first, select the focus for your workspace</h2>
         </EuiTitle>
         <EuiText>
-          what kind of work will you be doing here? adding or removing features will not impact you
-          or your collaborator’s access to data.
+          <p>
+            what kind of work will you be doing here? adding or removing features will not impact
+            you or your collaborator’s access to data.
+          </p>
         </EuiText>
-        <EuiText>use cases</EuiText>
+        <EuiText>
+          <b>use cases</b>
+        </EuiText>
         <EuiFlexGroup gutterSize="l">
           {workspacePresetData.map((item) => (
             <EuiFlexItem key={item.id}>
@@ -87,35 +92,47 @@ export const WorkspacePresets = ({ workspaceConfigurableApps$ }: WorkspacePreset
             </EuiFlexItem>
           ))}
         </EuiFlexGroup>
-        <EuiText>features</EuiText>
-        <EuiFlexGroup gutterSize="l" direction="column">
-          {featureGroups.map((group) => (
-            <EuiFlexItem key={group.name}>
-              <EuiText>{group.name}</EuiText>
-              <EuiFlexGrid columns={2}>
-                {group.features.map((feature) => (
-                  <EuiFlexItem key={feature.id}>
-                    <EuiCheckableCard
-                      id={htmlIdGenerator()()}
-                      label={feature.name}
-                      checkableType="checkbox"
-                      checked={selectedFeatures.includes(feature.id)}
-                      onChange={() => {
-                        setSelectedFeatures(
-                          selectedFeatures.includes(feature.id)
-                            ? selectedFeatures.filter((item) => item != feature.id)
-                            : [...selectedFeatures, feature.id]
-                        );
-                        if (selectedPreset !== CUSTOM_PRESET_ID) {
-                          setSelectedPreset(CUSTOM_PRESET_ID);
-                        }
-                      }}
-                    />
-                  </EuiFlexItem>
-                ))}
-              </EuiFlexGrid>
-            </EuiFlexItem>
-          ))}
+        <EuiFlexGroup>
+          <EuiFlexItem grow>
+            <EuiText>
+              <b>features</b>
+            </EuiText>
+            <EuiFlexGroup gutterSize="l" direction="column">
+              {featureGroups.map((group) => (
+                <EuiFlexItem key={group.name}>
+                  <EuiText>{group.name}</EuiText>
+                  <EuiFlexGrid columns={2}>
+                    {group.features.map((feature) => (
+                      <EuiFlexItem key={feature.id}>
+                        <EuiCheckableCard
+                          id={htmlIdGenerator()()}
+                          label={feature.name}
+                          checkableType="checkbox"
+                          checked={selectedFeatures.includes(feature.id)}
+                          onChange={() => {
+                            setSelectedFeatures(
+                              selectedFeatures.includes(feature.id)
+                                ? selectedFeatures.filter((item) => item != feature.id)
+                                : [...selectedFeatures, feature.id]
+                            );
+                            if (selectedPreset !== CUSTOM_PRESET_ID) {
+                              setSelectedPreset(CUSTOM_PRESET_ID);
+                            }
+                          }}
+                        />
+                      </EuiFlexItem>
+                    ))}
+                  </EuiFlexGrid>
+                </EuiFlexItem>
+              ))}
+            </EuiFlexGroup>
+          </EuiFlexItem>
+          <EuiFlexItem>
+            <WorkspacePreviewMenuPanel
+              selectedFeatures={selectedFeatures}
+              featureGroups={featureGroups}
+            />
+          </EuiFlexItem>
         </EuiFlexGroup>
       </EuiPageBody>
     </EuiPage>
