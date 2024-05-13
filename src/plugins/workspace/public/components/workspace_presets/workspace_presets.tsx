@@ -14,6 +14,7 @@ import {
   EuiFlexItem,
   EuiPage,
   EuiPageBody,
+  EuiSpacer,
 } from '@elastic/eui';
 import { BehaviorSubject, of } from 'rxjs';
 import { PublicAppInfo } from 'opensearch-dashboards/public';
@@ -92,15 +93,20 @@ export const WorkspacePresets = ({ workspaceConfigurableApps$ }: WorkspacePreset
             </EuiFlexItem>
           ))}
         </EuiFlexGroup>
+        <EuiSpacer />
         <EuiFlexGroup>
           <EuiFlexItem grow>
             <EuiText>
-              <b>features</b>
+              <p>
+                <b>features</b>
+              </p>
             </EuiText>
             <EuiFlexGroup gutterSize="l" direction="column">
               {featureGroups.map((group) => (
                 <EuiFlexItem key={group.name}>
-                  <EuiText>{group.name}</EuiText>
+                  <EuiText>
+                    <p>{group.name}</p>
+                  </EuiText>
                   <EuiFlexGrid columns={2}>
                     {group.features.map((feature) => (
                       <EuiFlexItem key={feature.id}>

@@ -33,19 +33,26 @@ export const WorkspacePreviewMenuPanel = ({
     return result;
   }, [featureGroups, selectedFeatures]);
   return (
-    <EuiPanel paddingSize="l">
+    <EuiPanel paddingSize="l" color="subdued">
       <EuiText textAlign="center">preview your workspace navigation menu</EuiText>
-      {menuGroups.map((group) => (
-        <EuiCollapsibleNavGroup title={group.title} isCollapsible={true} initialIsOpen={true}>
-          <EuiListGroup
-            listItems={group.listItems}
-            maxWidth="none"
-            color="subdued"
-            gutterSize="none"
-            size="s"
-          />
-        </EuiCollapsibleNavGroup>
-      ))}
+      <div>
+        {menuGroups.map((group) => (
+          <EuiCollapsibleNavGroup
+            title={group.title}
+            style={{ background: 'white' }}
+            isCollapsible
+            initialIsOpen
+          >
+            <EuiListGroup
+              listItems={group.listItems}
+              maxWidth="none"
+              color="subdued"
+              gutterSize="none"
+              size="s"
+            />
+          </EuiCollapsibleNavGroup>
+        ))}
+      </div>
     </EuiPanel>
   );
 };
