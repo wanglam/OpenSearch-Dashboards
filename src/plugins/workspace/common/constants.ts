@@ -79,3 +79,34 @@ export const WORKSPACE_APP_CATEGORIES: Record<string, AppCategory> = Object.free
     order: 14000,
   },
 });
+
+export const WORKSPACE_USE_CASES = {
+  observability: {
+    title: i18n.translate('workspace.usecases.observability.title', {
+      defaultMessage: 'Observability',
+    }),
+    description: 'Description',
+    features: ['vis-builder'] as string[],
+  },
+  'security-analytics': {
+    title: i18n.translate('workspace.usecases.security.analytics.title', {
+      defaultMessage: 'Security Analytics',
+    }),
+    description: 'Description',
+    features: [] as string[],
+  },
+  analytics: {
+    title: i18n.translate('workspace.usecases.analytics.title', {
+      defaultMessage: 'Analytics',
+    }),
+    description: 'Description',
+    features: [] as string[],
+  },
+  search: {
+    name: i18n.translate('workspace.usecases.search.title', {
+      defaultMessage: 'Search',
+    }),
+    description: 'Description',
+    features: [] as string[],
+  },
+};
