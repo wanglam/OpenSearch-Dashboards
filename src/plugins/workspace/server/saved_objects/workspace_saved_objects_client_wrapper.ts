@@ -62,6 +62,18 @@ const generateOSDAdminPermissionError = () =>
     )
   );
 
+const getWorkspacesFromSavedObjects = (savedObjects: SavedObject[]) => {
+  return savedObjects
+    .reduce<string[]>(
+      (previous, { workspaces }) => Array.from(new Set([...previous, ...(workspaces ?? [])])),
+      []
+    )
+    .map((id) => ({
+      type: WORKSPACE_TYPE,
+      id,
+    }));
+};
+
 const getDefaultValuesForEmpty = <T>(values: T[] | undefined, defaultValues: T[]) => {
   return !values || values.length === 0 ? defaultValues : values;
 };
@@ -116,15 +128,12 @@ export class WorkspaceSavedObjectsClientWrapper {
       return false;
     }
     for (const workspaceId of workspaces) {
-      const validateResult = await this.permissionControl.validate(
+      const validateResult = await this.validateMultiWorkspacesPermissions(
+        [workspaceId],
         request,
-        {
-          type: WORKSPACE_TYPE,
-          id: workspaceId,
-        },
         permissionModes
       );
-      if (validateResult?.result) {
+      if (validateResult) {
         return true;
       }
     }
@@ -235,6 +244,7 @@ export class WorkspaceSavedObjectsClientWrapper {
     ): Promise<SavedObjectsUpdateResponse<T>> => {
       const objectToUpdate = await wrapperOptions.client.get<T>(type, id, options);
       const permitted = await validateUpdateWithWorkspacePermission(objectToUpdate);
+      this.permissionControl.clearSavedObjectsCaching(wrapperOptions.request);
       if (!permitted) {
         throw generateSavedObjectsPermissionError();
       }
@@ -246,14 +256,20 @@ export class WorkspaceSavedObjectsClientWrapper {
       options?: SavedObjectsBulkUpdateOptions
     ): Promise<SavedObjectsBulkUpdateResponse<T>> => {
       const objectsToUpdate = await wrapperOptions.client.bulkGet<T>(objects, options);
+      this.permissionControl.turnOnSavedObjectsCaching(
+        wrapperOptions.request,
+        getWorkspacesFromSavedObjects(objectsToUpdate.saved_objects)
+      );
 
       for (const object of objectsToUpdate.saved_objects) {
         const permitted = await validateUpdateWithWorkspacePermission(object);
         if (!permitted) {
+          this.permissionControl.clearSavedObjectsCaching(wrapperOptions.request);
           throw generateSavedObjectsPermissionError();
         }
       }
 
+      this.permissionControl.clearSavedObjectsCaching(wrapperOptions.request);
       return await wrapperOptions.client.bulkUpdate(objects, options);
     };
 
@@ -303,6 +319,10 @@ export class WorkspaceSavedObjectsClientWrapper {
                 throw error;
               }
             }
+            this.permissionControl.turnOnSavedObjectsCaching(
+              wrapperOptions.request,
+              getWorkspacesFromSavedObjects([rawObject])
+            );
             if (
               !(await this.validateWorkspacesAndSavedObjectsPermissions(
                 rawObject,
@@ -312,10 +332,12 @@ export class WorkspaceSavedObjectsClientWrapper {
                 false
               ))
             ) {
+              this.permissionControl.clearSavedObjectsCaching(wrapperOptions.request);
               throw generateWorkspacePermissionError();
             }
           }
         }
+        this.permissionControl.clearSavedObjectsCaching(wrapperOptions.request);
       }
 
       return await wrapperOptions.client.bulkCreate(objects, options);
@@ -397,6 +419,10 @@ export class WorkspaceSavedObjectsClientWrapper {
       options: SavedObjectsBaseOptions = {}
     ): Promise<SavedObjectsBulkResponse<T>> => {
       const objectToBulkGet = await wrapperOptions.client.bulkGet<T>(objects, options);
+      this.permissionControl.turnOnSavedObjectsCaching(
+        wrapperOptions.request,
+        getWorkspacesFromSavedObjects(objectToBulkGet.saved_objects)
+      );
 
       for (const object of objectToBulkGet.saved_objects) {
         if (
@@ -408,10 +434,12 @@ export class WorkspaceSavedObjectsClientWrapper {
             false
           ))
         ) {
+          this.permissionControl.clearSavedObjectsCaching(wrapperOptions.request);
           throw generateSavedObjectsPermissionError();
         }
       }
 
+      this.permissionControl.clearSavedObjectsCaching(wrapperOptions.request);
       return objectToBulkGet;
     };
 
