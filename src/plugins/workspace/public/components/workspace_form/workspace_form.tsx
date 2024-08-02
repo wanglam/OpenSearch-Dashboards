@@ -4,7 +4,18 @@
  */
 
 import React, { useRef } from 'react';
-import { EuiPanel, EuiSpacer, EuiTitle, EuiForm } from '@elastic/eui';
+import {
+  EuiPanel,
+  EuiSpacer,
+  EuiTitle,
+  EuiForm,
+  EuiFlexGroup,
+  EuiFlexItem,
+  EuiCard,
+} from '@elastic/eui';
+import { i18n } from '@osd/i18n';
+
+import { WorkspaceFaqPanel } from '../workspace_faq_panel';
 
 import { WorkspaceBottomBar } from './workspace_bottom_bar';
 import { WorkspaceFormProps } from './types';
@@ -22,6 +33,8 @@ import {
   workspaceDetailsTitle,
   workspaceUseCaseTitle,
 } from './constants';
+
+import './workspace_form.scss';
 
 export const WorkspaceForm = (props: WorkspaceFormProps) => {
   const {
@@ -54,87 +67,96 @@ export const WorkspaceForm = (props: WorkspaceFormProps) => {
   const isDashboardAdmin = application?.capabilities?.dashboards?.isDashboardAdmin ?? false;
 
   return (
-    <EuiForm id={formId} onSubmit={handleFormSubmit} component="form">
-      {numberOfErrors > 0 && (
-        <>
-          <WorkspaceFormErrorCallout errors={formErrors} />
+    <EuiFlexGroup>
+      <EuiFlexItem>
+        <EuiForm id={formId} onSubmit={handleFormSubmit} component="form">
+          {numberOfErrors > 0 && (
+            <>
+              <WorkspaceFormErrorCallout errors={formErrors} />
+              <EuiSpacer />
+            </>
+          )}
+
+          <EuiPanel>
+            <EuiTitle size="s">
+              <h2>{workspaceDetailsTitle}</h2>
+            </EuiTitle>
+            <EuiSpacer size="s" />
+            <EnterDetailsPanel
+              formErrors={formErrors}
+              name={formData.name}
+              description={formData.description}
+              color={formData.color}
+              readOnly={!!defaultValues?.reserved}
+              handleNameInputChange={handleNameInputChange}
+              handleDescriptionChange={handleDescriptionChange}
+              handleColorChange={handleColorChange}
+            />
+          </EuiPanel>
           <EuiSpacer />
-        </>
-      )}
+          <EuiPanel>
+            <EuiTitle size="s">
+              <h2>{workspaceUseCaseTitle}</h2>
+            </EuiTitle>
+            <EuiSpacer size="s" />
+            <WorkspaceUseCase
+              value={formData.useCase}
+              onChange={handleUseCaseChange}
+              formErrors={formErrors}
+              availableUseCases={availableUseCases}
+            />
+          </EuiPanel>
+          <EuiSpacer />
+          {permissionEnabled && (
+            <EuiPanel>
+              <EuiTitle size="s">
+                <h2>{usersAndPermissionsTitle}</h2>
+              </EuiTitle>
+              <EuiSpacer size="m" />
+              <WorkspacePermissionSettingPanel
+                errors={formErrors.permissionSettings?.fields}
+                onChange={setPermissionSettings}
+                permissionSettings={formData.permissionSettings}
+                disabledUserOrGroupInputIds={disabledUserOrGroupInputIdsRef.current}
+                data-test-subj={`workspaceForm-permissionSettingPanel`}
+              />
+            </EuiPanel>
+          )}
+          <EuiSpacer />
 
-      <EuiPanel>
-        <EuiTitle size="s">
-          <h2>{workspaceDetailsTitle}</h2>
-        </EuiTitle>
-        <EuiSpacer size="s" />
-        <EnterDetailsPanel
-          formErrors={formErrors}
-          name={formData.name}
-          description={formData.description}
-          color={formData.color}
-          readOnly={!!defaultValues?.reserved}
-          handleNameInputChange={handleNameInputChange}
-          handleDescriptionChange={handleDescriptionChange}
-          handleColorChange={handleColorChange}
-        />
-      </EuiPanel>
-      <EuiSpacer />
-      <EuiPanel>
-        <EuiTitle size="s">
-          <h2>{workspaceUseCaseTitle}</h2>
-        </EuiTitle>
-        <EuiSpacer size="s" />
-        <WorkspaceUseCase
-          value={formData.useCase}
-          onChange={handleUseCaseChange}
-          formErrors={formErrors}
-          availableUseCases={availableUseCases}
-        />
-      </EuiPanel>
-      <EuiSpacer />
-      {permissionEnabled && (
-        <EuiPanel>
-          <EuiTitle size="s">
-            <h2>{usersAndPermissionsTitle}</h2>
-          </EuiTitle>
-          <EuiSpacer size="m" />
-          <WorkspacePermissionSettingPanel
-            errors={formErrors.permissionSettings?.fields}
-            onChange={setPermissionSettings}
-            permissionSettings={formData.permissionSettings}
-            disabledUserOrGroupInputIds={disabledUserOrGroupInputIdsRef.current}
-            data-test-subj={`workspaceForm-permissionSettingPanel`}
-          />
-        </EuiPanel>
-      )}
-      <EuiSpacer />
-
-      {/* SelectDataSourcePanel is only visible for dashboard admin and when data source is enabled*/}
-      {isDashboardAdmin && isDataSourceEnabled && (
-        <EuiPanel>
-          <EuiTitle size="s">
-            <h2>{selectDataSourceTitle}</h2>
-          </EuiTitle>
-          <SelectDataSourcePanel
-            errors={formErrors.selectedDataSources}
-            onChange={setSelectedDataSources}
-            savedObjects={savedObjects}
-            selectedDataSources={formData.selectedDataSources}
-            data-test-subj={`workspaceForm-dataSourcePanel`}
-          />
-        </EuiPanel>
-      )}
-      <EuiSpacer />
-      {operationType === WorkspaceOperationType.Create && (
-        <WorkspaceCreateActionPanel formId={formId} application={application} />
-      )}
-      {operationType === WorkspaceOperationType.Update && (
-        <WorkspaceBottomBar
-          formId={formId}
-          application={application}
-          numberOfChanges={numberOfChanges}
-        />
-      )}
-    </EuiForm>
+          {/* SelectDataSourcePanel is only visible for dashboard admin and when data source is enabled*/}
+          {isDashboardAdmin && isDataSourceEnabled && (
+            <EuiPanel>
+              <EuiTitle size="s">
+                <h2>{selectDataSourceTitle}</h2>
+              </EuiTitle>
+              <SelectDataSourcePanel
+                errors={formErrors.selectedDataSources}
+                onChange={setSelectedDataSources}
+                savedObjects={savedObjects}
+                selectedDataSources={formData.selectedDataSources}
+                data-test-subj={`workspaceForm-dataSourcePanel`}
+              />
+            </EuiPanel>
+          )}
+          <EuiSpacer />
+          {operationType === WorkspaceOperationType.Create && (
+            <WorkspaceCreateActionPanel formId={formId} application={application} />
+          )}
+          {operationType === WorkspaceOperationType.Update && (
+            <WorkspaceBottomBar
+              formId={formId}
+              application={application}
+              numberOfChanges={numberOfChanges}
+            />
+          )}
+        </EuiForm>
+      </EuiFlexItem>
+      <EuiFlexItem>
+        <div className="workspaceCreateRightSidebar">
+          <WorkspaceFaqPanel />
+        </div>
+      </EuiFlexItem>
+    </EuiFlexGroup>
   );
 };
