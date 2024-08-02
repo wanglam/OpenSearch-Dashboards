@@ -1,4 +1,21 @@
+$rightSideBarTopOffset: 116px;
+
 .workspaceCreateRightSidebar {
   position: sticky;
-  top: 116px;
+  top: $rightSideBarTopOffset;
+  max-height: calc(100vh - $rightSideBarTopOffset);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  width: 280px;
+}
+
+.workspaceCreateRightSideBarContentWrapper {
+  overflow-y: scroll;
+}
+
+.workspaceCreateRightSideBarActionsWrapper {
+  padding: $ouiSizeM;
+  border-radius: $ouiSizeM;
+  background: $ouiColorEmptyShade;
 }

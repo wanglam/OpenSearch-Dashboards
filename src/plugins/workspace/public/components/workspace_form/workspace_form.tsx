@@ -11,7 +11,8 @@ import {
   EuiForm,
   EuiFlexGroup,
   EuiFlexItem,
-  EuiCard,
+  EuiSmallButton,
+  EuiSmallButtonEmpty,
 } from '@elastic/eui';
 import { i18n } from '@osd/i18n';
 
@@ -33,6 +34,7 @@ import {
   workspaceDetailsTitle,
   workspaceUseCaseTitle,
 } from './constants';
+import { WorkspaceFormSummaryPanel } from './workspace_form_summary_panel';
 
 import './workspace_form.scss';
 
@@ -67,7 +69,7 @@ export const WorkspaceForm = (props: WorkspaceFormProps) => {
   const isDashboardAdmin = application?.capabilities?.dashboards?.isDashboardAdmin ?? false;
 
   return (
-    <EuiFlexGroup>
+    <EuiFlexGroup justifyContent="spaceBetween">
       <EuiFlexItem>
         <EuiForm id={formId} onSubmit={handleFormSubmit} component="form">
           {numberOfErrors > 0 && (
@@ -152,9 +154,37 @@ export const WorkspaceForm = (props: WorkspaceFormProps) => {
           )}
         </EuiForm>
       </EuiFlexItem>
-      <EuiFlexItem>
+      <EuiFlexItem grow={false}>
         <div className="workspaceCreateRightSidebar">
-          <WorkspaceFaqPanel />
+          <div className="workspaceCreateRightSideBarContentWrapper">
+            <WorkspaceFaqPanel />
+            <EuiSpacer size="m" />
+            <WorkspaceFormSummaryPanel formData={formData} availableUseCases={availableUseCases} />
+          </div>
+          <EuiSpacer size="m" />
+          <div className="workspaceCreateRightSideBarActionsWrapper">
+            <EuiFlexGroup>
+              <EuiFlexItem grow={false}>
+                <EuiSmallButtonEmpty>
+                  {i18n.translate('workspace.form.right.sidebar.buttons.cancelText', {
+                    defaultMessage: 'Cancel',
+                  })}
+                </EuiSmallButtonEmpty>
+              </EuiFlexItem>
+              <EuiFlexItem grow={false}>
+                <EuiSmallButton
+                  type="submit"
+                  form={formId}
+                  data-test-subj="workspaceForm-bottomBar-createButton"
+                  fill
+                >
+                  {i18n.translate('workspace.form.right.sidebar.buttons.createWorkspaceText', {
+                    defaultMessage: 'Create workspace',
+                  })}
+                </EuiSmallButton>
+              </EuiFlexItem>
+            </EuiFlexGroup>
+          </div>
         </div>
       </EuiFlexItem>
     </EuiFlexGroup>

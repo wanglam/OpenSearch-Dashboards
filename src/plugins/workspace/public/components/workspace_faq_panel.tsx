@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { EuiCard, EuiText, EuiTitle } from '@elastic/eui';
+import { EuiCard, EuiSpacer, EuiText } from '@elastic/eui';
 import { i18n } from '@osd/i18n';
 
 const WorkspaceFaqItem = ({ question, answer }: { question: string; answer: string }) => {
@@ -18,23 +18,38 @@ const WorkspaceFaqItem = ({ question, answer }: { question: string; answer: stri
 
 const FAQs = [
   {
-    question: 'Can I change the workspace use case later?',
-    answer: 'Lorem ipsum dolor sit amet consecetur lorem ipsum dolor sit amet.',
+    question: i18n.translate('workspace.form.faq.panel.question1', {
+      defaultMessage: 'Can I change the workspace use case later?',
+    }),
+    answer: i18n.translate('workspace.form.faq.panel.answer1', {
+      defaultMessage: 'You can only change to the All use case after workspace creation. ',
+    }),
   },
   {
-    question: 'Are data sources workspace specific or global',
-    answer: 'Lorem ipsum dolor sit amet consecetur lorem ipsum dolor sit amet.',
+    question: i18n.translate('workspace.form.faq.panel.question2', {
+      defaultMessage: 'Why can’t I find the data sources I want to attached to the workspace? ',
+    }),
+    answer: i18n.translate('workspace.form.faq.panel.answer2', {
+      defaultMessage:
+        'Available data sources to all workspaces here are configured by OpenSearch admin. Contact OpenSearch admin within your organization to add the requested data source. ',
+    }),
   },
   {
-    question: 'Do workspaces permissions control access to data?',
-    answer: 'Workspace permissions are about access to dashboards.',
+    question: i18n.translate('workspace.form.faq.panel.question3', {
+      defaultMessage:
+        'Do the added team members automatically gain access to the attached data sources? ',
+    }),
+    answer: i18n.translate('workspace.form.faq.panel.answer3', {
+      defaultMessage:
+        'No. Adding team members will only grant them access to the created workspace. To grant access to the attached data sources, contact the data source admin within your organization. ',
+    }),
   },
 ];
 
 export const WorkspaceFaqPanel = () => {
   return (
     <EuiCard
-      title={i18n.translate('workspace.form.rightSidebar.faq.title', {
+      title={i18n.translate('workspace.form.faq.panel.title', {
         defaultMessage: 'FAQs',
       })}
       textAlign="left"
@@ -42,7 +57,15 @@ export const WorkspaceFaqPanel = () => {
       titleElement="h3"
     >
       {FAQs.map(({ question, answer }, index) => (
-        <WorkspaceFaqItem key={index} question={question} answer={answer} />
+        <React.Fragment key={index}>
+          <WorkspaceFaqItem question={question} answer={answer} />
+          {index !== FAQs.length - 1 && (
+            <>
+              <EuiSpacer size="s" />
+              <EuiSpacer size="xs" />
+            </>
+          )}
+        </React.Fragment>
       ))}
     </EuiCard>
   );
