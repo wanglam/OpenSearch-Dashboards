@@ -78,7 +78,7 @@ export const WorkspaceUseCase = ({
       error={formErrors.features?.message}
       fullWidth
     >
-      <EuiFlexGroup>
+      <EuiFlexGroup style={{ overflow: 'auto' }}>
         {availableUseCases
           .filter((item) => !item.systematic)
           .concat(DEFAULT_NAV_GROUPS.all)

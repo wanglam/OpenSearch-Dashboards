@@ -69,8 +69,8 @@ export const WorkspaceForm = (props: WorkspaceFormProps) => {
   const isDashboardAdmin = application?.capabilities?.dashboards?.isDashboardAdmin ?? false;
 
   return (
-    <EuiFlexGroup justifyContent="spaceBetween">
-      <EuiFlexItem>
+    <EuiFlexGroup justifyContent="spaceBetween" className="workspaceCreateFormContainer">
+      <EuiFlexItem style={{ overflow: 'hidden' }}>
         <EuiForm id={formId} onSubmit={handleFormSubmit} component="form">
           {numberOfErrors > 0 && (
             <>
@@ -142,16 +142,6 @@ export const WorkspaceForm = (props: WorkspaceFormProps) => {
             </EuiPanel>
           )}
           <EuiSpacer />
-          {operationType === WorkspaceOperationType.Create && (
-            <WorkspaceCreateActionPanel formId={formId} application={application} />
-          )}
-          {operationType === WorkspaceOperationType.Update && (
-            <WorkspaceBottomBar
-              formId={formId}
-              application={application}
-              numberOfChanges={numberOfChanges}
-            />
-          )}
         </EuiForm>
       </EuiFlexItem>
       <EuiFlexItem grow={false}>
