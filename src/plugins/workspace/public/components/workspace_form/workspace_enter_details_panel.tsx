@@ -15,6 +15,7 @@ import { i18n } from '@osd/i18n';
 import React from 'react';
 import { EuiColorPickerOutput } from '@elastic/eui/src/components/color_picker/color_picker';
 import { WorkspaceFormErrors } from './types';
+import { generateRightSidebarScrollProps, RightSidebarScrollField } from './utils';
 
 export interface EnterDetailsPanelProps {
   formErrors: WorkspaceFormErrors;
@@ -49,6 +50,7 @@ export const EnterDetailsPanel = ({
         })}
         isInvalid={!!formErrors.name}
         error={formErrors.name?.message}
+        {...generateRightSidebarScrollProps(RightSidebarScrollField.Name)}
       >
         <EuiCompressedFieldText
           value={name}
@@ -66,6 +68,7 @@ export const EnterDetailsPanel = ({
             Description - <i>optional</i>
           </>
         }
+        {...generateRightSidebarScrollProps(RightSidebarScrollField.Description)}
       >
         <>
           <EuiText size="xs" color="subdued">
@@ -91,6 +94,7 @@ export const EnterDetailsPanel = ({
         })}
         isInvalid={!!formErrors.color}
         error={formErrors.color?.message}
+        {...generateRightSidebarScrollProps(RightSidebarScrollField.Color)}
       >
         <div>
           <EuiText size="xs" color="subdued">

@@ -18,14 +18,11 @@ import { i18n } from '@osd/i18n';
 
 import { WorkspaceFaqPanel } from '../workspace_faq_panel';
 
-import { WorkspaceBottomBar } from './workspace_bottom_bar';
 import { WorkspaceFormProps } from './types';
 import { useWorkspaceForm } from './use_workspace_form';
 import { WorkspacePermissionSettingPanel } from './workspace_permission_setting_panel';
 import { WorkspaceUseCase } from './workspace_use_case';
-import { WorkspaceOperationType } from './constants';
 import { WorkspaceFormErrorCallout } from './workspace_form_error_callout';
-import { WorkspaceCreateActionPanel } from './workspace_create_action_panel';
 import { SelectDataSourcePanel } from './select_data_source_panel';
 import { EnterDetailsPanel } from './workspace_enter_details_panel';
 import {
@@ -37,13 +34,13 @@ import {
 import { WorkspaceFormSummaryPanel } from './workspace_form_summary_panel';
 
 import './workspace_form.scss';
+import { generateRightSidebarScrollProps, RightSidebarScrollField } from './utils';
 
 export const WorkspaceForm = (props: WorkspaceFormProps) => {
   const {
     application,
     savedObjects,
     defaultValues,
-    operationType,
     permissionEnabled,
     dataSourceManagement: isDataSourceEnabled,
     availableUseCases,
@@ -53,7 +50,6 @@ export const WorkspaceForm = (props: WorkspaceFormProps) => {
     formData,
     formErrors,
     numberOfErrors,
-    numberOfChanges,
     handleFormSubmit,
     handleColorChange,
     handleUseCaseChange,
@@ -98,7 +94,9 @@ export const WorkspaceForm = (props: WorkspaceFormProps) => {
           <EuiSpacer />
           <EuiPanel>
             <EuiTitle size="s">
-              <h2>{workspaceUseCaseTitle}</h2>
+              <h2 {...generateRightSidebarScrollProps(RightSidebarScrollField.UseCase)}>
+                {workspaceUseCaseTitle}
+              </h2>
             </EuiTitle>
             <EuiSpacer size="s" />
             <WorkspaceUseCase
@@ -112,7 +110,9 @@ export const WorkspaceForm = (props: WorkspaceFormProps) => {
           {permissionEnabled && (
             <EuiPanel>
               <EuiTitle size="s">
-                <h2>{usersAndPermissionsTitle}</h2>
+                <h2 {...generateRightSidebarScrollProps(RightSidebarScrollField.Member)}>
+                  {usersAndPermissionsTitle}
+                </h2>
               </EuiTitle>
               <EuiSpacer size="m" />
               <WorkspacePermissionSettingPanel
@@ -130,7 +130,9 @@ export const WorkspaceForm = (props: WorkspaceFormProps) => {
           {isDashboardAdmin && isDataSourceEnabled && (
             <EuiPanel>
               <EuiTitle size="s">
-                <h2>{selectDataSourceTitle}</h2>
+                <h2 {...generateRightSidebarScrollProps(RightSidebarScrollField.DataSource)}>
+                  {selectDataSourceTitle}
+                </h2>
               </EuiTitle>
               <SelectDataSourcePanel
                 errors={formErrors.selectedDataSources}

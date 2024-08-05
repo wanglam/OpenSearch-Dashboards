@@ -491,3 +491,19 @@ export const getNumberOfChanges = (
     }, 0) ?? 0;
   return count;
 };
+
+export const RIGHT_SIDEBAR_SCROLL_KEY = 'data-right-sidebar-scroll';
+
+export enum RightSidebarScrollField {
+  Name = 'name',
+  Description = 'description',
+  Color = 'color',
+  UseCase = 'useCase',
+  // eslint-disable-next-line no-shadow
+  DataSource = 'dataSource',
+  Member = 'Member',
+}
+
+export const generateRightSidebarScrollProps = (key: RightSidebarScrollField) => {
+  return { [RIGHT_SIDEBAR_SCROLL_KEY]: key };
+};

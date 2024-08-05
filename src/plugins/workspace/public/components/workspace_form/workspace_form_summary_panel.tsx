@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
+  EuiSmallButtonEmpty,
   EuiCard,
   EuiFlexGroup,
   EuiFlexItem,
@@ -12,22 +13,38 @@ import {
   EuiSpacer,
   EuiText,
   EuiTextColor,
+  EuiLink,
 } from '@elastic/eui';
 import { i18n } from '@osd/i18n';
 import { WorkspaceFormSubmitData } from './types';
 import { WorkspaceUseCase } from '../../types';
+import { RightSidebarScrollField, RIGHT_SIDEBAR_SCROLL_KEY } from './utils';
 
 const SummaryItem = ({
-  id,
+  scrollField,
   title,
   children,
   bottomGap = true,
-}: React.PropsWithChildren<{ id?: string; title: string; bottomGap?: boolean }>) => {
+}: React.PropsWithChildren<{
+  scrollField: RightSidebarScrollField;
+  title: string;
+  bottomGap?: boolean;
+}>) => {
+  const handleTitleClick = useCallback(() => {
+    const element = document.querySelector(
+      `.workspaceCreateFormContainer [${RIGHT_SIDEBAR_SCROLL_KEY}="${scrollField}"]`
+    );
+
+    element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [scrollField]);
+
   return (
     <>
       <EuiText size="xs">
         <h5>
-          <u>{title}</u>
+          <EuiLink color="text" onClick={handleTitleClick}>
+            <u>{title}</u>
+          </EuiLink>
         </h5>
       </EuiText>
       <EuiSpacer size="xs" />
@@ -70,6 +87,7 @@ export const WorkspaceFormSummaryPanel = ({
         title={i18n.translate('workspace.form.summary.panel.useCase.title', {
           defaultMessage: 'Use case',
         })}
+        scrollField={RightSidebarScrollField.UseCase}
       >
         {useCase && (
           <>
@@ -83,6 +101,7 @@ export const WorkspaceFormSummaryPanel = ({
         title={i18n.translate('workspace.form.summary.panel.name.title', {
           defaultMessage: 'Name',
         })}
+        scrollField={RightSidebarScrollField.Name}
       >
         {formData.name}
       </SummaryItem>
@@ -90,6 +109,7 @@ export const WorkspaceFormSummaryPanel = ({
         title={i18n.translate('workspace.form.summary.panel.description.title', {
           defaultMessage: 'Description',
         })}
+        scrollField={RightSidebarScrollField.Description}
       >
         {formData.description?.trim()}
       </SummaryItem>
@@ -97,6 +117,7 @@ export const WorkspaceFormSummaryPanel = ({
         title={i18n.translate('workspace.form.summary.panel.color.title', {
           defaultMessage: 'Accent color',
         })}
+        scrollField={RightSidebarScrollField.Color}
       >
         {formData.color && (
           <EuiFlexGroup gutterSize="xs" alignItems="center">
@@ -113,12 +134,14 @@ export const WorkspaceFormSummaryPanel = ({
         title={i18n.translate('workspace.form.summary.panel.dataSources.title', {
           defaultMessage: 'Data sources',
         })}
+        scrollField={RightSidebarScrollField.DataSource}
       />
       <SummaryItem
         title={i18n.translate('workspace.form.summary.panel.members.title', {
           defaultMessage: 'Members',
         })}
         bottomGap={false}
+        scrollField={RightSidebarScrollField.Member}
       />
     </EuiCard>
   );
