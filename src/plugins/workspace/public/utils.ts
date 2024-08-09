@@ -44,7 +44,7 @@ export const isFeatureIdInsideUseCase = (
   useCases: WorkspaceUseCase[]
 ) => {
   const availableFeatures = useCases.find(({ id }) => id === useCaseId)?.features ?? [];
-  return availableFeatures.includes(featureId);
+  return availableFeatures.some((feature) => feature.id === featureId);
 };
 
 export const isNavGroupInFeatureConfigs = (navGroupId: string, featureConfigs: string[]) =>
@@ -234,7 +234,7 @@ export const convertNavGroupToWorkspaceUseCase = ({
   id,
   title,
   description,
-  features: navLinks.map((item) => item.id),
+  features: navLinks.map((item) => ({ id: item.id, title: item.title })),
   systematic: type === NavGroupType.SYSTEM,
   order,
 });

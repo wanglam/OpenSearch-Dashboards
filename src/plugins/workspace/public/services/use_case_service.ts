@@ -62,9 +62,17 @@ export class UseCaseService {
               WORKSPACE_USE_CASES['security-analytics'],
               WORKSPACE_USE_CASES.essentials,
               WORKSPACE_USE_CASES.search,
-            ].filter((useCase) => {
-              return useCase.features.some((featureId) => configurableAppsId.includes(featureId));
-            });
+            ]
+              .filter((useCase) => {
+                return useCase.features.some((featureId) => configurableAppsId.includes(featureId));
+              })
+              .map((item) => ({
+                ...item,
+                features: item.features.map((featureId) => ({
+                  title: configurableApps.find((app) => app.id === featureId)?.title,
+                  id: featureId,
+                })),
+              }));
           })
         );
       },
