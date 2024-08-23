@@ -17,9 +17,10 @@ import {
   EuiSelectableOption,
 } from '@elastic/eui';
 import { FormattedMessage } from 'react-intl';
-import { getDataSourcesList } from '../../utils';
+import { getDataSourcesConnections, getDataSourcesList } from '../../utils';
 import { DataSource } from '../../../common/types';
 import { SavedObjectsStart } from '../../../../../core/public';
+import { useOpenSearchDashboards } from '../../../../opensearch_dashboards_react/public';
 
 export interface AssociationDataSourceModalProps {
   savedObjects: SavedObjectsStart;
@@ -34,6 +35,9 @@ export const AssociationDataSourceModal = ({
   assignedDataSources,
   handleAssignDataSources,
 }: AssociationDataSourceModalProps) => {
+  const {
+    services: { http },
+  } = useOpenSearchDashboards();
   const [options, setOptions] = useState<EuiSelectableOption[]>([]);
   const [allDataSources, setAllDataSources] = useState<DataSource[]>([]);
 
@@ -51,6 +55,16 @@ export const AssociationDataSourceModal = ({
       );
     });
   }, [assignedDataSources, savedObjects]);
+
+  useEffect(() => {
+    const allDataSourcesIds = allDataSources.map(({ id }) => id);
+    if (allDataSourcesIds.length === 0 || !http) {
+      return;
+    }
+    getDataSourcesConnections(http, allDataSourcesIds).then((connections) => {
+      console.log(connections);
+    });
+  }, [allDataSources]);
 
   const selectedDataSources = useMemo(() => {
     const selectedIds = options

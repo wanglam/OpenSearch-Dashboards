@@ -6,15 +6,12 @@
 import { combineLatest } from 'rxjs';
 import {
   NavGroupType,
-  SavedObjectsStart,
   NavGroupItemInMap,
   ALL_USE_CASE_ID,
   CoreStart,
   ChromeBreadcrumb,
   ApplicationStart,
   HttpSetup,
-} from '../../../core/public';
-import {
   App,
   AppCategory,
   AppNavLinkStatus,
@@ -22,11 +19,10 @@ import {
   PublicAppInfo,
   WorkspaceObject,
   WorkspaceAvailability,
-} from '../../../core/public';
-import { DEFAULT_SELECTED_FEATURES_IDS, WORKSPACE_DETAIL_APP_ID } from '../common/constants';
-import { WorkspaceUseCase } from './types';
-import { formatUrlWithWorkspaceId } from '../../../core/public/utils';
-import { SigV4ServiceName } from '../../../plugins/data_source/common/data_sources';
+} from '../../../../core/public';
+import { DEFAULT_SELECTED_FEATURES_IDS, WORKSPACE_DETAIL_APP_ID } from '../../common/constants';
+import { WorkspaceUseCase } from '../types';
+import { formatUrlWithWorkspaceId } from '../../../../core/public/utils';
 
 export const USE_CASE_PREFIX = 'use-case-';
 
@@ -200,48 +196,6 @@ export const filterWorkspaceConfigurableApps = (applications: PublicAppInfo[]) =
   );
 
   return visibleApplications;
-};
-
-export const getDataSourcesList = (client: SavedObjectsStart['client'], workspaces: string[]) => {
-  return client
-    .find({
-      type: 'data-source',
-      fields: ['id', 'title', 'auth', 'description', 'dataSourceEngineType'],
-      perPage: 10000,
-      workspaces,
-    })
-    .then((response) => {
-      const objects = response?.savedObjects;
-      if (objects) {
-        return objects.map((source) => {
-          const id = source.id;
-          const title = source.get('title');
-          const auth = source.get('auth');
-          const description = source.get('description');
-          const dataSourceEngineType = source.get('dataSourceEngineType');
-          return {
-            id,
-            title,
-            auth,
-            description,
-            dataSourceEngineType,
-          };
-        });
-      } else {
-        return [];
-      }
-    });
-};
-
-// If all connected data sources are serverless, will only allow to select essential use case.
-export const getIsOnlyAllowEssentialUseCase = async (client: SavedObjectsStart['client']) => {
-  const allDataSources = await getDataSourcesList(client, ['*']);
-  if (allDataSources.length > 0) {
-    return allDataSources.every(
-      (ds) => ds?.auth?.credentials?.service === SigV4ServiceName.OpenSearchServerless
-    );
-  }
-  return false;
 };
 
 export const convertNavGroupToWorkspaceUseCase = ({

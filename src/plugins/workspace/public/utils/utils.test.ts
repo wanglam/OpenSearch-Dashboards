@@ -3,25 +3,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { AppNavLinkStatus, NavGroupType, PublicAppInfo } from '../../../core/public';
+import {
+  AppNavLinkStatus,
+  NavGroupType,
+  PublicAppInfo,
+  WorkspaceAvailability,
+} from '../../../../core/public';
+import { coreMock } from '../../../../core/public/mocks';
+import { WORKSPACE_DETAIL_APP_ID } from '../../common/constants';
+import { SigV4ServiceName } from '../../../../plugins/data_source/common/data_sources';
+import { createMockedRegisteredUseCases } from '../mocks';
 import {
   featureMatchesConfig,
   filterWorkspaceConfigurableApps,
   isAppAccessibleInWorkspace,
   isFeatureIdInsideUseCase,
   isNavGroupInFeatureConfigs,
-  getDataSourcesList,
   convertNavGroupToWorkspaceUseCase,
   isEqualWorkspaceUseCase,
   USE_CASE_PREFIX,
-  prependWorkspaceToBreadcrumbs,
-  getIsOnlyAllowEssentialUseCase,
+  prependWorkspaceToBreadcrumbs,,
 } from './utils';
-import { WorkspaceAvailability } from '../../../core/public';
-import { coreMock } from '../../../core/public/mocks';
-import { WORKSPACE_DETAIL_APP_ID } from '../common/constants';
-import { SigV4ServiceName } from '../../../plugins/data_source/common/data_sources';
-import { createMockedRegisteredUseCases } from './mocks';
 
 const startMock = coreMock.createStart();
 const STATIC_USE_CASES = createMockedRegisteredUseCases();
@@ -365,96 +367,6 @@ describe('workspace utils: isNavGroupInFeatureConfigs', () => {
     expect(
       isNavGroupInFeatureConfigs('observability', ['use-case-observability', 'use-case-search'])
     ).toBe(true);
-  });
-});
-
-describe('workspace utils: getDataSourcesList', () => {
-  const mockedSavedObjectClient = startMock.savedObjects.client;
-
-  it('should return result when passed saved object client', async () => {
-    mockedSavedObjectClient.find = jest.fn().mockResolvedValue({
-      savedObjects: [
-        {
-          id: 'id1',
-          get: (param: string) => {
-            switch (param) {
-              case 'title':
-                return 'title1';
-              case 'description':
-                return 'description1';
-              case 'dataSourceEngineType':
-                return 'dataSourceEngineType1';
-              case 'auth':
-                return 'mock_value';
-            }
-          },
-        },
-      ],
-    });
-    expect(await getDataSourcesList(mockedSavedObjectClient, [])).toStrictEqual([
-      {
-        id: 'id1',
-        title: 'title1',
-        auth: 'mock_value',
-        description: 'description1',
-        dataSourceEngineType: 'dataSourceEngineType1',
-      },
-    ]);
-  });
-
-  it('should return empty array if no saved objects responded', async () => {
-    mockedSavedObjectClient.find = jest.fn().mockResolvedValue({});
-    expect(await getDataSourcesList(mockedSavedObjectClient, [])).toStrictEqual([]);
-  });
-});
-
-describe('workspace utils: getIsOnlyAllowEssentialUseCase', () => {
-  const mockedSavedObjectClient = startMock.savedObjects.client;
-
-  it('should return true when all data sources are serverless', async () => {
-    mockedSavedObjectClient.find = jest.fn().mockResolvedValue({
-      savedObjects: [
-        {
-          id: 'id1',
-          get: () => {
-            return {
-              credentials: {
-                service: SigV4ServiceName.OpenSearchServerless,
-              },
-            };
-          },
-        },
-      ],
-    });
-    expect(await getIsOnlyAllowEssentialUseCase(mockedSavedObjectClient)).toBe(true);
-  });
-
-  it('should return false when not all data sources are serverless', async () => {
-    mockedSavedObjectClient.find = jest.fn().mockResolvedValue({
-      savedObjects: [
-        {
-          id: 'id1',
-          get: () => {
-            return {
-              credentials: {
-                service: SigV4ServiceName.OpenSearchServerless,
-              },
-            };
-          },
-        },
-        {
-          id: 'id2',
-          get: () => {
-            return {
-              credentials: {
-                service: SigV4ServiceName.OpenSearch,
-              },
-            };
-          },
-        },
-      ],
-    });
-    expect(await getIsOnlyAllowEssentialUseCase(mockedSavedObjectClient)).toBe(false);
   });
 });
 

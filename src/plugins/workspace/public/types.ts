@@ -22,3 +22,18 @@ export interface WorkspaceUseCase {
   systematic?: boolean;
   order?: number;
 }
+
+export enum DataSourceConnectionType {
+  OpenSearchConnection,
+  DirectQueryConnection,
+}
+
+export interface DataSourceConnection {
+  id: string;
+  type: string;
+  parentId?: string;
+  connectionType: DataSourceConnectionType;
+  name: string;
+  description?: string;
+  relatedConnections?: DataSourceConnection[];
+}
