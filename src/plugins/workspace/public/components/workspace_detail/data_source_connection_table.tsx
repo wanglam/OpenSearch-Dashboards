@@ -232,7 +232,7 @@ export const DataSourceConnectionTable = ({
                   key={item.id}
                   size="xs"
                   label={item.name}
-                  icon={<DirectQueryConnectionIcon type={record.type} />}
+                  icon={<DirectQueryConnectionIcon type={item.type} />}
                   style={{ maxHeight: '30px' }}
                 />
               ))}
