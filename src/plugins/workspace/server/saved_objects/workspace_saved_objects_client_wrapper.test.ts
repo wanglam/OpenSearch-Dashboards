@@ -620,6 +620,20 @@ describe('WorkspaceSavedObjectsClientWrapper', () => {
           workspaces: ['workspace-1'],
         });
       });
+
+      it('should throw permission error when tried to access a global data source', async () => {
+        const { wrapper, requestMock } = generateWorkspaceSavedObjectsClientWrapper();
+        updateWorkspaceState(requestMock, { requestWorkspaceId: undefined });
+        let errorCatched;
+        try {
+          await wrapper.get('data-source', 'global-data-source');
+        } catch (e) {
+          errorCatched = e;
+        }
+        expect(errorCatched?.message).toEqual(
+          'Invalid data source permission, please associate it to current workspace'
+        );
+      });
     });
     describe('bulk get', () => {
       it("should call permission validate with object's workspace and throw permission error", async () => {
