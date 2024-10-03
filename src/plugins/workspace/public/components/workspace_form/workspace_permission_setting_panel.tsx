@@ -6,21 +6,17 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import {
   EuiSmallButton,
-  EuiFlexGroup,
-  EuiFlexItem,
   EuiCompressedFormRow,
-  EuiSpacer,
   EuiFormLabel,
-  EuiButtonIcon,
+  EuiText,
+  EuiSpacer,
 } from '@elastic/eui';
 import { i18n } from '@osd/i18n';
 import { WorkspaceFormError, WorkspacePermissionSetting } from './types';
 import {
   WorkspacePermissionItemType,
   optionIdToWorkspacePermissionModesMap,
-  PERMISSION_TYPE_LABEL_ID,
   PERMISSION_COLLABORATOR_LABEL_ID,
-  PERMISSION_ACCESS_LEVEL_LABEL_ID,
 } from './constants';
 import {
   WorkspacePermissionSettingInput,
@@ -39,6 +35,10 @@ export interface WorkspacePermissionSettingPanelProps {
     value: Array<Pick<WorkspacePermissionSetting, 'id'> & Partial<WorkspacePermissionSetting>>
   ) => void;
   readOnly?: boolean;
+  userOrGroupLabel: string;
+  userOrGroupDescription?: string;
+  userOrGroupPlaceholder?: string;
+  addAnotherButtonText: string;
 }
 
 export const WorkspacePermissionSettingPanel = ({
@@ -47,6 +47,10 @@ export const WorkspacePermissionSettingPanel = ({
   readOnly = false,
   permissionSettings,
   disabledUserOrGroupInputIds,
+  userOrGroupLabel,
+  userOrGroupDescription,
+  userOrGroupPlaceholder,
+  addAnotherButtonText,
 }: WorkspacePermissionSettingPanelProps) => {
   const nextIdRef = useRef(generateNextPermissionSettingsId(permissionSettings));
 
@@ -77,7 +81,7 @@ export const WorkspacePermissionSettingPanel = ({
       {
         id: nextIdGenerator(),
         type: WorkspacePermissionItemType.User,
-        modes: optionIdToWorkspacePermissionModesMap[PermissionModeId.Read],
+        modes: optionIdToWorkspacePermissionModesMap[PermissionModeId.ReadOnly],
       },
     ]);
   }, [handlePermissionSettingsChange, permissionSettings, nextIdGenerator]);
@@ -138,39 +142,16 @@ export const WorkspacePermissionSettingPanel = ({
     <>
       {permissionSettings.length > 0 && (
         <>
-          <EuiFlexGroup alignItems="center" gutterSize="s">
-            <EuiFlexItem style={{ maxWidth: 150 }}>
-              <EuiFormLabel id={PERMISSION_TYPE_LABEL_ID}>
-                {i18n.translate('workspace.form.permissionSetting.typeLabel', {
-                  defaultMessage: 'Type',
-                })}
-              </EuiFormLabel>
-            </EuiFlexItem>
-            <EuiFlexItem style={{ maxWidth: 400 }}>
-              <EuiFormLabel id={PERMISSION_COLLABORATOR_LABEL_ID}>
-                {i18n.translate('workspace.form.permissionSetting.collaboratorLabel', {
-                  defaultMessage: 'Collaborator',
-                })}
-              </EuiFormLabel>
-            </EuiFlexItem>
-            <EuiFlexItem style={{ maxWidth: 150 }}>
-              <EuiFormLabel id={PERMISSION_ACCESS_LEVEL_LABEL_ID}>
-                {i18n.translate('workspace.form.permissionSetting.accessLevelLabel', {
-                  defaultMessage: 'Access level',
-                })}
-              </EuiFormLabel>
-            </EuiFlexItem>
-            {/* Placeholder to vertically align form labels with their respective inputs */}
-            <EuiFlexItem grow={false}>
-              <EuiButtonIcon
-                color="text"
-                iconType="trash"
-                size="xs"
-                style={{ visibility: 'hidden' }}
-              />
-            </EuiFlexItem>
-          </EuiFlexGroup>
+          <EuiFormLabel id={PERMISSION_COLLABORATOR_LABEL_ID}>{userOrGroupLabel}</EuiFormLabel>
           <EuiSpacer size="xs" />
+          {userOrGroupDescription && (
+            <>
+              <EuiText color="subdued" size="xs">
+                {userOrGroupDescription}
+              </EuiText>
+              <EuiSpacer size="xs" />
+            </>
+          )}
         </>
       )}
       {permissionSettings.map((item, index) => (
@@ -190,6 +171,7 @@ export const WorkspacePermissionSettingPanel = ({
               onPermissionModesChange={handlePermissionModesChange}
               onTypeChange={handleTypeChange}
               readOnly={readOnly}
+              userOrGroupPlaceholder={userOrGroupPlaceholder}
             />
           </EuiCompressedFormRow>
         </React.Fragment>
@@ -203,9 +185,7 @@ export const WorkspacePermissionSettingPanel = ({
             color="primary"
             iconType="plusInCircle"
           >
-            {i18n.translate('workspace.form.permissionSettingPanel.addCollaborator', {
-              defaultMessage: 'Add collaborator',
-            })}
+            {addAnotherButtonText}
           </EuiSmallButton>
         </EuiCompressedFormRow>
       )}

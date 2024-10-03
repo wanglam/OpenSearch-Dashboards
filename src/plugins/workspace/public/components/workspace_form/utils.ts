@@ -88,7 +88,7 @@ export const getPermissionModeId = (modes: WorkspacePermissionMode[]) => {
       return key;
     }
   }
-  return PermissionModeId.Read;
+  return PermissionModeId.ReadOnly;
 };
 
 export const getPermissionModeName = (modes: WorkspacePermissionMode[]) => {
@@ -97,7 +97,7 @@ export const getPermissionModeName = (modes: WorkspacePermissionMode[]) => {
       return permissionModeOptions.find((option) => option.value === key)?.inputDisplay;
     }
   }
-  return permissionModeOptions.find((option) => option.value === PermissionModeId.Read)
+  return permissionModeOptions.find((option) => option.value === PermissionModeId.ReadOnly)
     ?.inputDisplay;
 };
 
@@ -403,13 +403,13 @@ export const generatePermissionSettingsState = (
     id: 1,
     type: WorkspacePermissionItemType.User,
     userId: '',
-    modes: optionIdToWorkspacePermissionModesMap[PermissionModeId.Owner],
+    modes: optionIdToWorkspacePermissionModesMap[PermissionModeId.Admin],
   };
   const emptyUserGroupPermission: WorkspaceUserGroupPermissionSetting = {
     id: 2,
     type: WorkspacePermissionItemType.Group,
     group: '',
-    modes: optionIdToWorkspacePermissionModesMap[PermissionModeId.Read],
+    modes: optionIdToWorkspacePermissionModesMap[PermissionModeId.ReadOnly],
   };
 
   if (operationType === WorkspaceOperationType.Create) {

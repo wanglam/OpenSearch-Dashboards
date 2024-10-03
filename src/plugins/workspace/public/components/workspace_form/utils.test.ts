@@ -631,7 +631,7 @@ describe('getNumberOfChanges', () => {
 describe('isWorkspacePermissionSetting', () => {
   it('should return true for a valid user permission setting', () => {
     const validUserPermissionSetting = {
-      modes: optionIdToWorkspacePermissionModesMap[PermissionModeId.Read],
+      modes: optionIdToWorkspacePermissionModesMap[PermissionModeId.ReadOnly],
       type: WorkspacePermissionItemType.User,
       userId: 'user123',
     };

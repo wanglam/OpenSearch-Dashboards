@@ -6,9 +6,9 @@
 import { Permissions } from '../server/saved_objects';
 
 export enum PermissionModeId {
-  Read = 'read',
+  ReadOnly = 'readOnly',
   ReadAndWrite = 'read+write',
-  Owner = 'owner',
+  Admin = 'admin',
 }
 
 export interface WorkspaceAttribute {

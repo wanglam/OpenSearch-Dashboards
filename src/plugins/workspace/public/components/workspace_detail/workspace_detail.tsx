@@ -40,6 +40,12 @@ import {
   TopNavControlDescriptionData,
   TopNavControlIconData,
 } from '../../../../navigation/public';
+import { AddCollaboratorModalMode, AddCollaboratorsModal } from './add_collaborators_modal';
+import {
+  WorkspaceCollaboratorTypesService,
+  WorkspaceCollaboratorType,
+  defaultWorkspaceCollaboratorTypes,
+} from '../../services';
 
 export interface WorkspaceDetailProps {
   registeredUseCases$: BehaviorSubject<WorkspaceUseCase[]>;
@@ -61,11 +67,13 @@ export const WorkspaceDetail = (props: WorkspaceDetailPropsWithFormSubmitting) =
       navigationUI: { HeaderControl },
       chrome,
       notifications,
+      collaboratorTypes,
     },
   } = useOpenSearchDashboards<{
     CoreStart: CoreStart;
     dataSourceManagement?: DataSourceManagementPluginSetup;
     navigationUI: NavigationPublicPluginStart['ui'];
+    collaboratorTypes: WorkspaceCollaboratorTypesService;
   }>();
 
   const {
@@ -97,6 +105,14 @@ export const WorkspaceDetail = (props: WorkspaceDetailPropsWithFormSubmitting) =
   const location = useLocation();
   //  default workspace state
   const [isDefaultWorkspace, setIsDefaultWorkspace] = useState<boolean>(false);
+  const supportCollaboratorTypes = useObservable(collaboratorTypes.getTypes$());
+  const [addCollaboratorModalInfo, setAddCollaboratorModalInfo] = useState<{
+    content: WorkspaceCollaboratorType;
+    mode: AddCollaboratorModalMode;
+  }>({
+    content: defaultWorkspaceCollaboratorTypes[0],
+    mode: AddCollaboratorModalMode.FormInput,
+  });
 
   useEffect(() => {
     setIsDefaultWorkspace(uiSettings?.get(DEFAULT_WORKSPACE) === currentWorkspace?.id);
@@ -255,6 +271,14 @@ export const WorkspaceDetail = (props: WorkspaceDetailPropsWithFormSubmitting) =
 
   return (
     <>
+      {addCollaboratorModalInfo && (
+        <AddCollaboratorsModal
+          defaultMode={addCollaboratorModalInfo.mode}
+          content={addCollaboratorModalInfo.content}
+          onClose={() => {}}
+          onCollaboratorsAdded={() => {}}
+        />
+      )}
       <EuiPage direction="column">
         {currentWorkspace.description && (
           <HeaderControl

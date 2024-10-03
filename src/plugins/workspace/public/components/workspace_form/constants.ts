@@ -20,12 +20,12 @@ export enum WorkspacePermissionItemType {
 export const optionIdToWorkspacePermissionModesMap: {
   [key: string]: WorkspacePermissionMode[];
 } = {
-  [PermissionModeId.Read]: [WorkspacePermissionMode.LibraryRead, WorkspacePermissionMode.Read],
+  [PermissionModeId.ReadOnly]: [WorkspacePermissionMode.LibraryRead, WorkspacePermissionMode.Read],
   [PermissionModeId.ReadAndWrite]: [
     WorkspacePermissionMode.LibraryWrite,
     WorkspacePermissionMode.Read,
   ],
-  [PermissionModeId.Owner]: [WorkspacePermissionMode.LibraryWrite, WorkspacePermissionMode.Write],
+  [PermissionModeId.Admin]: [WorkspacePermissionMode.LibraryWrite, WorkspacePermissionMode.Write],
 };
 
 export const workspaceDetailsTitle = i18n.translate('workspace.form.workspaceDetails.title', {
@@ -125,11 +125,11 @@ export const PERMISSION_ACCESS_LEVEL_LABEL_ID = 'workspace-form-permission-acces
 
 export const permissionModeOptions = [
   {
-    value: PermissionModeId.Read,
+    value: PermissionModeId.ReadOnly,
     inputDisplay: i18n.translate(
       'workspace.form.permissionSettingPanel.permissionModeOptions.read',
       {
-        defaultMessage: 'Read',
+        defaultMessage: 'Read only',
       }
     ),
   },
@@ -138,16 +138,16 @@ export const permissionModeOptions = [
     inputDisplay: i18n.translate(
       'workspace.form.permissionSettingPanel.permissionModeOptions.readAndWrite',
       {
-        defaultMessage: 'Read & Write',
+        defaultMessage: 'Read and write',
       }
     ),
   },
   {
-    value: PermissionModeId.Owner,
+    value: PermissionModeId.Admin,
     inputDisplay: i18n.translate(
-      'workspace.form.permissionSettingPanel.permissionModeOptions.owner',
+      'workspace.form.permissionSettingPanel.permissionModeOptions.admin',
       {
-        defaultMessage: 'Owner',
+        defaultMessage: 'Admin',
       }
     ),
   },

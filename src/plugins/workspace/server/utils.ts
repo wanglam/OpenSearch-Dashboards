@@ -169,14 +169,14 @@ export const translatePermissionsToRole = (
       modes.includes(WorkspacePermissionMode.LibraryWrite) &&
       modes.includes(WorkspacePermissionMode.Write)
     ) {
-      permissionMode = PermissionModeId.Owner;
+      permissionMode = PermissionModeId.Admin;
     } else if (modes.includes(WorkspacePermissionMode.LibraryWrite)) {
       permissionMode = PermissionModeId.ReadAndWrite;
     } else {
-      permissionMode = PermissionModeId.Read;
+      permissionMode = PermissionModeId.ReadOnly;
     }
   } else {
-    permissionMode = PermissionModeId.Read;
+    permissionMode = PermissionModeId.ReadOnly;
   }
   return permissionMode;
 };

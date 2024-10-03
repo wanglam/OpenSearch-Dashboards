@@ -8,35 +8,19 @@ import {
   EuiFlexGroup,
   EuiFlexItem,
   EuiButtonIcon,
-  EuiSuperSelect,
   EuiFieldText,
+  EuiButtonGroup,
+  EuiText,
 } from '@elastic/eui';
 import { i18n } from '@osd/i18n';
 import { WorkspacePermissionMode } from '../../../common/constants';
 import {
   WorkspacePermissionItemType,
   optionIdToWorkspacePermissionModesMap,
-  PERMISSION_TYPE_LABEL_ID,
   PERMISSION_COLLABORATOR_LABEL_ID,
-  PERMISSION_ACCESS_LEVEL_LABEL_ID,
   permissionModeOptions,
 } from './constants';
 import { getPermissionModeId } from './utils';
-
-const typeOptions = [
-  {
-    value: WorkspacePermissionItemType.User,
-    inputDisplay: i18n.translate('workspace.form.permissionSettingPanel.typeOptions.user', {
-      defaultMessage: 'User',
-    }),
-  },
-  {
-    value: WorkspacePermissionItemType.Group,
-    inputDisplay: i18n.translate('workspace.form.permissionSettingPanel.typeOptions.group', {
-      defaultMessage: 'User Group',
-    }),
-  },
-];
 
 export interface WorkspacePermissionSettingInputProps {
   index: number;
@@ -59,7 +43,13 @@ export interface WorkspacePermissionSettingInputProps {
     index: number
   ) => void;
   onDelete: (index: number) => void;
+  userOrGroupPlaceholder?: string;
 }
+
+const accessLevelButtonGroupOptions = permissionModeOptions.map((option) => ({
+  id: option.value,
+  label: <EuiText size="xs">{option.inputDisplay}</EuiText>,
+}));
 
 export const WorkspacePermissionSettingInput = ({
   index,
@@ -73,13 +63,9 @@ export const WorkspacePermissionSettingInput = ({
   onDelete,
   onGroupOrUserIdChange,
   onPermissionModesChange,
-  onTypeChange,
+  userOrGroupPlaceholder,
 }: WorkspacePermissionSettingInputProps) => {
-  const permissionModesSelected = useMemo(
-    () => getPermissionModeId(modes ?? []),
-
-    [modes]
-  );
+  const permissionModesSelected = useMemo(() => getPermissionModeId(modes ?? []), [modes]);
 
   const handleGroupOrUserIdChange = useCallback(
     (event) => {
@@ -109,31 +95,7 @@ export const WorkspacePermissionSettingInput = ({
 
   return (
     <EuiFlexGroup alignItems="center" gutterSize="s">
-      <EuiFlexItem style={{ maxWidth: 150 }}>
-        {readOnly ? (
-          <EuiFieldText
-            value={typeOptions.find((option) => option.value === type)?.inputDisplay}
-            aria-labelledby={PERMISSION_TYPE_LABEL_ID}
-            compressed
-            readOnly
-          />
-        ) : (
-          <EuiSuperSelect
-            compressed={true}
-            placeholder={i18n.translate('workspace.form.permissionSetting.selectType', {
-              defaultMessage: 'Select',
-            })}
-            options={typeOptions}
-            valueOfSelected={type}
-            onChange={(value) => onTypeChange(value, index)}
-            disabled={userOrGroupDisabled}
-            readOnly={readOnly}
-            data-test-subj="workspace-typeOptions"
-            aria-labelledby={PERMISSION_TYPE_LABEL_ID}
-          />
-        )}
-      </EuiFlexItem>
-      <EuiFlexItem style={{ maxWidth: 400 }}>
+      <EuiFlexItem>
         <EuiFieldText
           compressed={true}
           disabled={userOrGroupDisabled}
@@ -141,40 +103,21 @@ export const WorkspacePermissionSettingInput = ({
           onChange={handleGroupOrUserIdChange}
           value={(type === WorkspacePermissionItemType.User ? userId : group) ?? ''}
           data-test-subj="workspaceFormUserIdOrGroupInput"
-          placeholder={
-            type === WorkspacePermissionItemType.User
-              ? i18n.translate('workspace.form.permissionSetting.selectUser', {
-                  defaultMessage: 'Enter user name or user ID',
-                })
-              : i18n.translate('workspace.form.permissionSetting.selectUserGroup', {
-                  defaultMessage: 'Enter group name or group ID',
-                })
-          }
+          placeholder={userOrGroupPlaceholder}
           aria-labelledby={PERMISSION_COLLABORATOR_LABEL_ID}
         />
       </EuiFlexItem>
-      <EuiFlexItem style={{ maxWidth: 150 }}>
-        {readOnly ? (
-          <EuiFieldText
-            value={
-              permissionModeOptions.find((option) => option.value === permissionModesSelected)
-                ?.inputDisplay
-            }
-            aria-labelledby={PERMISSION_ACCESS_LEVEL_LABEL_ID}
-            compressed
-            readOnly
-          />
-        ) : (
-          <EuiSuperSelect
-            compressed={true}
-            options={permissionModeOptions}
-            valueOfSelected={permissionModesSelected}
-            onChange={handlePermissionModeOptionChange}
-            disabled={userOrGroupDisabled}
-            data-test-subj="workspace-permissionModeOptions"
-            aria-labelledby={PERMISSION_ACCESS_LEVEL_LABEL_ID}
-          />
-        )}
+      <EuiFlexItem grow={false}>
+        <EuiButtonGroup
+          options={accessLevelButtonGroupOptions}
+          legend={i18n.translate('workspace.form.permissionSettingInput.accessLevelLegend', {
+            defaultMessage: 'This is a access level button group',
+          })}
+          buttonSize="compressed"
+          type="single"
+          idSelected={permissionModesSelected}
+          onChange={handlePermissionModeOptionChange}
+        />
       </EuiFlexItem>
       <EuiFlexItem grow={false}>
         {deletable && !readOnly && (

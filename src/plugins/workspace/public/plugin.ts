@@ -7,7 +7,6 @@ import { BehaviorSubject, combineLatest, Subscription } from 'rxjs';
 import React from 'react';
 import { i18n } from '@osd/i18n';
 import { map } from 'rxjs/operators';
-import { EuiPanel } from '@elastic/eui';
 import {
   Plugin,
   CoreStart,
@@ -56,10 +55,8 @@ import {
 } from './utils';
 import { recentWorkspaceManager } from './recent_workspace_manager';
 import { toMountPoint } from '../../opensearch_dashboards_react/public';
-import { UseCaseService } from './services/use_case_service';
 import { WorkspaceListCard } from './components/service_card';
 import { NavigationPublicPluginStart } from '../../../plugins/navigation/public';
-import { WorkspacePickerContent } from './components/workspace_picker_content/workspace_picker_content';
 import { WorkspaceSelector } from './components/workspace_selector/workspace_selector';
 import { HOME_CONTENT_AREAS } from '../../../plugins/content_management/public';
 import {
@@ -72,6 +69,7 @@ import {
 } from './components/use_case_overview/setup_overview';
 import { UserDefaultWorkspace } from './components/workspace_list/default_workspace';
 import { registerGetStartedCardToNewHome } from './components/home_get_start_card';
+import { WorkspaceCollaboratorTypesService, UseCaseService } from './services';
 
 type WorkspaceAppType = (
   params: AppMountParameters,
@@ -106,6 +104,7 @@ export class WorkspacePlugin
   private workspaceAndUseCasesCombineSubscription?: Subscription;
   private useCase = new UseCaseService();
   private workspaceClient?: WorkspaceClient;
+  private collaboratorTypes = new WorkspaceCollaboratorTypesService();
 
   private _changeSavedObjectCurrentWorkspace() {
     if (this.coreStart) {
@@ -332,6 +331,7 @@ export class WorkspacePlugin
         ...coreStart,
         workspaceClient,
         dataSourceManagement,
+        collaboratorTypes: this.collaboratorTypes,
         navigationUI: navigation.ui,
       };
 
@@ -663,5 +663,6 @@ export class WorkspacePlugin
     this.registeredUseCasesUpdaterSubscription?.unsubscribe();
     this.workspaceAndUseCasesCombineSubscription?.unsubscribe();
     this.useCase.stop();
+    this.collaboratorTypes.stop();
   }
 }

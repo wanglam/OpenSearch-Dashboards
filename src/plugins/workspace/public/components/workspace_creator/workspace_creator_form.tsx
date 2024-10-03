@@ -4,23 +4,13 @@
  */
 
 import React, { useCallback, useRef } from 'react';
-import {
-  EuiSpacer,
-  EuiForm,
-  EuiText,
-  EuiFlexItem,
-  EuiFlexGroup,
-  EuiDescribedFormGroup,
-  EuiPanel,
-} from '@elastic/eui';
+import { EuiSpacer, EuiForm, EuiText, EuiFlexItem, EuiFlexGroup, EuiPanel } from '@elastic/eui';
 import { i18n } from '@osd/i18n';
 import {
   useWorkspaceForm,
-  WorkspacePermissionSettingPanel,
   WorkspaceUseCase,
   WorkspaceFormErrorCallout,
   SelectDataSourcePanel,
-  usersAndPermissionsCreatePageTitle,
   WorkspaceFormProps,
 } from '../workspace_form';
 
@@ -38,8 +28,6 @@ export const WorkspaceCreatorForm = (props: WorkspaceCreatorFormProps) => {
   const {
     application,
     savedObjects,
-    defaultValues,
-    permissionEnabled,
     dataSourceManagement: isDataSourceEnabled,
     availableUseCases,
   } = props;
@@ -53,14 +41,10 @@ export const WorkspaceCreatorForm = (props: WorkspaceCreatorFormProps) => {
     handleFormSubmit,
     handleColorChange,
     handleUseCaseChange: handleUseCaseChangeInHook,
-    setPermissionSettings,
     setSelectedDataSourceConnections,
   } = useWorkspaceForm(props);
   const nameManualChangedRef = useRef(false);
 
-  const disabledUserOrGroupInputIdsRef = useRef(
-    defaultValues?.permissionSettings?.map((item) => item.id) ?? []
-  );
   const isDashboardAdmin = application?.capabilities?.dashboards?.isDashboardAdmin ?? false;
   const handleNameInputChange = useCallback(
     (newName) => {
@@ -145,46 +129,6 @@ export const WorkspaceCreatorForm = (props: WorkspaceCreatorFormProps) => {
               <EuiSpacer size="s" />
             </>
           )}
-          {permissionEnabled && (
-            <EuiPanel>
-              <EuiText
-                {...generateRightSidebarScrollProps(RightSidebarScrollField.Collaborators)}
-                size="s"
-              >
-                <h2>{usersAndPermissionsCreatePageTitle}</h2>
-              </EuiText>
-              <EuiText size="xs">
-                {i18n.translate('workspace.creator.form.usersAndPermissionsDescription', {
-                  defaultMessage: 'Manage access and permissions',
-                })}
-              </EuiText>
-              <EuiSpacer size="m" />
-              <EuiDescribedFormGroup
-                title={
-                  <h4 {...generateRightSidebarScrollProps(RightSidebarScrollField.Name)}>
-                    {i18n.translate('workspace.creator.collaborators.panel.fields.name.title', {
-                      defaultMessage: 'Workspace access',
-                    })}
-                  </h4>
-                }
-                description={i18n.translate(
-                  'workspace.creator.collaborators.panel.fields.name.description',
-                  {
-                    defaultMessage:
-                      'You will be added as an owner to the workspace. Select additional users and user groups as workspace collaborators with different access levels.',
-                  }
-                )}
-              >
-                <WorkspacePermissionSettingPanel
-                  errors={formErrors.permissionSettings?.fields}
-                  onChange={setPermissionSettings}
-                  permissionSettings={formData.permissionSettings}
-                  disabledUserOrGroupInputIds={disabledUserOrGroupInputIdsRef.current}
-                  data-test-subj={`workspaceForm-permissionSettingPanel`}
-                />
-              </EuiDescribedFormGroup>
-            </EuiPanel>
-          )}
         </EuiForm>
       </EuiFlexItem>
       <EuiFlexItem grow={false}>
@@ -193,7 +137,7 @@ export const WorkspaceCreatorForm = (props: WorkspaceCreatorFormProps) => {
             <WorkspaceFormSummaryPanel
               formData={formData}
               availableUseCases={availableUseCases}
-              permissionEnabled={permissionEnabled}
+              permissionEnabled={false}
               formId={formId}
               application={application}
               isSubmitting={props.isSubmitting}
