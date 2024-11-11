@@ -80,6 +80,7 @@ export class SampleDataSetCard extends React.Component {
           <EuiFlexGroup gutterSize="none" justifyContent="spaceBetween">
             <EuiFlexItem grow={false}>
               <EuiSmallButtonEmpty
+                isDisabled={this.props.uninstallButtonDisabled}
                 isLoading={this.props.isProcessing}
                 onClick={this.uninstall}
                 color="danger"
@@ -240,4 +241,5 @@ SampleDataSetCard.propTypes = {
   previewUrl: PropTypes.string.isRequired,
   onInstall: PropTypes.func.isRequired,
   onUninstall: PropTypes.func.isRequired,
+  uninstallButtonDisabled: PropTypes.bool,
 };

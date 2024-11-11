@@ -156,6 +156,7 @@ export class HomePublicPlugin
         injectedMetadata: coreStart.injectedMetadata,
         dataSource,
         sectionTypes: this.sectionTypeService,
+        workspaces: coreStart.workspaces,
         ...homeOpenSearchDashboardsServices,
       });
     };

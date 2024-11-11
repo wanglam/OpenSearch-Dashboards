@@ -36,6 +36,7 @@ import { EuiFlexGrid, EuiFlexItem } from '@elastic/eui';
 import { SampleDataSetCard, INSTALLED_STATUS, UNINSTALLED_STATUS } from './sample_data_set_card';
 
 import { getServices } from '../opensearch_dashboards_services';
+import { isAbleToUpdateUiSettings } from '../utils';
 
 import {
   listSampleDataSets,
@@ -114,7 +115,12 @@ export class SampleDataSetCards extends React.Component {
     }));
 
     try {
-      await installSampleDataSet(id, targetSampleDataSet.defaultIndex, dataSourceId);
+      await installSampleDataSet(
+        id,
+        targetSampleDataSet.defaultIndex,
+        dataSourceId,
+        isAbleToUpdateUiSettings(getServices())
+      );
     } catch (fetchError) {
       if (this._isMounted) {
         this.setState((prevState) => ({
@@ -162,7 +168,12 @@ export class SampleDataSetCards extends React.Component {
     }));
 
     try {
-      await uninstallSampleDataSet(id, targetSampleDataSet.defaultIndex, dataSourceId);
+      await uninstallSampleDataSet(
+        id,
+        targetSampleDataSet.defaultIndex,
+        dataSourceId,
+        isAbleToUpdateUiSettings(getServices())
+      );
     } catch (fetchError) {
       if (this._isMounted) {
         this.setState((prevState) => ({
@@ -216,6 +227,8 @@ export class SampleDataSetCards extends React.Component {
   };
 
   render() {
+    const ableToUpdateUiSettings = isAbleToUpdateUiSettings(getServices());
+
     return (
       <EuiFlexGrid
         columns={3}
@@ -243,6 +256,7 @@ export class SampleDataSetCards extends React.Component {
                 dataSourceId={this.state.dataSourceId}
                 isDataSourceEnabled={this.props.isDataSourceEnabled}
                 isLocalClusterHidden={this.props.isLocalClusterHidden}
+                uninstallButtonDisabled={!ableToUpdateUiSettings && !!sampleDataSet.defaultIndex}
               />
             </EuiFlexItem>
           );

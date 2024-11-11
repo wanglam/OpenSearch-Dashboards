@@ -41,24 +41,35 @@ export async function listSampleDataSets(dataSourceId) {
   return await getServices().http.get(sampleDataUrl, { query });
 }
 
-export async function installSampleDataSet(id, sampleDataDefaultIndex, dataSourceId) {
+export async function installSampleDataSet(
+  id,
+  sampleDataDefaultIndex,
+  dataSourceId,
+  ableToUpdateUiSettings
+) {
   const query = buildQuery(dataSourceId);
   await getServices().http.post(`${sampleDataUrl}/${id}`, { query });
 
-  if (getServices().uiSettings.isDefault('defaultIndex')) {
+  if (ableToUpdateUiSettings && getServices().uiSettings.isDefault('defaultIndex')) {
     getServices().uiSettings.set('defaultIndex', sampleDataDefaultIndex);
   }
 
   clearIndexPatternsCache();
 }
 
-export async function uninstallSampleDataSet(id, sampleDataDefaultIndex, dataSourceId) {
+export async function uninstallSampleDataSet(
+  id,
+  sampleDataDefaultIndex,
+  dataSourceId,
+  ableToUpdateUiSettings
+) {
   const query = buildQuery(dataSourceId);
   await getServices().http.delete(`${sampleDataUrl}/${id}`, { query });
 
   const uiSettings = getServices().uiSettings;
 
   if (
+    ableToUpdateUiSettings &&
     !uiSettings.isDefault('defaultIndex') &&
     uiSettings.get('defaultIndex') === sampleDataDefaultIndex
   ) {
