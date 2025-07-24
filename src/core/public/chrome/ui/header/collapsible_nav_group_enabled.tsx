@@ -219,7 +219,6 @@ export function CollapsibleNavGroupEnabled({
           <NavGroups
             navLinks={navLinksForRender}
             navigateToApp={(...args) => {
-              closeNav();
               return navigateToApp(...args);
             }}
             appId={appId}
