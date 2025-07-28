@@ -213,7 +213,6 @@ export class HomePublicPlugin
         {
           id: SEARCH_OVERVIEW_PAGE_ID,
           order: -1,
-          euiIconType: 'tableOfContents',
         },
       ]);
 
@@ -222,7 +221,6 @@ export class HomePublicPlugin
         {
           id: SEARCH_OVERVIEW_PAGE_ID,
           order: -1,
-          euiIconType: 'searchProfilerApp',
           category: {
             id: DEFAULT_NAV_GROUPS.search.id,
             label: DEFAULT_NAV_GROUPS.search.title,
