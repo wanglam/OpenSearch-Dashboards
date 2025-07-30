@@ -4,13 +4,15 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import type { EuiToolTipProps } from '@elastic/eui';
+
 import { DismissibleTooltip } from './dismissible_tooltip';
 
 // Mock EuiToolTip to capture the className prop
 jest.mock('@elastic/eui', () => ({
   ...jest.requireActual('@elastic/eui'),
-  EuiToolTip: ({ children, className, ...props }) => (
+  EuiToolTip: ({ children, className }: EuiToolTipProps) => (
     <span className={`euiToolTipAnchor ${className || ''}`.trim()} data-testid="mocked-tooltip">
       {children}
     </span>
