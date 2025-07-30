@@ -3,10 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { EuiButtonEmpty, EuiIcon, EuiIconProps, EuiToolTip } from '@elastic/eui';
+import { EuiButtonEmpty, EuiIcon, EuiIconProps } from '@elastic/eui';
 import React from 'react';
 import { Observable } from 'rxjs';
 import useObservable from 'react-use/lib/useObservable';
+
+import { DismissibleTooltip } from './dismissible_tooltip';
 
 import './left_bottom_action_button.scss';
 
@@ -48,7 +50,7 @@ export const LeftBottomActionButton = (props: LeftBottomActionButtonProps) => {
       </div>
     </EuiButtonEmpty>
   ) : (
-    <EuiToolTip content={props.title}>
+    <DismissibleTooltip content={props.title}>
       <EuiButtonEmpty
         aria-label={props['arial-label'] || props.title}
         flush="both"
@@ -57,6 +59,6 @@ export const LeftBottomActionButton = (props: LeftBottomActionButtonProps) => {
       >
         {finalIcon}
       </EuiButtonEmpty>
-    </EuiToolTip>
+    </DismissibleTooltip>
   );
 };
