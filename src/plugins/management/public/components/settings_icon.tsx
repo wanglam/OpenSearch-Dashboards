@@ -53,7 +53,7 @@ export function SettingsIcon({ core }: { core: CoreStart }) {
       button={
         <LeftBottomActionButton
           iconType="managementApp"
-          onClick={() => setPopover(true)}
+          onClick={() => setPopover((flag) => !flag)}
           title={i18n.translate('management.settings.icon.nav.title', {
             defaultMessage: 'Administration',
           })}
