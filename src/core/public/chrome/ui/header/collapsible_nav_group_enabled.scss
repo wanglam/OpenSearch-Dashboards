@@ -155,12 +155,26 @@ $iconWidth: 16px;
       height: 20px;
     }
 
+    &.nested-has-icon {
+      &::after {
+        left: $ouiSizeXS;
+      }
+    }
+
     .nav-link-item-btn {
       padding-top: 0;
       padding-bottom: 0;
       padding-left: $euiSizeM;
       margin-left: 0;
       margin-right: 0;
+
+      &.parent-has-icon {
+        padding-left: $euiSizeM + $euiSizeXS;
+
+        &::after {
+          left: $ouiSizeXS;
+        }
+      }
     }
   }
 
@@ -245,22 +259,28 @@ $iconWidth: 16px;
 
   .nav-link-item-active-true {
     &.nav-nested-item {
-      &::before {
-        content: "";
-        display: block;
-        position: absolute;
-        height: $sizeForSelectedSubMenu;
-        width: $sizeForSelectedSubMenu;
-        top: 50%;
-        margin-left: -0.5 * $sizeForSelectedSubMenu;
-        margin-top: -0.5 * $sizeForSelectedSubMenu;
-        z-index: 100;
-        background-color: $euiColorPrimary;
-      }
-    }
+      & > .nav-link-item-btn {
+        &::before {
+          content: "";
+          display: block;
+          position: absolute;
+          height: $sizeForSelectedSubMenu;
+          width: $sizeForSelectedSubMenu;
+          margin-top: -0.5 * $sizeForSelectedSubMenu;
+          z-index: 100;
+          background-color: $euiColorPrimary;
 
-    .nav-link-item-btn::after {
-      display: none;
+          // Depends on the ouiSideNavItemButton in oui
+          left: $ouiSizeXS;
+          top: $ouiSizeM;
+        }
+
+        &.parent-has-icon {
+          &::before {
+            left: $ouiSizeXS * 2;
+          }
+        }
+      }
     }
   }
 }

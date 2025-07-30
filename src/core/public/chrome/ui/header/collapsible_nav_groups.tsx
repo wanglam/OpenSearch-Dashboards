@@ -45,6 +45,7 @@ type EnhancedNavItem = EuiSideNavItemType<{}> & { hidden?: boolean };
 const createNavItem = ({
   link,
   className,
+  buttonClassName,
   appId,
   navigateToApp,
   basePath,
@@ -52,6 +53,7 @@ const createNavItem = ({
 }: {
   link: ChromeNavLink;
   className?: string;
+  buttonClassName?: string;
   appId?: string;
   basePath: HttpStart['basePath'];
   navigateToApp: CoreStart['application']['navigateToApp'];
@@ -79,7 +81,7 @@ const createNavItem = ({
     href: euiListItem.href,
     emphasize: euiListItem.isActive,
     className: `nav-link-item nav-link-item-active-${!!euiListItem.isActive} ${className || ''}`,
-    buttonClassName: 'nav-link-item-btn',
+    buttonClassName: `nav-link-item-btn ${buttonClassName || ''}`,
     'data-test-subj': euiListItem['data-test-subj'],
     'aria-label': link.title,
     icon: icon ? <span className="leftNavMenuIcon">{icon}</span> : undefined,
@@ -100,12 +102,14 @@ export function NavGroups({
     navLink: LinkItem,
     level: number,
     className?: string,
-    navOpen?: boolean
+    navOpen?: boolean,
+    buttonClassName?: string
   ): EnhancedNavItem => {
     if (navLink.itemType === LinkItemType.LINK) {
       const result = createNavItem({
         link: navLink.link,
         className,
+        buttonClassName,
         appId,
         navigateToApp,
         basePath,
@@ -129,11 +133,6 @@ export function NavGroups({
       const parentOpenKey = `${currentWorkspaceId ? `${currentWorkspaceId}-` : ''}${
         navLink.link.id
       }`;
-      const subItems = navLink.links.map((subNavLink) =>
-        createSideNavItem(subNavLink, level + 1, 'nav-nested-item', navOpen)
-      );
-
-      const parentItemEmphasize = subItems.some((item) => item.emphasize);
 
       const props = createNavItem({
         link: navLink.link,
@@ -141,6 +140,22 @@ export function NavGroups({
         navigateToApp,
         basePath,
       });
+
+      const subItems = navLink.links.map((subNavLink) =>
+        createSideNavItem(
+          subNavLink,
+          level + 1,
+          classNames('nav-nested-item', {
+            'nested-has-icon': !!props.icon,
+          }),
+          navOpen,
+          classNames({
+            'parent-has-icon': !!props.icon,
+          })
+        )
+      );
+
+      const parentItemEmphasize = subItems.some((item) => item.emphasize);
 
       const content = (
         <CollapsibleNavGroupsLabel
