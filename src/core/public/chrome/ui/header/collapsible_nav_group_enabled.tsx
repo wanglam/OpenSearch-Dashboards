@@ -4,7 +4,14 @@
  */
 
 import './collapsible_nav_group_enabled.scss';
-import { EuiFlyout, EuiPanel, EuiHideFor, EuiFlyoutProps, EuiShowFor } from '@elastic/eui';
+import {
+  EuiFlyout,
+  EuiPanel,
+  EuiHideFor,
+  EuiFlyoutProps,
+  EuiShowFor,
+  EuiSpacer,
+} from '@elastic/eui';
 import { i18n } from '@osd/i18n';
 import React, { useMemo } from 'react';
 import useObservable from 'react-use/lib/useObservable';
@@ -236,6 +243,7 @@ export function CollapsibleNavGroupEnabled({
         >
           <HeaderNavControls navControls$={observables.navControlsLeftBottom$} />
         </div>
+        <EuiSpacer size="xs" />
       </div>
     </EuiFlyout>
   );
