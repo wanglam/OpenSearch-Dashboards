@@ -241,7 +241,10 @@ export function CollapsibleNavGroupEnabled({
             'eui-xScroll': isNavOpen,
           })}
         >
-          <HeaderNavControls navControls$={observables.navControlsLeftBottom$} />
+          <HeaderNavControls
+            className="left-nav-bottom-nav-item"
+            navControls$={observables.navControlsLeftBottom$}
+          />
         </div>
         <EuiSpacer size="xs" />
       </div>

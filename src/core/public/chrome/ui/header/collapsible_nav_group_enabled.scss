@@ -46,6 +46,12 @@ $iconWidth: 16px;
     .navGroupEnabledHomeIcon {
       margin-left: 0;
     }
+
+    .bottom-container {
+      > .left-nav-bottom-nav-item {
+        justify-content: center;
+      }
+    }
   }
 
   &.leftNavIsOpen-true {
