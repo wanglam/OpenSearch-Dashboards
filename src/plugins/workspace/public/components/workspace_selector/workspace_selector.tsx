@@ -72,7 +72,7 @@ export const WorkspaceSelector = ({ coreStart, registeredUseCases$, isNavOpen }:
       <EuiPanel
         className="workspaceSelectorPopoverButton"
         data-test-subj="workspace-selector-button"
-        paddingSize="s"
+        paddingSize="none"
         color="transparent"
         hasBorder={false}
         hasShadow={false}
@@ -80,10 +80,10 @@ export const WorkspaceSelector = ({ coreStart, registeredUseCases$, isNavOpen }:
       >
         <EuiFlexGroup gutterSize="none" justifyContent="spaceBetween" responsive={false}>
           <EuiFlexItem>
-            <EuiFlexGroup gutterSize="s" justifyContent="flexStart" responsive={false}>
-              <EuiFlexItem grow={false}>
+            <EuiFlexGroup gutterSize="xs" justifyContent="flexStart" responsive={false}>
+              <EuiFlexItem className="workspaceIconContainer" grow={false}>
                 <EuiIcon
-                  size="l"
+                  size="m"
                   type={getUseCase(currentWorkspace)?.icon || 'wsSelector'}
                   color={getValidWorkspaceColor(currentWorkspace.color)}
                 />

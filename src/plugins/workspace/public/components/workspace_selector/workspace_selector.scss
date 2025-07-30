@@ -17,6 +17,11 @@
   background-color: $euiSideNavBackgroundColor;
   border: 1px solid $euiColorMediumShade;
   border-radius: 4px;
+  padding: 0.5 * $euiSizeXS $euiSizeS;
+
+  .workspaceIconContainer {
+    padding-top: $euiSizeXS;
+  }
 
   &::before {
     content: attr(data-label);
