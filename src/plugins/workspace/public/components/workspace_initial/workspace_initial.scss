@@ -11,6 +11,9 @@
   position: fixed;
   bottom: 12px;
   left: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .workspace-initial__flex-group-responsive {
