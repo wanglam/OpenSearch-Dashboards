@@ -226,6 +226,7 @@ export function NavGroups({
           name: '',
           items: [parentItem],
           id: `fake_${props.id}`,
+          hidden: !navOpen && !props.icon,
         };
       }
 
