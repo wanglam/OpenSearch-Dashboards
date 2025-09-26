@@ -38,6 +38,7 @@ import {
   EuiHeaderSectionItemButtonProps,
   EuiHideFor,
   EuiIcon,
+  EuiPanel,
   EuiShowFor,
   EuiTitle,
   htmlIdGenerator,
@@ -89,6 +90,7 @@ import { HomeLoader } from './home_loader';
 import { RecentItems } from './recent_items';
 import { GlobalSearchCommand } from '../../global_search';
 import { HeaderBanner } from './header_banner';
+import { HeaderSearchBar } from './header_search_bar';
 
 export interface HeaderProps {
   http: HttpStart;
@@ -244,46 +246,62 @@ export function Header({
   const expandedHeaderColorScheme: EuiHeaderProps['theme'] = 'dark';
 
   const renderLegacyExpandedHeader = () => (
-    <EuiHeader
-      className="expandedHeader"
-      theme={expandedHeaderColorScheme}
-      style={sidecarPaddingStyle}
-      position="fixed"
-      sections={[
-        {
-          items: [
-            <HeaderLogo
-              href={homeHref}
-              forceNavigation$={observables.forceAppSwitcherNavigation$}
-              navLinks$={observables.navLinks$}
-              navigateToApp={application.navigateToApp}
-              branding={branding}
-              logos={logos}
-              /* This color-scheme should match the `theme` of the parent EuiHeader */
-              backgroundColorScheme={expandedHeaderColorScheme}
-            />,
-          ],
-          borders: 'none',
-        },
-        {
-          items: [
-            <EuiShowFor sizes={['m', 'l', 'xl', 'xxl', 'xxxl']}>
-              <HeaderNavControls navControls$={observables.navControlsExpandedCenter$} />
-            </EuiShowFor>,
-          ],
-          borders: 'none',
-        },
-        {
-          items: [
-            <EuiHideFor sizes={['m', 'l', 'xl', 'xxl', 'xxxl']}>
-              <HeaderNavControls navControls$={observables.navControlsExpandedCenter$} />
-            </EuiHideFor>,
-            <HeaderNavControls navControls$={observables.navControlsExpandedRight$} />,
-          ],
-          borders: 'none',
-        },
-      ]}
-    />
+    <>
+      <EuiHeader
+        className="expandedHeader"
+        theme={expandedHeaderColorScheme}
+        style={sidecarPaddingStyle}
+        position="fixed"
+        sections={[
+          {
+            items: [
+              <HeaderLogo
+                href={homeHref}
+                forceNavigation$={observables.forceAppSwitcherNavigation$}
+                navLinks$={observables.navLinks$}
+                navigateToApp={application.navigateToApp}
+                branding={branding}
+                logos={logos}
+                /* This color-scheme should match the `theme` of the parent EuiHeader */
+                backgroundColorScheme={expandedHeaderColorScheme}
+              />,
+            ],
+            borders: 'none',
+          },
+          ...(globalSearchCommands
+            ? [
+                {
+                  items: [
+                    <HeaderSearchBar
+                      globalSearchCommands={globalSearchCommands}
+                      showSearchBarWhenPopoverOpen
+                    />,
+                  ],
+                  borders: 'none' as const,
+                },
+              ]
+            : []),
+          {
+            items: [
+              <EuiShowFor sizes={['m', 'l', 'xl', 'xxl', 'xxxl']}>
+                <HeaderNavControls navControls$={observables.navControlsExpandedCenter$} />
+              </EuiShowFor>,
+            ],
+            borders: 'none',
+          },
+          {
+            items: [
+              <EuiHideFor sizes={['m', 'l', 'xl', 'xxl', 'xxxl']}>
+                <HeaderNavControls navControls$={observables.navControlsExpandedCenter$} />
+              </EuiHideFor>,
+              <HeaderNavControls navControls$={observables.navControlsExpandedRight$} />,
+            ],
+            borders: 'none',
+          },
+        ]}
+      />
+      <div style={{ height: 48 }} />
+    </>
   );
 
   const renderBreadcrumbs = (renderFullLength?: boolean, hideTrailingSeparator?: boolean) => (
@@ -688,7 +706,7 @@ export function Header({
       <HeaderBanner globalBanner={globalBanner} />
       <header className={className} data-test-subj="headerGlobalNav">
         <div id="globalHeaderBars">
-          {!useUpdatedHeader && useExpandedHeader && renderLegacyExpandedHeader()}
+          {useExpandedHeader && renderLegacyExpandedHeader()}
           {useUpdatedHeader ? renderHeader() : renderLegacyHeader()}
         </div>
 
