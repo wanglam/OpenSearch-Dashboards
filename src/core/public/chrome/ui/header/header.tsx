@@ -88,7 +88,7 @@ import { HeaderLogo } from './header_logo';
 import { HeaderNavControls } from './header_nav_controls';
 import { HomeLoader } from './home_loader';
 import { RecentItems } from './recent_items';
-import { GlobalSearchCommand } from '../../global_search';
+import { GlobalSearchCommand, GlobalSearchSubmitCommand } from '../../global_search';
 import { HeaderBanner } from './header_banner';
 import { HeaderSearchBar } from './header_search_bar';
 
@@ -136,6 +136,8 @@ export interface HeaderProps {
   globalSearchCommands?: GlobalSearchCommand[];
   globalBanner$?: Observable<ChromeGlobalBanner | undefined>;
   keyboardShortcut?: KeyboardShortcutStart;
+  globalSearchSubmitCommands$: Observable<GlobalSearchSubmitCommand[]>;
+  initialGlobalSearchSubmitCommands?: GlobalSearchSubmitCommand[];
 }
 
 const hasValue = (value: any) => {
@@ -163,6 +165,7 @@ export function Header({
   useUpdatedHeader,
   globalSearchCommands,
   keyboardShortcut,
+  initialGlobalSearchSubmitCommands,
   ...observables
 }: HeaderProps) {
   const isVisible = useObservable(observables.isVisible$, false);
@@ -172,6 +175,10 @@ export function Header({
   const sidecarConfig = useObservable(observables.sidecarConfig$, undefined);
   const breadcrumbs = useObservable(observables.breadcrumbs$, []);
   const globalBanner = useObservable(observables.globalBanner$ || of(undefined), undefined);
+  const globalSearchSubmitCommands = useObservable(
+    observables.globalSearchSubmitCommands$,
+    initialGlobalSearchSubmitCommands
+  );
 
   const currentLeftControls = useObservableValue(application.currentLeftControls$);
   const navControlsLeft = useObservable(observables.navControlsLeft$);
@@ -275,6 +282,7 @@ export function Header({
                     <HeaderSearchBar
                       globalSearchCommands={globalSearchCommands}
                       showSearchBarWhenPopoverOpen
+                      globalSearchSubmitCommands={globalSearchSubmitCommands}
                     />,
                   ],
                   borders: 'none' as const,

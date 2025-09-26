@@ -4,7 +4,6 @@
  */
 
 import {
-  EuiButton,
   EuiButtonIcon,
   EuiFieldSearch,
   EuiFlexGroup,
@@ -13,7 +12,6 @@ import {
   EuiListGroupItem,
   EuiPanel,
   EuiPopover,
-  EuiSmallButton,
   EuiText,
   EuiTitle,
   EuiToolTip,
@@ -22,12 +20,14 @@ import React, { ReactNode, useCallback, useRef, useState } from 'react';
 import { i18n } from '@osd/i18n';
 import {
   GlobalSearchCommand,
+  GlobalSearchSubmitCommand,
   SearchCommandKeyTypes,
   SearchCommandTypes,
 } from '../../global_search';
 
 interface Props {
   globalSearchCommands: GlobalSearchCommand[];
+  globalSearchSubmitCommands?: GlobalSearchSubmitCommand[];
   panel?: boolean;
   onSearchResultClick?: () => void;
   showSearchBarWhenPopoverOpen?: boolean;
@@ -90,10 +90,12 @@ export const HeaderSearchBar = ({
   panel,
   onSearchResultClick,
   showSearchBarWhenPopoverOpen = false,
+  globalSearchSubmitCommands,
 }: Props) => {
   const [results, setResults] = useState([] as React.JSX.Element[]);
   const [isLoading, setIsLoading] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const searchBarInputRef = useRef<HTMLInputElement | null>(null);
 
   const closePopover = () => {
     setIsPopoverOpen(false);
@@ -259,7 +261,23 @@ export const HeaderSearchBar = ({
             onClick={() => {
               setIsPopoverOpen((flag) => !flag);
             }}
+            inputRef={(input) => {
+              searchBarInputRef.current = input;
+            }}
             style={{ paddingRight: 32 }}
+            onKeyUp={(e) => {
+              const currentValue = searchBarInputRef.current?.value.trim();
+              if (e.key !== 'Enter' || !searchBarInputRef.current || !currentValue) {
+                return;
+              }
+              globalSearchSubmitCommands?.forEach(({ run }) => {
+                run({
+                  content: currentValue,
+                });
+              });
+              setIsPopoverOpen(false);
+              searchBarInputRef.current.value = '';
+            }}
           />
         }
         zIndex={2000}
