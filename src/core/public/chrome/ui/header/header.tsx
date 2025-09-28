@@ -381,7 +381,10 @@ export function Header({
         {isNavOpen
           ? null
           : renderNavToggleWithExtraProps({
-              className: 'navToggleInLargeScreen eui-hideFor--xs eui-hideFor--s eui-hideFor--m',
+              className: classnames(
+                'navToggleInLargeScreen eui-hideFor--xs eui-hideFor--s eui-hideFor--m',
+                { 'has-expanded-header': useExpandedHeader }
+              ),
               // Nav toggle button has a fixed position and its left size is 0 be default, it should have a left size if sidecar is docked to left.
               style: sidecarLeftNavStyle,
             })}
@@ -743,6 +746,7 @@ export function Header({
             capabilities={application.capabilities}
             currentWorkspace$={observables.currentWorkspace$}
             globalSearchCommands={globalSearchCommands}
+            hasExpandedHeader={useExpandedHeader}
           />
         ) : (
           <CollapsibleNav

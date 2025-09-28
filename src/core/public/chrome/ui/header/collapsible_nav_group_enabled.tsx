@@ -50,6 +50,7 @@ export interface CollapsibleNavGroupEnabledProps {
   capabilities: InternalApplicationStart['capabilities'];
   currentWorkspace$: WorkspacesStart['currentWorkspace$'];
   globalSearchCommands?: GlobalSearchCommand[];
+  hasExpandedHeader?: boolean;
 }
 
 const titleForSeeAll = i18n.translate('core.ui.primaryNav.seeAllLabel', {
@@ -74,6 +75,7 @@ export function CollapsibleNavGroupEnabled({
   capabilities,
   collapsibleNavHeaderRender,
   globalSearchCommands,
+  hasExpandedHeader,
   ...observables
 }: CollapsibleNavGroupEnabledProps) {
   const allNavLinks = useObservable(observables.navLinks$, []);
@@ -189,7 +191,7 @@ export function CollapsibleNavGroupEnabled({
       type="push"
       onClose={closeNav}
       outsideClickCloses={false}
-      className="context-nav-wrapper"
+      className={classNames('context-nav-wrapper', { 'has-expanded-header': hasExpandedHeader })}
       size={width}
       closeButtonPosition="outside"
       hideCloseButton

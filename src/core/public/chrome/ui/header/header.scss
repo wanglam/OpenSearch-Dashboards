@@ -3,6 +3,8 @@
 * SPDX-License-Identifier: Apache-2.0
 */
 
+@import "../../../variables";
+
 .newTopNavHeader {
   z-index: 1000;
   padding: 0 $euiSizeS $euiSizeS;
@@ -130,6 +132,10 @@
   position: fixed;
   left: 0;
   top: var(--global-banner-height, 0);
+
+  &.has-expanded-header {
+    top: $osdHeaderOffset;
+  }
 }
 
 .navToggleInSmallScreen {
