@@ -20,14 +20,17 @@ import React, { ReactNode, useCallback, useRef, useState } from 'react';
 import { i18n } from '@osd/i18n';
 import {
   GlobalSearchCommand,
+  GlobalSearchSubmitCommand,
   SearchCommandKeyTypes,
   SearchCommandTypes,
 } from '../../global_search';
 
 interface Props {
   globalSearchCommands: GlobalSearchCommand[];
+  globalSearchSubmitCommands?: GlobalSearchSubmitCommand[];
   panel?: boolean;
   onSearchResultClick?: () => void;
+  useInlineSearchMode?: boolean;
 }
 
 export const HeaderSearchBarIcon = ({ globalSearchCommands }: Props) => {
@@ -82,10 +85,19 @@ export const HeaderSearchBarIcon = ({ globalSearchCommands }: Props) => {
   );
 };
 
-export const HeaderSearchBar = ({ globalSearchCommands, panel, onSearchResultClick }: Props) => {
+export const HeaderSearchBar = ({
+  globalSearchCommands,
+  panel,
+  onSearchResultClick,
+  useInlineSearchMode = false,
+  globalSearchSubmitCommands,
+}: Props) => {
   const [results, setResults] = useState([] as React.JSX.Element[]);
   const [isLoading, setIsLoading] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState('');
+  const enterKeyDownRef = useRef(false);
+  const searchBarInputRef = useRef<HTMLInputElement | null>(null);
 
   const closePopover = () => {
     setIsPopoverOpen(false);
@@ -121,23 +133,48 @@ export const HeaderSearchBar = ({ globalSearchCommands, panel, onSearchResultCli
     );
   };
 
-  const searchResultSections =
-    results && results.length ? (
-      <EuiFlexGroup direction="column" gutterSize="none">
-        {results.map((result) => (
-          <EuiFlexItem key={result.key}>{result}</EuiFlexItem>
-        ))}
-      </EuiFlexGroup>
-    ) : (
-      <EuiText color="subdued" size="xs">
-        {i18n.translate('core.globalSearch.emptyResult.description', {
-          defaultMessage: 'No results found.',
-        })}
-      </EuiText>
-    );
+  const searchResultSections = (
+    <>
+      {results && results.length ? (
+        <EuiFlexGroup direction="column" gutterSize="none">
+          {results.map((result) => (
+            <EuiFlexItem key={result.key}>{result}</EuiFlexItem>
+          ))}
+        </EuiFlexGroup>
+      ) : (
+        <EuiText color="subdued" size="xs">
+          {i18n.translate('core.globalSearch.emptyResult.description', {
+            defaultMessage: 'No results found.',
+          })}
+        </EuiText>
+      )}
+      {searchValue.length > 0 && (globalSearchSubmitCommands?.length ?? 0) > 0 && (
+        <EuiText color="subdued" size="xs">
+          {i18n.translate('core.globalSearch.submitCommands.description', {
+            defaultMessage: 'Press Enter to {commands}.',
+            values: {
+              commands: globalSearchSubmitCommands?.map(({ name }) => name).join(', '),
+            },
+          })}
+        </EuiText>
+      )}
+    </>
+  );
 
   const onSearch = useCallback(
     async (value: string) => {
+      if (enterKeyDownRef.current && (globalSearchSubmitCommands?.length ?? 0) > 0) {
+        globalSearchSubmitCommands?.forEach((command) => {
+          command.run({
+            content: value,
+          });
+        });
+        enterKeyDownRef.current = false;
+        setIsPopoverOpen(false);
+        setSearchValue('');
+        searchBarInputRef.current?.blur();
+        return;
+      }
       const filteredCommands = globalSearchCommands.filter((command) => {
         const alias = SearchCommandTypes[command.type].alias;
         return alias && value.startsWith(alias);
@@ -193,7 +230,7 @@ export const HeaderSearchBar = ({ globalSearchCommands, panel, onSearchResultCli
         setResults([]);
       }
     },
-    [globalSearchCommands, onSearchResultClick]
+    [globalSearchCommands, onSearchResultClick, globalSearchSubmitCommands]
   );
 
   const searchBar = (
@@ -231,28 +268,74 @@ export const HeaderSearchBar = ({ globalSearchCommands, panel, onSearchResultCli
 
   if (panel) {
     return searchBarPanel;
-  } else {
+  }
+  if (useInlineSearchMode) {
     return (
-      <>
-        {!isPopoverOpen && searchBar}
-        {isPopoverOpen && (
-          <EuiPopover
-            panelStyle={{ minWidth: '400px', minHeight: '100px' }}
-            button={<></>}
-            zIndex={2000}
-            panelPaddingSize="s"
-            attachToAnchor={true}
-            ownFocus={true}
-            display="block"
-            isOpen={isPopoverOpen}
-            closePopover={() => {
-              closePopover();
+      <EuiPopover
+        button={
+          <EuiFieldSearch
+            compressed
+            incremental
+            onSearch={onSearch}
+            fullWidth
+            placeholder={i18n.translate('core.globalAISearch.input.placeholder', {
+              defaultMessage: 'Search or chat with AI',
+            })}
+            isLoading={isLoading}
+            aria-label="Global AI search"
+            data-test-subj="global-ai-search-input"
+            className="searchInput"
+            onClick={() => {
+              setIsPopoverOpen((flag) => !flag);
             }}
-          >
-            {searchBarPanel}
-          </EuiPopover>
-        )}
-      </>
+            inputRef={(input) => {
+              searchBarInputRef.current = input;
+            }}
+            style={{ paddingRight: 32 }}
+            value={searchValue}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                enterKeyDownRef.current = true;
+              }
+            }}
+            onChange={(e) => {
+              setSearchValue(e.currentTarget.value);
+            }}
+          />
+        }
+        zIndex={2000}
+        panelPaddingSize="s"
+        isOpen={isPopoverOpen}
+        closePopover={() => {
+          closePopover();
+        }}
+        ownFocus={false}
+      >
+        <div style={{ minWidth: 400, minHeight: 100 }}>{searchResultSections}</div>
+      </EuiPopover>
     );
   }
+
+  return (
+    <>
+      {!isPopoverOpen && searchBar}
+      {isPopoverOpen && (
+        <EuiPopover
+          panelStyle={{ minWidth: '400px', minHeight: '100px' }}
+          button={<></>}
+          zIndex={2000}
+          panelPaddingSize="s"
+          attachToAnchor={true}
+          ownFocus={true}
+          display="block"
+          isOpen={isPopoverOpen}
+          closePopover={() => {
+            closePopover();
+          }}
+        >
+          {searchBarPanel}
+        </EuiPopover>
+      )}
+    </>
+  );
 };

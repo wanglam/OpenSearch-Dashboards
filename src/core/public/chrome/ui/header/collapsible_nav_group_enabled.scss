@@ -1,6 +1,18 @@
+/*
+* Copyright OpenSearch Contributors
+* SPDX-License-Identifier: Apache-2.0
+*/
+
+@import "../../../variables";
+
 .context-nav-wrapper {
   top: var(--global-banner-height, 0);
   height: calc(100% - var(--global-banner-height, 0));
+
+  &.has-expanded-header {
+    top: $osdHeaderOffset;
+    height: calc(100% - $osdHeaderOffset);
+  }
 
   // TODO: Remove this after https://github.com/opensearch-project/oui/issues/1622 is resolved
   z-index: $ouiZHeader - 3 !important;
