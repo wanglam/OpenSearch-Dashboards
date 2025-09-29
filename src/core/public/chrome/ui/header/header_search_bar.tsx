@@ -98,6 +98,7 @@ export const HeaderSearchBar = ({
   const [searchValue, setSearchValue] = useState('');
   const enterKeyDownRef = useRef(false);
   const searchBarInputRef = useRef<HTMLInputElement | null>(null);
+  const latestAbortController = useRef<AbortController>();
 
   const closePopover = () => {
     setIsPopoverOpen(false);
@@ -163,6 +164,10 @@ export const HeaderSearchBar = ({
 
   const onSearch = useCallback(
     async (value: string) => {
+      latestAbortController.current?.abort();
+      const abortController = new AbortController();
+      latestAbortController.current = abortController;
+
       if (enterKeyDownRef.current && (globalSearchSubmitCommands?.length ?? 0) > 0) {
         globalSearchSubmitCommands?.forEach((command) => {
           command.run({
@@ -224,6 +229,9 @@ export const HeaderSearchBar = ({
           return resultSection(items, sectionHeader);
         });
 
+        // if (abortController.signal.aborted) {
+        //   return;
+        // }
         setIsLoading(false);
         setResults(sections);
       } else {

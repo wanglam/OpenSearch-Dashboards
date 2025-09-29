@@ -7,6 +7,7 @@ import { BehaviorSubject, combineLatest, Subscription } from 'rxjs';
 import React from 'react';
 import { i18n } from '@osd/i18n';
 import { map } from 'rxjs/operators';
+import { throttle, debounce } from 'lodash';
 import {
   Plugin,
   CoreStart,
@@ -73,6 +74,7 @@ import { registerDefaultCollaboratorTypes } from './register_default_collaborato
 import { WorkspaceValidationService } from './services/workspace_validation_service';
 import { workspaceSearchPages } from './components/global_search/search_pages_command';
 import { isNavGroupInFeatureConfigs } from '../../../core/public';
+import { searchAssets } from './components/global_search/search_assets_command';
 
 type WorkspaceAppType = (
   params: AppMountParameters,
@@ -536,6 +538,40 @@ export class WorkspacePlugin
       type: 'PAGES',
       run: async (query: string, callback: () => void) =>
         workspaceSearchPages(query, this.registeredUseCases$, this.coreStart, callback),
+    });
+
+    const searchAssentsWithCallback = ({ args, callback }: { args: any; callback: () => void }) => {
+      searchAssets(args).then(callback);
+      // callback(result);
+    };
+    const throttledSearchAssets = debounce(searchAssentsWithCallback, 200);
+
+    core.chrome.globalSearch.registerSearchCommand({
+      id: 'assetsSearch',
+      type: 'SAVED_OBJECTS',
+      run: async (query: string, callback: () => void) => {
+        try {
+          const [{ savedObjects, workspaces }] = await core.getStartServices();
+          const currentWorkspaceId = workspaces.currentWorkspaceId$.getValue();
+
+          console.log('search assets:', query);
+          return new Promise((resolve) => {
+            throttledSearchAssets({
+              args: {
+                savedObjects: savedObjects,
+                query,
+                callback,
+                currentWorkspaceId,
+              },
+              callback: resolve,
+            });
+          });
+        } catch (e) {
+          console.error('failed to get start services...', e);
+        }
+        console.log('after get start services...');
+        return [];
+      },
     });
 
     if (workspaceId) {
