@@ -95,6 +95,8 @@ export const HeaderSearchBar = ({
   const [results, setResults] = useState([] as React.JSX.Element[]);
   const [isLoading, setIsLoading] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState('');
+  const enterKeyDownRef = useRef(false);
   const searchBarInputRef = useRef<HTMLInputElement | null>(null);
 
   const closePopover = () => {
@@ -131,23 +133,48 @@ export const HeaderSearchBar = ({
     );
   };
 
-  const searchResultSections =
-    results && results.length ? (
-      <EuiFlexGroup direction="column" gutterSize="none">
-        {results.map((result) => (
-          <EuiFlexItem key={result.key}>{result}</EuiFlexItem>
-        ))}
-      </EuiFlexGroup>
-    ) : (
-      <EuiText color="subdued" size="xs">
-        {i18n.translate('core.globalSearch.emptyResult.description', {
-          defaultMessage: 'No results found.',
-        })}
-      </EuiText>
-    );
+  const searchResultSections = (
+    <>
+      {results && results.length ? (
+        <EuiFlexGroup direction="column" gutterSize="none">
+          {results.map((result) => (
+            <EuiFlexItem key={result.key}>{result}</EuiFlexItem>
+          ))}
+        </EuiFlexGroup>
+      ) : (
+        <EuiText color="subdued" size="xs">
+          {i18n.translate('core.globalSearch.emptyResult.description', {
+            defaultMessage: 'No results found.',
+          })}
+        </EuiText>
+      )}
+      {searchValue.length > 0 && (globalSearchSubmitCommands?.length ?? 0) > 0 && (
+        <EuiText color="subdued" size="xs">
+          {i18n.translate('core.globalSearch.submitCommands.description', {
+            defaultMessage: 'Press Enter to {commands}.',
+            values: {
+              commands: globalSearchSubmitCommands?.map(({ name }) => name).join(', '),
+            },
+          })}
+        </EuiText>
+      )}
+    </>
+  );
 
   const onSearch = useCallback(
     async (value: string) => {
+      if (enterKeyDownRef.current && (globalSearchSubmitCommands?.length ?? 0) > 0) {
+        globalSearchSubmitCommands?.forEach((command) => {
+          command.run({
+            content: value,
+          });
+        });
+        enterKeyDownRef.current = false;
+        setIsPopoverOpen(false);
+        setSearchValue('');
+        searchBarInputRef.current?.blur();
+        return;
+      }
       const filteredCommands = globalSearchCommands.filter((command) => {
         const alias = SearchCommandTypes[command.type].alias;
         return alias && value.startsWith(alias);
@@ -203,7 +230,7 @@ export const HeaderSearchBar = ({
         setResults([]);
       }
     },
-    [globalSearchCommands, onSearchResultClick]
+    [globalSearchCommands, onSearchResultClick, globalSearchSubmitCommands]
   );
 
   const searchBar = (
@@ -265,18 +292,14 @@ export const HeaderSearchBar = ({
               searchBarInputRef.current = input;
             }}
             style={{ paddingRight: 32 }}
-            onKeyUp={(e) => {
-              const currentValue = searchBarInputRef.current?.value.trim();
-              if (e.key !== 'Enter' || !searchBarInputRef.current || !currentValue) {
-                return;
+            value={searchValue}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                enterKeyDownRef.current = true;
               }
-              globalSearchSubmitCommands?.forEach(({ run }) => {
-                run({
-                  content: currentValue,
-                });
-              });
-              setIsPopoverOpen(false);
-              searchBarInputRef.current.value = '';
+            }}
+            onChange={(e) => {
+              setSearchValue(e.currentTarget.value);
             }}
           />
         }

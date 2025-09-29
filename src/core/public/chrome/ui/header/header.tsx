@@ -133,7 +133,7 @@ export interface HeaderProps {
   workspaceList$: Observable<WorkspaceObject[]>;
   currentWorkspace$: WorkspacesStart['currentWorkspace$'];
   useUpdatedHeader?: boolean;
-  globalSearchCommands?: GlobalSearchCommand[];
+  globalSearchCommands$: Observable<GlobalSearchCommand[]>;
   globalBanner$?: Observable<ChromeGlobalBanner | undefined>;
   keyboardShortcut?: KeyboardShortcutStart;
   globalSearchSubmitCommands$: Observable<GlobalSearchSubmitCommand[]>;
@@ -163,7 +163,6 @@ export function Header({
   navGroupEnabled,
   setCurrentNavGroup,
   useUpdatedHeader,
-  globalSearchCommands,
   keyboardShortcut,
   initialGlobalSearchSubmitCommands,
   ...observables
@@ -195,6 +194,8 @@ export function Header({
 
   const currentBadgeControls = useObservableValue(application.currentBadgeControls$);
   const observableBadge = useObservable(observables.badge$);
+
+  const globalSearchCommands = useObservable(observables.globalSearchCommands$);
 
   const sidecarPaddingStyle = useMemo(() => {
     return getOsdSidecarPaddingStyle(sidecarConfig);

@@ -432,7 +432,7 @@ export class ChromeService {
           workspaceList$={workspaces.workspaceList$}
           currentWorkspace$={workspaces.currentWorkspace$}
           useUpdatedHeader={this.useUpdatedHeader}
-          globalSearchCommands={globalSearch.getAllSearchCommands()}
+          globalSearchCommands$={globalSearch.getSearchCommands$()}
           globalSearchSubmitCommands$={globalSearch.getSearchSubmitCommands$()}
           initialGlobalSearchSubmitCommands={globalSearch.getSearchSubmitCommands()}
           globalBanner$={this.globalBanner$.pipe(takeUntil(this.stop$))}

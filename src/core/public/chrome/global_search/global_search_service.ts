@@ -55,6 +55,7 @@ export interface GlobalSearchCommand {
  */
 export interface GlobalSearchSubmitCommand {
   id: string;
+  name: string;
   run: (payload: { content: string }) => void;
 }
 
@@ -65,6 +66,7 @@ export interface GlobalSearchServiceSetupContract {
 
 export interface GlobalSearchServiceStartContract {
   getAllSearchCommands(): GlobalSearchCommand[];
+  getSearchCommands$(): Observable<GlobalSearchCommand[]>;
   unregisterSearchCommand(id: string): void;
   unregisterSearchSubmitCommand(id: string): void;
   getSearchSubmitCommands$: () => Observable<GlobalSearchSubmitCommand[]>;
@@ -89,8 +91,12 @@ export interface GlobalSearchServiceStartContract {
  * @experimental
  */
 export class GlobalSearchService {
-  private searchCommands = [] as GlobalSearchCommand[];
+  private searchCommands$ = new BehaviorSubject<GlobalSearchCommand[]>([]);
   private searchSubmitCommands$ = new BehaviorSubject<GlobalSearchSubmitCommand[]>([]);
+
+  private get searchCommands() {
+    return this.searchCommands$.getValue();
+  }
 
   private registerSearchCommand(searchHandler: GlobalSearchCommand) {
     const exists = this.searchCommands.find((item) => {
@@ -105,9 +111,10 @@ export class GlobalSearchService {
   }
 
   private unregisterSearchCommand(id: string) {
-    this.searchCommands = this.searchCommands.filter((item) => {
+    const newCommands = this.searchCommands.filter((item) => {
       return item.id !== id;
     });
+    this.searchCommands$.next(newCommands);
   }
 
   private registerSearchSubmitCommand = (searchSubmitCommand: GlobalSearchSubmitCommand) => {
@@ -140,6 +147,7 @@ export class GlobalSearchService {
   public start(): GlobalSearchServiceStartContract {
     return {
       getAllSearchCommands: () => this.searchCommands,
+      getSearchCommands$: () => this.searchCommands$.asObservable(),
       getSearchSubmitCommands$: () => this.searchSubmitCommands$.asObservable(),
       getSearchSubmitCommands: () => this.searchSubmitCommands$.getValue(),
       unregisterSearchCommand: this.unregisterSearchCommand.bind(this),
