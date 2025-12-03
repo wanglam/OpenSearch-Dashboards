@@ -271,9 +271,23 @@ export class ChatEventHandler {
       return;
     }
 
+    let args;
+    let parsedError;
     try {
       // Parse arguments
-      const args = toolCall.function.arguments ? JSON.parse(toolCall.function.arguments) : {};
+      args = toolCall.function.arguments ? JSON.parse(toolCall.function.arguments) : {};
+    } catch (e) {
+      parsedError = e;
+      // Ignore parse error for agent tools, we don't actually need the args
+      if (!this.assistantActionService.hasAction(toolCall.function.name)) {
+        args = toolCall.function.arguments;
+      }
+    }
+
+    try {
+      if (!args) {
+        throw parsedError;
+      }
 
       // Update state to executing
       this.assistantActionService.updateToolCallState(toolCallId, {
