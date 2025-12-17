@@ -1,91 +1,106 @@
-# Assistant UI Chatbot
+# @osd/assistant-ui-chatbot
 
-A React 19-based chatbot component that can be mounted independently in OpenSearch Dashboards.
+A basic chatbot built with `@assistant-ui/react` v0.11.51 (latest) and React 19.
 
-## Overview
+## Features
 
-This package provides a self-contained React 19 chatbot that can be mounted to any DOM element. It's completely isolated from the platform's React 16 instance.
+- **Latest @assistant-ui/react**: Built with version 0.11.51
+- **React 19**: Uses the latest React version
+- **Primitive Components**: Uses ThreadPrimitive, ComposerPrimitive, and MessagePrimitive
+- **Custom Runtime Provider**: Includes a basic echo adapter that can be customized
+- **Vite Bundling**: Fast builds with Vite
 
 ## Installation
 
 ```bash
 cd packages/assistant-ui-chatbot
 yarn install
+```
+
+## Build
+
+```bash
 yarn build
 ```
 
 ## Usage
 
-### In a Plugin
+### Mount the Chatbot
 
-```typescript
+```javascript
 import { mount } from '@osd/assistant-ui-chatbot';
 
-// Mount the chatbot to a DOM element
-const containerElement = document.getElementById('chatbot-container');
-const unmount = mount(containerElement);
+const container = document.getElementById('chatbot-container');
+const unmount = mount(container);
 
-// Later, when you need to unmount
+// To unmount later
 unmount();
 ```
 
-### Example in React 16 Component
+### Use Components Directly
+
+```jsx
+import { Chatbot, MyRuntimeProvider, MyAssistant } from '@osd/assistant-ui-chatbot';
+
+// Full chatbot with container
+function App() {
+  return <Chatbot />;
+}
+
+// Or use components separately
+function CustomApp() {
+  return (
+    <MyRuntimeProvider>
+      <MyAssistant />
+    </MyRuntimeProvider>
+  );
+}
+```
+
+## Customizing the Model Adapter
+
+The `MyRuntimeProvider` component uses a basic echo adapter. To connect to a real AI backend, modify the `MyModelAdapter` in `src/MyRuntimeProvider.tsx`:
 
 ```typescript
-import React, { useEffect, useRef } from 'react';
-
-export const ChatbotContainer: React.FC = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const unmountRef = useRef<(() => void) | null>(null);
-
-  useEffect(() => {
-    if (containerRef.current) {
-      // Dynamically import the React 19 bundle
-      import('@osd/assistant-ui-chatbot').then((module) => {
-        unmountRef.current = module.mount(containerRef.current!);
-      });
-    }
-
-    // Cleanup on unmount
-    return () => {
-      if (unmountRef.current) {
-        unmountRef.current();
-      }
+const MyModelAdapter: ChatModelAdapter = {
+  async *run({ messages, abortSignal }: ChatModelRunOptions) {
+    // Your custom implementation here
+    // Connect to OpenAI, Anthropic, or any other AI service
+    
+    yield {
+      content: [{ type: 'text', text: 'Response from AI' }],
     };
-  }, []);
-
-  return <div ref={containerRef} />;
+  },
 };
 ```
 
-## Features
+## File Structure
 
-- Built with React 19
-- Self-contained bundle (includes React 19)
-- Simple mount/unmount API
-- Completely isolated from platform React 16
-- TypeScript support
-
-## API
-
-### `mount(container: HTMLElement): () => void`
-
-Mounts the chatbot to the specified DOM element.
-
-- **Parameters:**
-  - `container`: The DOM element to mount the chatbot to
-- **Returns:** An unmount function to remove the chatbot
-
-## Building
-
-```bash
-yarn build      # Build production bundle
-yarn dev        # Build and watch for changes
+```
+packages/assistant-ui-chatbot/
+├── src/
+│   ├── index.ts           # Main entry point with mount function
+│   ├── Chatbot.tsx        # Main chatbot component
+│   ├── MyAssistant.tsx    # Thread UI component using primitives
+│   └── MyRuntimeProvider.tsx  # Runtime provider with model adapter
+├── demo.html              # Demo HTML file
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+└── README.md
 ```
 
-## Important Notes
+## Demo
 
-1. This package is completely isolated from the platform's React 16
-2. Cannot share React context or state with React 16 components
-3. Props must be passed via data attributes or events
-4. Adds ~45KB (gzipped) to bundle size for React 19
+After building, open `demo.html` in a browser to see the chatbot in action:
+
+```bash
+yarn build
+# Then open demo.html in browser or use a local server
+```
+
+## Dependencies
+
+- `@assistant-ui/react`: ^0.11.51
+- `react`: ^19.0.0
+- `react-dom`: ^19.0.0
