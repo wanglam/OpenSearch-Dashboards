@@ -22,6 +22,7 @@ import { ChatHeaderButton, ChatLayoutMode } from './components/chat_header_butto
 import { toMountPoint } from '../../opensearch_dashboards_react/public';
 import { SuggestedActionsService } from './services/suggested_action';
 import { isChatEnabled } from '../common/chat_capabilities';
+import { ChatbotContainer } from './components/chatbot_container';
 
 const isValidChatWindowState = (test: unknown): test is ChatWindowState => {
   const state = test as ChatWindowState | null;
@@ -136,13 +137,14 @@ export class ChatPlugin implements Plugin<ChatPluginSetup, ChatPluginStart> {
 
         // Mount the component
         const mountPoint = toMountPoint(
-          React.createElement(ChatHeaderButton, {
-            core,
-            chatService: this.chatService!,
-            contextProvider: deps.contextProvider,
-            charts: deps.charts,
-            suggestedActionsService: this.suggestedActionsService!,
-          })
+          // React.createElement(ChatHeaderButton, {
+          //   core,
+          //   chatService: this.chatService!,
+          //   contextProvider: deps.contextProvider,
+          //   charts: deps.charts,
+          //   suggestedActionsService: this.suggestedActionsService!,
+          // })
+          React.createElement(ChatbotContainer)
         );
         unmountComponent = mountPoint(element);
 

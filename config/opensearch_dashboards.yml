@@ -384,39 +384,49 @@
 # data.savedQueriesNewUI.enabled: true
 
 # Set the value to true to enable the banner plugin
-# banner.enabled: true
+banner.enabled: false
 
 # Set the content of the banner
-# banner.content: "This is an important announcement for all users. [Learn more](https://opensearch.org) about OpenSearch."
+banner.content: "This is an important announcement for all users. [Learn more](https://opensearch.org) about OpenSearch."
 
-# set the value to false to disable the keyboard shortcuts
-# opensearchDashboards.keyboardShortcuts.enabled: false
+# Set the value to true to enable the keyboard shortcuts (requires workspace.enabled: true)
+# opensearchDashboards.keyboardShortcuts.enabled: true
 
-# set the value to true to enable dataset management
-# datasetManagement.enabled: true
 
-# The new OpenSearch Dashboards Experience
-# Enable the following three flags together for the new OpenSearch Dashboards discover features
-# ===========================================
 
-# Set the value of this setting to true to enable multiple data source feature.
-# data_source.enabled: true
+opensearchDashboards.dashboardAdmin.users: ['admin']
+workspace.enabled: true
+savedObjects.permission.enabled: true
+data_source.enabled: true
+uiSettings:
+  overrides:
+    'home:useNewHomePage': true
+  defaults:
+    'theme:darkMode': false
+opensearch.username: "admin"
+opensearch.password: "myStrongPassword123!"
 
-# Set the value to true to enable workspace feature
-# Please note, workspace will not work with multi-tenancy. To enable workspace feature, you need to disable multi-tenancy first with `opensearch_security.multitenancy.enabled: false`
-# workspace.enabled: true
+server.port: 5661
+server.host: '0.0.0.0'
+opensearch.hosts: ['https://localhost:9200']
+# opensearch.hosts: ["http://localhost:9201"]
+opensearch.ssl.verificationMode: none
+data_source.ssl.verificationMode: none
+opensearch.ignoreVersionMismatch: true
 
-# explore.enabled: true
+# assistant.chat.enabled: true
+assistant.enabled: true
+opensearchDashboards.branding.useExpandedHeader: true
+investigation.enabled: true
+investigation.agenticFeaturesEnabled: true
 
-# @experimental Set the value to true to enable discover traces
-# explore.discoverTraces.enabled: true
+explore.enabled: true
 
 # @experimental Set the enabled value to true and provide an AG-UI agent to enable chat
-# chat:
-  # enabled: true
-  # agUiUrl: "http://your-ai-agent-url:port"
-  # mlCommonsAgentId: "olly-chat-agent-id"
+chat:
+  enabled: true
+  agUiUrl: "https://ag-ui-soap.explore.opensearch.aws.dev"
 
 # @experimental Set the value to true to enable context provider
-# contextProvider:
-#   enabled: true
+contextProvider:
+  enabled: true
