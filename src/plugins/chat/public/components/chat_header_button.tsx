@@ -20,6 +20,7 @@ import { ContextProviderStart, TextSelectionMonitor } from '../../../context_pro
 import './chat_header_button.scss';
 import { SuggestedActionsService } from '../services/suggested_action';
 import gradientGenerateIcon from '../assets/gradient_generate_icon.svg';
+import { AssistantUiChatWindow } from './assistant_ui_chat_window';
 
 export interface ChatHeaderButtonInstance {
   startNewConversation: ({ content }: { content: string }) => Promise<void>;
@@ -228,7 +229,7 @@ export const ChatHeaderButton = React.forwardRef<ChatHeaderButtonInstance, ChatH
           >
             <div className="chatHeaderButton__content">
               <OpenSearchDashboardsContextProvider services={{ core, contextProvider, charts }}>
-                <GlobalAssistantProvider
+                {/* <GlobalAssistantProvider
                   onToolsUpdated={(_tools) => {
                     // Tools updated in chat
                   }}
@@ -244,7 +245,8 @@ export const ChatHeaderButton = React.forwardRef<ChatHeaderButtonInstance, ChatH
                       onClose={closeSidecar}
                     />
                   </ChatProvider>
-                </GlobalAssistantProvider>
+                </GlobalAssistantProvider> */}
+                <AssistantUiChatWindow />
               </OpenSearchDashboardsContextProvider>
             </div>
           </div>

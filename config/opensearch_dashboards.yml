@@ -412,11 +412,32 @@
 # explore.discoverTraces.enabled: true
 
 # @experimental Set the enabled value to true and provide an AG-UI agent to enable chat
-# chat:
-  # enabled: true
+chat:
+  enabled: true
   # agUiUrl: "http://your-ai-agent-url:port"
   # mlCommonsAgentId: "olly-chat-agent-id"
 
 # @experimental Set the value to true to enable context provider
-# contextProvider:
-#   enabled: true
+contextProvider:
+  enabled: true
+
+data_source.ssl.verificationMode: none
+server.port: 5661
+server.host: '0.0.0.0'
+opensearch.hosts: ['https://localhost:9200']
+opensearch.ssl.verificationMode: none
+opensearchDashboards.dashboardAdmin.users: ['admin']
+workspace.enabled: true
+savedObjects.permission.enabled: true
+data_source.enabled: true
+uiSettings:
+  overrides:
+    'home:useNewHomePage': true
+  defaults:
+    'theme:darkMode': false
+opensearch.ignoreVersionMismatch: true
+explore.enabled: true
+
+investigation:
+  enabled: true
+  agenticFeaturesEnabled: true
