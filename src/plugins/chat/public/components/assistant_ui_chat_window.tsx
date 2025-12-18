@@ -3,10 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { mount } from 'assistant-ui-chat';
-import { of } from 'rxjs';
-import { useObservable } from 'react-use';
 
 import { useOpenSearchDashboards } from '../../../opensearch_dashboards_react/public';
 
@@ -15,25 +13,26 @@ import './assistant_ui_chat_window.scss';
 export const AssistantUiChatWindow = () => {
   const { services } = useOpenSearchDashboards();
   const ref = React.useRef(null);
-  const currentWorkspaceId$ = useMemo(() => services.workspaces?.currentWorkspaceId$ ?? of(''), [
-    services.workspaces,
-  ]);
-  const currentWorkspaceId = useObservable(currentWorkspaceId$);
-  const currentWorkspaceIdRef = useRef(currentWorkspaceId);
-  currentWorkspaceIdRef.current = currentWorkspaceId;
 
   useEffect(() => {
-    if (!ref.current) {
+    if (!ref.current || !services.core.workspaces?.currentWorkspaceId$) {
       return;
     }
+    const currentWorkspaceId = services.core.workspaces?.currentWorkspaceId$.getValue();
+    console.log(currentWorkspaceId);
     const unmount = mount({
       element: ref.current,
-      api: `${currentWorkspaceIdRef.current ? `/w/${currentWorkspaceIdRef.current}` : ''}/api/chat`,
+      transportOptions: {
+        api: `${currentWorkspaceId ? `/w/${currentWorkspaceId}` : ''}/api/chat`,
+        headers: {
+          'osd-xsrf': 'true',
+        },
+      },
     });
     return () => {
       unmount();
     };
-  }, []);
+  }, [services.core.workspaces?.currentWorkspaceId$]);
 
   return (
     <div

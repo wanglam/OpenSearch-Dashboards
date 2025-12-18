@@ -111,6 +111,7 @@ export function defineRoutes(
       },
     },
     async (context, request, response) => {
+
       const dataSourceId = request.query?.dataSourceId;
 
       try {
@@ -164,7 +165,9 @@ export function defineRoutes(
   router.post(
     {
       path: '/api/chat',
-      validate: false,
+      validate: {
+        body: schema.any(),
+      },
     },
     async (_context, request, response) => {
       try {
@@ -175,18 +178,21 @@ export function defineRoutes(
         });
 
         // Convert AI SDK stream to Node.js Readable stream
-        const textStream = result.textStream;
-        const reader = textStream.getReader();
+        // const textStream = result.textStream;
+        const rawStream = result.toUIMessageStream();
+        const reader = rawStream.getReader();
 
         const stream = new Readable({
           async read() {
             try {
               const { done, value } = await reader.read();
               if (done) {
+                this.push("[DONE]\n\n");
                 this.push(null); // Signal end of stream
               } else {
                 // Format as Server-Sent Events (SSE)
-                this.push(`data: ${JSON.stringify({ text: value })}\n\n`);
+                this.push(`data: ${JSON.stringify(value)}\n\n`);
+                // this.push(value);
               }
             } catch (error) {
               this.destroy(error as Error);
@@ -203,7 +209,8 @@ export function defineRoutes(
             'Transfer-Encoding': 'chunked',
             'X-Accel-Buffering': 'no',
           },
-          body: stream,
+          // body: result.toUIMessageStream(),
+          body: stream
         });
       } catch (error) {
         logger.error(`AI chat error: ${error}`);

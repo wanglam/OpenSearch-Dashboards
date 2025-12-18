@@ -10468,7 +10468,7 @@ assistant-stream@^0.2.45:
 
 "assistant-ui-chat@https://github.com/wanglam/assistant-ui-chat":
   version "0.1.0"
-  resolved "https://github.com/wanglam/assistant-ui-chat#7c40a1e753861a1e800e5ff15f8d619a1570d1f2"
+  resolved "https://github.com/wanglam/assistant-ui-chat#a94ed67213050ddf3448ec153a5205d3e2facbe5"
 
 ast-types-flow@^0.0.7:
   version "0.0.7"
