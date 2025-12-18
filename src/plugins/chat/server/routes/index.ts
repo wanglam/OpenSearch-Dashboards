@@ -5,6 +5,8 @@
 
 import { schema } from '@osd/config-schema';
 import { Readable } from 'stream';
+import { bedrock } from "@ai-sdk/amazon-bedrock";
+import { streamText, convertToModelMessages, type UIMessage } from "ai";
 import {
   IRouter,
   Logger,
@@ -149,6 +151,62 @@ export function defineRoutes(
         return await forwardToAgUI(agUiUrl, request, response, dataSourceId, logger);
       } catch (error) {
         logger.error(`AI agent routing error: ${error}`);
+        return response.customError({
+          statusCode: 500,
+          body: {
+            message: error instanceof Error ? error.message : 'Unknown error occurred',
+          },
+        });
+      }
+    }
+  );
+
+  router.post(
+    {
+      path: '/api/chat',
+      validate: false,
+    },
+    async (_context, request, response) => {
+      try {
+        const { messages } = request.body;
+        const result = streamText({
+          model: bedrock("global.anthropic.claude-sonnet-4-5-20250929-v1:0"),
+          messages: convertToModelMessages(messages),
+        });
+
+        // Convert AI SDK stream to Node.js Readable stream
+        const textStream = result.textStream;
+        const reader = textStream.getReader();
+
+        const stream = new Readable({
+          async read() {
+            try {
+              const { done, value } = await reader.read();
+              if (done) {
+                this.push(null); // Signal end of stream
+              } else {
+                // Format as Server-Sent Events (SSE)
+                this.push(`data: ${JSON.stringify({ text: value })}\n\n`);
+              }
+            } catch (error) {
+              this.destroy(error as Error);
+            }
+          },
+        });
+
+        return response.ok({
+          headers: {
+            'Content-Type': 'text/event-stream',
+            'Content-Encoding': 'identity',
+            'Cache-Control': 'no-cache',
+            Connection: 'keep-alive',
+            'Transfer-Encoding': 'chunked',
+            'X-Accel-Buffering': 'no',
+          },
+          body: stream,
+        });
+      } catch (error) {
+        logger.error(`AI chat error: ${error}`);
         return response.customError({
           statusCode: 500,
           body: {

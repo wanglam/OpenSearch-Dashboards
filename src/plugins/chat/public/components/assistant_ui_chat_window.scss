@@ -3,5 +3,209 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Import assistant-ui-chat styles
+// Import assistant-ui-chat styles at the root level
 @import '~assistant-ui-chat/dist/mount.css';
+
+// Create maximum specificity protection using the :is() pseudo-class with double nesting
+// This gives us a specificity of (0,2,1) which beats most global CSS selectors
+.assistant-ui-chat-container:is(.assistant-ui-chat-container) {
+  // Create isolation context
+  isolation: isolate !important;
+  display: block !important;
+  height: 100% !important;
+  width: 100% !important;
+
+  // Ultra-high specificity selector using :not(#\#):not(#\#) hack
+  // This adds (0,4,0) specificity to override virtually any global CSS
+  :where(*):not(#\#):not(#\#):not(#\#) {
+    // Force box-sizing for all elements
+    box-sizing: border-box !important;
+  }
+
+  // Protect all Tailwind utility classes with maximum specificity
+  // Display utilities
+  :where(.flex):not(#\#):not(#\#):not(#\#) { display: flex !important; }
+  :where(.inline-flex):not(#\#):not(#\#):not(#\#) { display: inline-flex !important; }
+  :where(.grid):not(#\#):not(#\#):not(#\#) { display: grid !important; }
+  :where(.block):not(#\#):not(#\#):not(#\#) { display: block !important; }
+  :where(.inline-block):not(#\#):not(#\#):not(#\#) { display: inline-block !important; }
+  :where(.inline):not(#\#):not(#\#):not(#\#) { display: inline !important; }
+  :where(.hidden):not(#\#):not(#\#):not(#\#) { display: none !important; }
+
+  // Position utilities
+  :where(.relative):not(#\#):not(#\#):not(#\#) { position: relative !important; }
+  :where(.absolute):not(#\#):not(#\#):not(#\#) { position: absolute !important; }
+  :where(.fixed):not(#\#):not(#\#):not(#\#) { position: fixed !important; }
+  :where(.sticky):not(#\#):not(#\#):not(#\#) { position: sticky !important; }
+
+  // Flexbox utilities
+  :where(.flex-col):not(#\#):not(#\#):not(#\#) { flex-direction: column !important; }
+  :where(.flex-row):not(#\#):not(#\#):not(#\#) { flex-direction: row !important; }
+  :where(.flex-col-reverse):not(#\#):not(#\#):not(#\#) { flex-direction: column-reverse !important; }
+  :where(.flex-row-reverse):not(#\#):not(#\#):not(#\#) { flex-direction: row-reverse !important; }
+  :where(.items-center):not(#\#):not(#\#):not(#\#) { align-items: center !important; }
+  :where(.items-start):not(#\#):not(#\#):not(#\#) { align-items: flex-start !important; }
+  :where(.items-end):not(#\#):not(#\#):not(#\#) { align-items: flex-end !important; }
+  :where(.items-stretch):not(#\#):not(#\#):not(#\#) { align-items: stretch !important; }
+  :where(.justify-center):not(#\#):not(#\#):not(#\#) { justify-content: center !important; }
+  :where(.justify-start):not(#\#):not(#\#):not(#\#) { justify-content: flex-start !important; }
+  :where(.justify-end):not(#\#):not(#\#):not(#\#) { justify-content: flex-end !important; }
+  :where(.justify-between):not(#\#):not(#\#):not(#\#) { justify-content: space-between !important; }
+  :where(.flex-1):not(#\#):not(#\#):not(#\#) { flex: 1 1 0% !important; }
+  :where(.shrink-0):not(#\#):not(#\#):not(#\#) { flex-shrink: 0 !important; }
+  :where(.grow):not(#\#):not(#\#):not(#\#),
+  :where(.flex-grow):not(#\#):not(#\#):not(#\#) { flex-grow: 1 !important; }
+
+  // Gap utilities - protect all gap classes
+  :where([class*="gap-"]):not(#\#):not(#\#):not(#\#) {
+    gap: var(--tw-gap, revert-layer) !important;
+  }
+
+  // Width/Height utilities - protect dimensional classes
+  :where([class*="w-"]):not(#\#):not(#\#):not(#\#) {
+    width: var(--tw-width, revert-layer) !important;
+  }
+  :where([class*="h-"]):not(#\#):not(#\#):not(#\#) {
+    height: var(--tw-height, revert-layer) !important;
+  }
+  :where([class*="min-w-"]):not(#\#):not(#\#):not(#\#) {
+    min-width: var(--tw-min-width, revert-layer) !important;
+  }
+  :where([class*="min-h-"]):not(#\#):not(#\#):not(#\#) {
+    min-height: var(--tw-min-height, revert-layer) !important;
+  }
+  :where([class*="max-w-"]):not(#\#):not(#\#):not(#\#) {
+    max-width: var(--tw-max-width, revert-layer) !important;
+  }
+  :where([class*="max-h-"]):not(#\#):not(#\#):not(#\#) {
+    max-height: var(--tw-max-height, revert-layer) !important;
+  }
+
+  // Margin utilities - protect all margin classes
+  :where([class*="m-"]):not(#\#):not(#\#):not(#\#),
+  :where([class*="mx-"]):not(#\#):not(#\#):not(#\#),
+  :where([class*="my-"]):not(#\#):not(#\#):not(#\#),
+  :where([class*="mt-"]):not(#\#):not(#\#):not(#\#),
+  :where([class*="mr-"]):not(#\#):not(#\#):not(#\#),
+  :where([class*="mb-"]):not(#\#):not(#\#):not(#\#),
+  :where([class*="ml-"]):not(#\#):not(#\#):not(#\#) {
+    margin: var(--tw-margin, revert-layer) !important;
+    margin-top: var(--tw-margin-top, revert-layer) !important;
+    margin-right: var(--tw-margin-right, revert-layer) !important;
+    margin-bottom: var(--tw-margin-bottom, revert-layer) !important;
+    margin-left: var(--tw-margin-left, revert-layer) !important;
+  }
+
+  // Padding utilities - protect all padding classes
+  :where([class*="p-"]):not(#\#):not(#\#):not(#\#),
+  :where([class*="px-"]):not(#\#):not(#\#):not(#\#),
+  :where([class*="py-"]):not(#\#):not(#\#):not(#\#),
+  :where([class*="pt-"]):not(#\#):not(#\#):not(#\#),
+  :where([class*="pr-"]):not(#\#):not(#\#):not(#\#),
+  :where([class*="pb-"]):not(#\#):not(#\#):not(#\#),
+  :where([class*="pl-"]):not(#\#):not(#\#):not(#\#) {
+    padding: var(--tw-padding, revert-layer) !important;
+    padding-top: var(--tw-padding-top, revert-layer) !important;
+    padding-right: var(--tw-padding-right, revert-layer) !important;
+    padding-bottom: var(--tw-padding-bottom, revert-layer) !important;
+    padding-left: var(--tw-padding-left, revert-layer) !important;
+  }
+
+  // Text/Typography utilities
+  :where([class*="text-"]):not(#\#):not(#\#):not(#\#) {
+    font-size: var(--tw-font-size, revert-layer) !important;
+    line-height: var(--tw-line-height, revert-layer) !important;
+    color: var(--tw-text-color, revert-layer) !important;
+    text-align: var(--tw-text-align, revert-layer) !important;
+  }
+
+  :where([class*="font-"]):not(#\#):not(#\#):not(#\#) {
+    font-weight: var(--tw-font-weight, revert-layer) !important;
+    font-family: var(--tw-font-family, revert-layer) !important;
+  }
+
+  // Background utilities
+  :where([class*="bg-"]):not(#\#):not(#\#):not(#\#) {
+    background: var(--tw-bg, revert-layer) !important;
+    background-color: var(--tw-bg-color, revert-layer) !important;
+  }
+
+  // Border utilities
+  :where([class*="border"]):not(#\#):not(#\#):not(#\#),
+  :where([class*="rounded"]):not(#\#):not(#\#):not(#\#) {
+    border: var(--tw-border, revert-layer) !important;
+    border-width: var(--tw-border-width, revert-layer) !important;
+    border-color: var(--tw-border-color, revert-layer) !important;
+    border-radius: var(--tw-border-radius, revert-layer) !important;
+  }
+
+  // Shadow utilities
+  :where([class*="shadow"]):not(#\#):not(#\#):not(#\#) {
+    box-shadow: var(--tw-shadow, revert-layer) !important;
+  }
+
+  // Opacity utilities
+  :where([class*="opacity"]):not(#\#):not(#\#):not(#\#) {
+    opacity: var(--tw-opacity, revert-layer) !important;
+  }
+
+  // Overflow utilities
+  :where(.overflow-auto):not(#\#):not(#\#):not(#\#) { overflow: auto !important; }
+  :where(.overflow-hidden):not(#\#):not(#\#):not(#\#) { overflow: hidden !important; }
+  :where(.overflow-visible):not(#\#):not(#\#):not(#\#) { overflow: visible !important; }
+  :where(.overflow-x-auto):not(#\#):not(#\#):not(#\#) { overflow-x: auto !important; }
+  :where(.overflow-y-auto):not(#\#):not(#\#):not(#\#) { overflow-y: auto !important; }
+  :where(.overflow-y-scroll):not(#\#):not(#\#):not(#\#) { overflow-y: scroll !important; }
+
+  // Pointer events
+  :where(.pointer-events-none):not(#\#):not(#\#):not(#\#) { pointer-events: none !important; }
+
+  // Z-index utilities
+  :where([class*="z-"]):not(#\#):not(#\#):not(#\#) {
+    z-index: var(--tw-z-index, revert-layer) !important;
+  }
+
+  // Transform/Transition utilities
+  :where([class*="transition"]):not(#\#):not(#\#):not(#\#),
+  :where([class*="duration"]):not(#\#):not(#\#):not(#\#),
+  :where([class*="ease"]):not(#\#):not(#\#):not(#\#) {
+    transition: var(--tw-transition, revert-layer) !important;
+    transition-duration: var(--tw-duration, revert-layer) !important;
+    transition-timing-function: var(--tw-ease, revert-layer) !important;
+  }
+
+  // Additional common utilities that get overridden
+  :where(.cursor-pointer):not(#\#):not(#\#):not(#\#) { cursor: pointer !important; }
+  :where(.select-none):not(#\#):not(#\#):not(#\#) { user-select: none !important; }
+  :where(.resize-none):not(#\#):not(#\#):not(#\#) { resize: none !important; }
+  :where(.whitespace-nowrap):not(#\#):not(#\#):not(#\#) { white-space: nowrap !important; }
+  :where(.break-words):not(#\#):not(#\#):not(#\#) { overflow-wrap: break-word !important; }
+  :where(.truncate):not(#\#):not(#\#):not(#\#) {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  // Form elements protection with highest specificity
+  input:not(#\#):not(#\#):not(#\#),
+  button:not(#\#):not(#\#):not(#\#),
+  textarea:not(#\#):not(#\#):not(#\#),
+  select:not(#\#):not(#\#):not(#\#) {
+    margin: revert-layer !important;
+    padding: revert-layer !important;
+    border: revert-layer !important;
+    font: inherit !important;
+    color: inherit !important;
+    background: revert-layer !important;
+    appearance: revert-layer !important;
+    border-radius: revert-layer !important;
+  }
+
+  // Ensure CSS variables are properly set
+  & {
+    --spacing: 0.25rem;
+    font-family: var(--default-font-family, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
