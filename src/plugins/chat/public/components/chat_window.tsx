@@ -195,7 +195,7 @@ const ChatWindowContent = React.forwardRef<ChatWindowInstance, ChatWindowProps>(
     let textContent = typeof message.content === "string" ? message.content : "";
     const additionalMessages: Message[] = [];
 
-    if(Array.isArray(message.content)){
+    if (Array.isArray(message.content)) {
       const lastMessageContent =  message.content[message.content.length - 1];
       if (lastMessageContent.type === "text") {
         textContent = lastMessageContent.text;
