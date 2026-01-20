@@ -206,7 +206,7 @@ const ChatWindowContent = React.forwardRef<ChatWindowInstance, ChatWindowProps>(
       }
     }
 
-    if(textContent === ""){
+    if (textContent === "") {
         return;
     }
 
