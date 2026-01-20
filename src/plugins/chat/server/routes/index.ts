@@ -123,7 +123,7 @@ export function defineRoutes(
         // Get the registered ML agent router (if any)
         const mlRouter = MLAgentRouterFactory.getRouter();
 
-        if (mlRouter) {
+        if (false && mlRouter) {
           logger.info(`Routing to ML Commons agent via ${mlRouter.getRouterName()}`);
           return await mlRouter.forward(
             context,
