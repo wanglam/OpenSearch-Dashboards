@@ -4,7 +4,10 @@
  */
 
 import React, { useRef } from 'react';
-import { EuiButtonIcon, EuiTextColor, EuiTextArea } from '@elastic/eui';
+import { useObservable } from 'react-use';
+import { EuiButtonIcon, EuiTextColor, EuiTextArea, EuiToolTip } from '@elastic/eui';
+import { i18n } from '@osd/i18n';
+import { useChatContext } from '../contexts/chat_context';
 import { ChatLayoutMode } from './chat_header_button';
 import { ContextPills } from './context_pills';
 import { SlashCommandMenu } from './slash_command_menu';
@@ -14,21 +17,28 @@ import './chat_input.scss';
 interface ChatInputProps {
   layoutMode: ChatLayoutMode;
   input: string;
-  isStreaming: boolean;
+  isDisabled: boolean;
   onInputChange: (value: string) => void;
   onSend: () => void;
   onKeyDown: (e: React.KeyboardEvent) => void;
+  includeScreenShotEnabled: boolean;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
   layoutMode,
   input,
-  isStreaming,
+  isDisabled,
   onInputChange,
   onSend,
   onKeyDown,
+  includeScreenShotEnabled,
 }) => {
+  const { chatService } = useChatContext();
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const shouldIncludeScreenshotAfterSend = useObservable(
+    chatService.getShouldIncludeScreenshotAfterSend$(),
+    false
+  );
 
   // Use custom hook for command menu keyboard handling
   const {
@@ -48,7 +58,38 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   return (
     <div className={`chatInput chatInput--${layoutMode}`}>
       <ContextPills category="chat" />
-      <div className="chatInput__inputRow" style={{ position: 'relative' }}>
+      <div
+        className={`chatInput__inputRow ${includeScreenShotEnabled ? 'treeColumn' : ''}`}
+        style={{ position: 'relative' }}
+      >
+        {includeScreenShotEnabled &&
+          (isDisabled ? (
+            <EuiButtonIcon
+              size="xs"
+              iconType="image"
+              color={shouldIncludeScreenshotAfterSend ? 'primary' : 'text'}
+              disabled={isDisabled}
+              style={{ cursor: 'not-allowed' }}
+            />
+          ) : (
+            <EuiToolTip
+              content={i18n.translate('chat.chatInput.screenshotTriggerTip', {
+                defaultMessage:
+                  'Include the current page contents for your questions. Best for getting answers for the viewing page.',
+              })}
+            >
+              <EuiButtonIcon
+                size="xs"
+                iconType="image"
+                color={shouldIncludeScreenshotAfterSend ? 'primary' : 'text'}
+                onClick={() => {
+                  chatService.setShouldIncludeScreenshotAfterSend(
+                    !shouldIncludeScreenshotAfterSend
+                  );
+                }}
+              />
+            </EuiToolTip>
+          ))}
         {showCommandMenu && (
           <SlashCommandMenu
             commands={commandSuggestions}
@@ -63,7 +104,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             value={input}
             onChange={(e) => onInputChange(e.target.value)}
             onKeyDown={handleKeyDown}
-            disabled={isStreaming}
+            disabled={isDisabled}
             autoFocus={true}
             fullWidth
             resize="none"
@@ -79,9 +120,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           )}
         </div>
         <EuiButtonIcon
-          iconType={isStreaming ? 'generate' : 'sortUp'}
+          iconType={isDisabled ? 'generate' : 'sortUp'}
           onClick={onSend}
-          isDisabled={input.trim().length === 0 || isStreaming}
+          isDisabled={input.trim().length === 0 || isDisabled}
           aria-label="Send message"
           size="m"
           color="primary"

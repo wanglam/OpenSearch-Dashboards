@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Observable, Subscription } from 'rxjs';
+import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { AgUiAgent } from './ag_ui_agent';
 import { RunAgentInput, Message, UserMessage, ToolMessage } from '../../common/types';
 import type { ToolDefinition } from '../../../context_provider/public';
@@ -57,6 +57,9 @@ export class ChatService {
 
   // Cache for datasourceId to avoid repeated lookups
   private cachedDataSourceId?: string;
+
+  // BehaviorSubject to control whether to include screenshot after send button click
+  private shouldIncludeScreenshotAfterSend$ = new BehaviorSubject<boolean>(false);
 
   constructor(
     uiSettings: IUiSettingsClient,
@@ -630,6 +633,42 @@ export class ChatService {
 
     // Reset AgUiAgent connection state to clear any aborted controllers
     this.resetConnection();
+  }
+
+  /**
+   * Get whether to include screenshot after send button click
+   */
+  public shouldIncludeScreenshotAfterSend(): boolean {
+    return this.shouldIncludeScreenshotAfterSend$.getValue();
+  }
+
+  /**
+   * Get observable for screenshot inclusion state
+   */
+  public getShouldIncludeScreenshotAfterSend$(): Observable<boolean> {
+    return this.shouldIncludeScreenshotAfterSend$.asObservable();
+  }
+
+  /**
+   * Set whether to include screenshot after send button click
+   * This will only be enabled if the core chat service's screenshot feature is enabled
+   */
+  public setShouldIncludeScreenshotAfterSend(value: boolean): void {
+    // Only allow enabling if the core screenshot feature is enabled
+    if (value) {
+      if (!this.coreChatService) {
+        // Core chat service not available, cannot enable
+        return;
+      }
+      if (!this.coreChatService.isScreenshotFeatureEnabled()) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          'Cannot enable screenshot inclusion: screenshot feature is not enabled in core chat service'
+        );
+        return;
+      }
+    }
+    this.shouldIncludeScreenshotAfterSend$.next(value);
   }
 
   /**

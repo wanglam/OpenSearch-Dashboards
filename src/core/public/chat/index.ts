@@ -18,6 +18,9 @@ export {
   FunctionCall,
   Role,
   ChatWindowState,
+  InputContent,
+  TextInputContent,
+  BinaryInputContent,
 } from './types';
 
 export { ChatService } from './chat_service';

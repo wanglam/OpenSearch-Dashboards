@@ -5,12 +5,12 @@
 
 import { Observable } from 'rxjs';
 
-interface TextInputContent {
+export interface TextInputContent {
   type: 'text';
   text: string;
 }
 
-interface BinaryInputContent {
+export interface BinaryInputContent {
   type: 'binary';
   mimeType: string;
   id?: string;
@@ -19,7 +19,7 @@ interface BinaryInputContent {
   filename?: string;
 }
 
-type InputContent = TextInputContent | BinaryInputContent;
+export type InputContent = TextInputContent | BinaryInputContent;
 
 /**
  * Function call interface
@@ -145,16 +145,23 @@ export interface ChatServiceInterface {
   onWindowClose(callback: () => void): () => void;
 
   /**
+   * Screenshot feature management - managed by core
+   */
+  isScreenshotFeatureEnabled(): boolean;
+  getScreenshotFeatureEnabled$(): Observable<boolean>;
+  setScreenshotFeatureEnabled(enabled: boolean): void;
+
+  /**
    * Operations - delegated to plugin (throws error if unavailable)
    */
   openWindow(): Promise<void>;
   closeWindow(): Promise<void>;
   sendMessage(
-    content: string,
+    content: string | InputContent[],
     messages: Message[]
   ): Promise<{ observable: any; userMessage: UserMessage }>;
   sendMessageWithWindow(
-    content: string,
+    content: string | InputContent[],
     messages: Message[],
     options?: { clearConversation?: boolean }
   ): Promise<{ observable: any; userMessage: UserMessage }>;
@@ -166,12 +173,12 @@ export interface ChatServiceInterface {
 export interface ChatImplementationFunctions {
   // Message operations
   sendMessage: (
-    content: string,
+    content: string | InputContent[],
     messages: Message[]
   ) => Promise<{ observable: any; userMessage: UserMessage }>;
 
   sendMessageWithWindow: (
-    content: string,
+    content: string | InputContent[],
     messages: Message[],
     options?: { clearConversation?: boolean }
   ) => Promise<{ observable: any; userMessage: UserMessage }>;
@@ -204,6 +211,12 @@ export interface ChatServiceSetup {
   suggestedActionsService?: {
     registerProvider(provider: any): void;
   };
+
+  /**
+   * Set the DOM element for screenshot page container
+   * This will be called by CoreSystem with the rootDomElement
+   */
+  setScreenshotPageContainerElement(element: HTMLElement): void;
 }
 
 /**
@@ -217,4 +230,10 @@ export interface ChatServiceStart extends ChatServiceInterface {
   suggestedActionsService?: {
     registerProvider(provider: any): void;
   };
+
+  /**
+   * DOM element for screenshot page container
+   * This element can be used to capture screenshots of the page
+   */
+  screenshotPageContainerElement?: HTMLElement;
 }

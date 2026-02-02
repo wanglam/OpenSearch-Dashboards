@@ -62,6 +62,9 @@ describe('ChatWindow', () => {
       getCurrentMessages: jest.fn().mockReturnValue([]),
       updateCurrentMessages: jest.fn(),
       getThreadId: jest.fn().mockReturnValue('mock-thread-id'),
+      getShouldIncludeScreenshotAfterSend$: jest.fn().mockReturnValue(of(false)),
+      shouldIncludeScreenshotAfterSend: jest.fn().mockReturnValue(false),
+      setShouldIncludeScreenshotAfterSend: jest.fn(),
     } as any;
     mockSuggestedActionsService = {} as any;
     mockConfirmationService = {

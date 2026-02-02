@@ -1412,6 +1412,180 @@ describe('ChatService', () => {
     });
   });
 
+  describe('screenshot inclusion management', () => {
+    let mockCoreChatServiceWithScreenshot: jest.Mocked<ChatServiceStart>;
+
+    beforeEach(() => {
+      // Create a mock core chat service with screenshot feature enabled
+      mockCoreChatServiceWithScreenshot = {
+        ...mockCoreChatService,
+        isScreenshotFeatureEnabled: jest.fn().mockReturnValue(true),
+        getScreenshotFeatureEnabled$: jest.fn(),
+        setScreenshotFeatureEnabled: jest.fn(),
+      } as any;
+    });
+
+    describe('shouldIncludeScreenshotAfterSend', () => {
+      it('should return false by default', () => {
+        expect(chatService.shouldIncludeScreenshotAfterSend()).toBe(false);
+      });
+
+      it('should return updated value after setting', () => {
+        const serviceWithScreenshot = new ChatService(
+          undefined as any,
+          mockCoreChatServiceWithScreenshot
+        );
+
+        serviceWithScreenshot.setShouldIncludeScreenshotAfterSend(true);
+        expect(serviceWithScreenshot.shouldIncludeScreenshotAfterSend()).toBe(true);
+
+        serviceWithScreenshot.setShouldIncludeScreenshotAfterSend(false);
+        expect(serviceWithScreenshot.shouldIncludeScreenshotAfterSend()).toBe(false);
+      });
+    });
+
+    describe('getShouldIncludeScreenshotAfterSend$', () => {
+      it('should return an observable that emits current value', (done) => {
+        const serviceWithScreenshot = new ChatService(
+          undefined as any,
+          mockCoreChatServiceWithScreenshot
+        );
+
+        const observable = serviceWithScreenshot.getShouldIncludeScreenshotAfterSend$();
+
+        observable.subscribe((value) => {
+          expect(value).toBe(false);
+          done();
+        });
+      });
+
+      it('should emit new values when state changes', (done) => {
+        const serviceWithScreenshot = new ChatService(
+          undefined as any,
+          mockCoreChatServiceWithScreenshot
+        );
+
+        const observable = serviceWithScreenshot.getShouldIncludeScreenshotAfterSend$();
+        const emittedValues: boolean[] = [];
+
+        observable.subscribe((value) => {
+          emittedValues.push(value);
+
+          if (emittedValues.length === 3) {
+            expect(emittedValues).toEqual([false, true, false]);
+            done();
+          }
+        });
+
+        // Trigger state changes
+        setTimeout(() => {
+          serviceWithScreenshot.setShouldIncludeScreenshotAfterSend(true);
+          setTimeout(() => {
+            serviceWithScreenshot.setShouldIncludeScreenshotAfterSend(false);
+          }, 10);
+        }, 10);
+      });
+    });
+
+    describe('setShouldIncludeScreenshotAfterSend', () => {
+      it('should update the value when core screenshot feature is enabled', () => {
+        const serviceWithScreenshot = new ChatService(
+          undefined as any,
+          mockCoreChatServiceWithScreenshot
+        );
+
+        serviceWithScreenshot.setShouldIncludeScreenshotAfterSend(true);
+        expect(serviceWithScreenshot.shouldIncludeScreenshotAfterSend()).toBe(true);
+      });
+
+      it('should not enable when core screenshot feature is disabled', () => {
+        const mockCoreServiceDisabled = {
+          ...mockCoreChatService,
+          isScreenshotFeatureEnabled: jest.fn().mockReturnValue(false),
+        } as any;
+
+        const serviceWithDisabled = new ChatService(undefined as any, mockCoreServiceDisabled);
+
+        const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+        serviceWithDisabled.setShouldIncludeScreenshotAfterSend(true);
+
+        expect(serviceWithDisabled.shouldIncludeScreenshotAfterSend()).toBe(false);
+        expect(consoleSpy).toHaveBeenCalledWith(
+          'Cannot enable screenshot inclusion: screenshot feature is not enabled in core chat service'
+        );
+
+        consoleSpy.mockRestore();
+      });
+
+      it('should allow disabling even when core screenshot feature is disabled', () => {
+        const mockCoreServiceDisabled = {
+          ...mockCoreChatService,
+          isScreenshotFeatureEnabled: jest.fn().mockReturnValue(false),
+        } as any;
+
+        const serviceWithDisabled = new ChatService(undefined as any, mockCoreServiceDisabled);
+
+        // Set to false should work even when core feature is disabled
+        serviceWithDisabled.setShouldIncludeScreenshotAfterSend(false);
+        expect(serviceWithDisabled.shouldIncludeScreenshotAfterSend()).toBe(false);
+      });
+
+      it('should handle missing core chat service gracefully when enabling', () => {
+        const serviceWithoutCore = new ChatService(undefined as any, undefined);
+
+        // Should not throw, but also should not enable
+        serviceWithoutCore.setShouldIncludeScreenshotAfterSend(true);
+        expect(serviceWithoutCore.shouldIncludeScreenshotAfterSend()).toBe(false);
+      });
+
+      it('should allow disabling when core chat service is not available', () => {
+        const serviceWithoutCore = new ChatService(undefined as any, undefined);
+
+        serviceWithoutCore.setShouldIncludeScreenshotAfterSend(false);
+        expect(serviceWithoutCore.shouldIncludeScreenshotAfterSend()).toBe(false);
+      });
+
+      it('should respect core screenshot feature state when enabling', () => {
+        const serviceWithScreenshot = new ChatService(
+          undefined as any,
+          mockCoreChatServiceWithScreenshot
+        );
+
+        // First enable it
+        serviceWithScreenshot.setShouldIncludeScreenshotAfterSend(true);
+        expect(serviceWithScreenshot.shouldIncludeScreenshotAfterSend()).toBe(true);
+
+        // Now disable the core feature
+        mockCoreChatServiceWithScreenshot.isScreenshotFeatureEnabled = jest
+          .fn()
+          .mockReturnValue(false);
+
+        // Try to enable again - should not work
+        serviceWithScreenshot.setShouldIncludeScreenshotAfterSend(false);
+        serviceWithScreenshot.setShouldIncludeScreenshotAfterSend(true);
+        expect(serviceWithScreenshot.shouldIncludeScreenshotAfterSend()).toBe(false);
+      });
+
+      it('should toggle value correctly when core screenshot feature is enabled', () => {
+        const serviceWithScreenshot = new ChatService(
+          undefined as any,
+          mockCoreChatServiceWithScreenshot
+        );
+
+        // Toggle multiple times
+        serviceWithScreenshot.setShouldIncludeScreenshotAfterSend(true);
+        expect(serviceWithScreenshot.shouldIncludeScreenshotAfterSend()).toBe(true);
+
+        serviceWithScreenshot.setShouldIncludeScreenshotAfterSend(false);
+        expect(serviceWithScreenshot.shouldIncludeScreenshotAfterSend()).toBe(false);
+
+        serviceWithScreenshot.setShouldIncludeScreenshotAfterSend(true);
+        expect(serviceWithScreenshot.shouldIncludeScreenshotAfterSend()).toBe(true);
+      });
+    });
+  });
+
   describe('getWorkspaceAwareDataSourceId with page context priority', () => {
     let mockUiSettings: any;
     let mockWorkspaces: any;

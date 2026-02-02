@@ -26,6 +26,7 @@ import { ChatMessages } from './chat_messages';
 import { ChatInput } from './chat_input';
 import { ConfirmationMessage } from './confirmation_message';
 import { slashCommandRegistry } from '../services/slash_commands';
+import { usePageContainerCapture } from '../hooks/use_page_container_capture';
 
 export interface ChatWindowInstance {
   startNewChat: ()=>void;
@@ -59,6 +60,7 @@ const ChatWindowContent = React.forwardRef<ChatWindowInstance, ChatWindowProps>(
   const [currentRunId, setCurrentRunId] = useState<string | null>(null);
   const [pendingConfirmation, setPendingConfirmation] = useState<ConfirmationRequest | null>(null);
   const handleSendRef = useRef<typeof handleSend>();
+  const {screenshotFeatureEnabled,isCapturing, capturePageContainer} = usePageContainerCapture();
 
   // Use ref to track streaming state synchronously for React 18 compatibility
   // React 18 batches state updates, so we need a ref for immediate checks
@@ -197,7 +199,7 @@ const ChatWindowContent = React.forwardRef<ChatWindowInstance, ChatWindowProps>(
         id: userMessage.id,
         role: 'user',
         content: userMessage.content,
-        rawMessage: rawMessage || messageContent,  // For regular messages, raw and content are the same
+        rawMessage: Array.isArray(userMessage.content) ? undefined : rawMessage || messageContent,  // For regular messages, raw and content are the same
       };
 
       // Add loading assistant message
@@ -241,6 +243,9 @@ const ChatWindowContent = React.forwardRef<ChatWindowInstance, ChatWindowProps>(
           setTimeline((prev) => prev.filter((msg) => msg.id !== loadingMessageId));
           isStreamingRef.current = false;
           setIsStreaming(false);
+          if(chatService.shouldIncludeScreenshotAfterSend()){
+            chatService.setShouldIncludeScreenshotAfterSend(false);
+          }
         },
       });
 
@@ -257,10 +262,34 @@ const ChatWindowContent = React.forwardRef<ChatWindowInstance, ChatWindowProps>(
     // Use ref for immediate check since React 18 batches state updates
     if (!messageContent || isStreamingRef.current) return;
 
-    setInput('');
-
     // Prepare additional messages for sending (but don't add to timeline yet)
-    const additionalMessages = options?.messages ?? [];
+    let additionalMessages = options?.messages ?? [];
+
+    // Adding additional messages if should include screenshot after message sent
+    if (!options && chatService.shouldIncludeScreenshotAfterSend()) {
+      let imageData;
+      try {
+        imageData = await capturePageContainer();
+      } catch (err) {
+        console.log(err);
+      }
+      if(imageData){
+        additionalMessages = [
+          {
+            role: 'user' as const,
+            id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+            content: [
+              {
+                type: 'binary' as const,
+                mimeType: imageData.mimeType,
+                data: imageData.base64,
+              },
+            ],
+        }]
+      }
+    }
+
+    setInput('');
 
     // Merge additional messages with current timeline for sending
     const messagesToSend = [...timeline, ...additionalMessages];
@@ -280,13 +309,6 @@ const ChatWindowContent = React.forwardRef<ChatWindowInstance, ChatWindowProps>(
   };
 
   handleSendRef.current = handleSend;
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
 
   const handleResendMessage = async (message: Message) => {
     // Use ref for immediate check since React 18 batches state updates
@@ -361,6 +383,13 @@ const ChatWindowContent = React.forwardRef<ChatWindowInstance, ChatWindowProps>(
     sendMessage: async ({content, messages})=>(await handleSendRef.current?.({input:content, messages}))
   }), [handleNewChat]);
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
   return (
     <ChatContainer layoutMode={layoutMode}>
       <ChatHeader
@@ -394,10 +423,11 @@ const ChatWindowContent = React.forwardRef<ChatWindowInstance, ChatWindowProps>(
       <ChatInput
         layoutMode={layoutMode}
         input={input}
-        isStreaming={isStreaming}
-        onInputChange={setInput}
+        isDisabled={isStreaming || isCapturing}
         onSend={handleSend}
+        onInputChange={setInput}
         onKeyDown={handleKeyDown}
+        includeScreenShotEnabled={screenshotFeatureEnabled}
       />
     </ChatContainer>
   );
