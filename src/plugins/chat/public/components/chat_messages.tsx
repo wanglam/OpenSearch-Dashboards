@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useRef, useEffect, useMemo, useCallback } from 'react';
+import React, { useRef, useEffect, useMemo, useCallback, useState } from 'react';
 import {
   EuiIcon,
   EuiText,
@@ -16,6 +16,8 @@ import {
 import { i18n } from '@osd/i18n';
 import { useObservable } from 'react-use';
 import { map } from 'rxjs/operators';
+import { CoreStart } from '../../../../core/public';
+import { useOpenSearchDashboards } from '../../../opensearch_dashboards_react/public';
 import { ChatLayoutMode } from '../types';
 import { MessageRow } from './message_row';
 import { TimelineToolCall, ToolCallRow } from './tool_call_row';
@@ -31,6 +33,8 @@ import {
   ConversationHistoryService,
   SavedConversation,
 } from '../services/conversation_history_service';
+import { useChatContext } from '../contexts/chat_context';
+import { StarterSuggestionItem } from '../services/starter_suggestions';
 
 /**
  * Determine tool status.
@@ -74,6 +78,7 @@ function getToolStatus(
 }
 
 interface SuggestionItem {
+  id?: string;
   icon: string;
   iconColor?: string;
   text: string;
@@ -85,12 +90,14 @@ interface SuggestionItem {
 
 const STARTER_SUGGESTIONS: SuggestionItem[] = [
   {
+    id: 'ask-data',
     icon: 'search',
     iconColor: 'primary',
     text: 'Ask questions about your data',
     prompt: 'What indices do I have?',
   },
   {
+    id: 'investigate',
     icon: 'notebookApp',
     iconColor: 'danger',
     text: '/investigate an issue',
@@ -98,6 +105,7 @@ const STARTER_SUGGESTIONS: SuggestionItem[] = [
     requiredTool: 'create_investigation',
   },
   {
+    id: 'explain',
     icon: 'help',
     iconColor: 'warning',
     text: 'Explain a concept',
@@ -388,7 +396,7 @@ const ChatMessagesComponent: React.FC<ChatMessagesProps> = ({
   );
 
   // Filter starter suggestions based on tool availability
-  const visibleSuggestions = useMemo(() => {
+  const visibleDefaults = useMemo(() => {
     return STARTER_SUGGESTIONS.filter((suggestion) => {
       if (suggestion.requiredTool) {
         if (!toolDefinitions) {
@@ -399,6 +407,52 @@ const ChatMessagesComponent: React.FC<ChatMessagesProps> = ({
       return true;
     });
   }, [toolDefinitions]);
+
+  // Page-aware starter suggestions: an active provider can replace/filter defaults
+  const { starterSuggestionsService } = useChatContext();
+  const { services } = useOpenSearchDashboards<{ core: CoreStart }>();
+  const currentAppId = useObservable(services.core.application.currentAppId$);
+  const [visibleSuggestions, setVisibleSuggestions] = useState<SuggestionItem[]>(visibleDefaults);
+
+  useEffect(() => {
+    setVisibleSuggestions(visibleDefaults);
+
+    if (!currentAppId) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchStarterSuggestions = () => {
+      starterSuggestionsService
+        .getSuggestions({
+          appId: currentAppId,
+          pathname: window.location.pathname,
+          defaults: visibleDefaults,
+        })
+        .then((items: StarterSuggestionItem[] | null) => {
+          if (!cancelled && items) {
+            setVisibleSuggestions(items);
+          }
+        })
+        .catch(() => {
+          // Keep whatever is currently displayed
+        });
+    };
+
+    fetchStarterSuggestions();
+
+    const unsubscribeInvalidate = starterSuggestionsService.onInvalidate((invalidatedAppId) => {
+      if (invalidatedAppId === currentAppId) {
+        fetchStarterSuggestions();
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      unsubscribeInvalidate();
+    };
+  }, [currentAppId, starterSuggestionsService, visibleDefaults]);
 
   // Context is now handled by RFC hooks and context pills
   // No need for separate context display here
