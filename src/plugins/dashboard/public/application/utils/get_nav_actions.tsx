@@ -35,6 +35,7 @@ import { appendEmptySection, migrateAllPanelsToSection } from '../embeddable/sec
 import { unhashUrl } from '../../../../opensearch_dashboards_utils/public';
 import { Dashboard } from '../../dashboard';
 import { showAddPanelPopover } from '../components/dashboard_top_nav/top_nav/show_add_panel_popover';
+import { convertSavedDashboardPanelToPanelState } from './embeddable_saved_object_converters';
 
 interface UrlParamsSelectedMap {
   [UrlParams.SHOW_TOP_MENU]: boolean;
@@ -425,6 +426,73 @@ export const getNavActions = (
         useSharedCrosshair: dashboard.options.useSharedCrosshair,
       };
       newStateContainer.timeRestore = dashboard.timeRestore;
+
+      // Restore section layout to its last-saved state. `layout` may be
+      // `undefined` (flat GridLayout) or a SectionLayout object -- both are
+      // valid and must be restored so that adding/removing sections during
+      // edit mode is correctly reverted on discard.
+      newStateContainer.layout = dashboard.layout;
+
+      // When a section operation ran during editing, the embeddable instances
+      // cached in the container may have been destroyed (add section, move panel
+      // to another section, ungroup, and create/add-into-section all route
+      // through reparentPanels, which does a remove → re-add cycle that destroys
+      // the removed panels' embeddables). A plain updateInput (via the
+      // appState→container sync) on discard would re-mount EmbeddablePanel
+      // components that call render() on those destroyed instances, producing
+      // "Embeddable has been destroyed" errors and blank panels.
+      //
+      // Fix: reparent ONLY the panels that actually need recreation -- those that
+      // changed section membership vs the saved state, plus panels that were
+      // added during editing (and so must be dropped). Panels whose membership is
+      // unchanged are left alone: reparenting a healthy, already-rendered panel
+      // (stripping + re-adding it) leaves its visualization blank, so we must not
+      // touch panels that never moved.
+      const currentInput = currentContainer?.getInput();
+      const currentLayout = currentInput?.layout;
+      const savedLayout = dashboard.layout;
+      const sectionsInvolved =
+        currentLayout?.type === 'SectionLayout' || savedLayout?.type === 'SectionLayout';
+
+      if (
+        sectionsInvolved &&
+        currentContainer &&
+        currentInput &&
+        !isErrorEmbeddable(currentContainer)
+      ) {
+        // Owning section id for a panel (undefined = GridLayout or an unclaimed
+        // panel in the virtual Ungrouped section).
+        const sectionIdOf = (layout: any, panelId: string): string | undefined =>
+          layout?.type === 'SectionLayout'
+            ? layout.items.find((s: any) => s.members?.some((m: any) => m.idRef === panelId))?.id
+            : undefined;
+
+        // Saved panels in container panel-state format, keyed by panel id.
+        const revertedPanels: { [key: string]: any } = {};
+        (dashboard.panels || []).forEach((panel: any) => {
+          revertedPanels[panel.panelIndex] = convertSavedDashboardPanelToPanelState(panel);
+        });
+
+        // Strip only the panels that changed section membership or that were
+        // added during editing (present now, absent in the saved state). Removed
+        // panels (present in saved, absent now) don't need stripping -- Phase 2's
+        // saved panel set re-adds them fresh.
+        const currentIds = Object.keys(currentInput.panels);
+        const idsToReparent = currentIds.filter(
+          (id) =>
+            !(id in revertedPanels) ||
+            sectionIdOf(currentLayout, id) !== sectionIdOf(savedLayout, id)
+        );
+
+        if (idsToReparent.length > 0) {
+          // reparentPanels: Phase 1 strips the given panels (destroys their stale
+          // embeddables), Phase 2 re-adds the saved panel set + layout (recreates
+          // just the stripped ones; unchanged panels keep their live instances).
+          // Restores flat GridLayout when savedLayout is undefined.
+          currentContainer.reparentPanels(idsToReparent, savedLayout as any, revertedPanels);
+        }
+      }
+
       stateContainer.transitions.setDashboard(newStateContainer);
 
       // Since time filters are not tracked by app state, we need to manually reset it

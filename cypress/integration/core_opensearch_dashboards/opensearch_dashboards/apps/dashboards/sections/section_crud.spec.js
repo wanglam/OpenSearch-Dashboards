@@ -262,4 +262,83 @@ describe('Dashboard Sections', () => {
       });
     });
   });
+
+  describe('Discard changes reverts section layout', () => {
+    /**
+     * Helper: switch from edit to view mode.
+     * Handles both the new-nav toggle switch and the legacy Edit button.
+     */
+    const exitEditMode = () => {
+      cy.get('body').then(($body) => {
+        if ($body.find('[data-test-subj="dashboardEditSwitch"]').length) {
+          cy.getElementByTestId('dashboardEditSwitch').click();
+        } else {
+          cy.getElementByTestId('dashboardEditMode').click();
+        }
+      });
+    };
+
+    it('should revert a newly-added section when discarding on a flat-grid dashboard', () => {
+      createNewDashboard();
+      // Save as a flat dashboard (no sections) so we have a saved baseline.
+      const dashName = `${DASHBOARD_NAME_PREFIX} DiscardFlat ${Date.now()}`;
+      saveDashboard(dashName);
+
+      // Enter edit mode.
+      cy.get('body').then(($body) => {
+        if ($body.find('[data-test-subj="dashboardEditSwitch"]').length) {
+          cy.getElementByTestId('dashboardEditSwitch').click();
+        } else {
+          cy.getElementByTestId('dashboardEditMode').click();
+        }
+      });
+
+      // Add a section.
+      addSection();
+      cy.get('[data-test-subj^="dashboardSection-"]').should('have.length.gte', 1);
+
+      // Exit edit mode -> discard.
+      exitEditMode();
+      cy.get('.euiModal').should('be.visible');
+      cy.get('.euiModal').find('button').contains('Discard changes').click();
+
+      // After discard: flat grid restored, no sections.
+      cy.get('[data-test-subj^="dashboardSection-"]', { timeout: 15000 }).should('not.exist');
+      cy.getElementByTestId('dashboardSectionLayout').should('not.exist');
+    });
+
+    it('should revert to the original section layout when discarding on a sectioned dashboard', () => {
+      createNewDashboard();
+      addSection();
+      getSectionId(0).then((sectionId) => {
+        renameSection(sectionId, 'Original');
+      });
+      const dashName = `${DASHBOARD_NAME_PREFIX} DiscardSections ${Date.now()}`;
+      saveDashboard(dashName);
+
+      // Enter edit mode.
+      cy.get('body').then(($body) => {
+        if ($body.find('[data-test-subj="dashboardEditSwitch"]').length) {
+          cy.getElementByTestId('dashboardEditSwitch').click();
+        } else {
+          cy.getElementByTestId('dashboardEditMode').click();
+        }
+      });
+
+      // Add a second section.
+      addSection();
+      cy.get('[data-test-subj^="dashboardSection-"]').should('have.length.gte', 2);
+
+      // Exit edit mode -> discard.
+      exitEditMode();
+      cy.get('.euiModal').should('be.visible');
+      cy.get('.euiModal').find('button').contains('Discard changes').click();
+
+      // After discard: back to single original section.
+      cy.get('[data-test-subj^="dashboardSection-"]', { timeout: 15000 }).should('have.length', 1);
+      cy.get('[data-test-subj^="dashboardSectionTitle-"]')
+        .first()
+        .should('contain.text', 'Original');
+    });
+  });
 });
