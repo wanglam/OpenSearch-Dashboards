@@ -104,17 +104,29 @@ export class ClonePanelAction implements ActionByType<typeof ACTION_CLONE_PANEL>
     // rather than the read-only "Ungrouped" group. showPlaceholderUntil
     // self-gates on the sections feature flag, so this is a no-op when off.
     const layout = dashboard.getInput().layout;
-    const sourceSectionId =
+    const sourceMember =
       layout?.type === 'SectionLayout'
-        ? layout.items.find((section) => section.members.some((m) => m.idRef === embeddable.id))?.id
+        ? layout.items
+            .flatMap((section) =>
+              section.members.map((member) => ({ sectionId: section.id, member }))
+            )
+            .find((entry) => entry.member.idRef === embeddable.id)
         : undefined;
+    const sourceSectionId = sourceMember?.sectionId;
+
+    // When the source lives in a section, the size the user sees is the section
+    // member's gridData (layoutJSON). panelsJSON.gridData is the stale flat
+    // GridLayout size -- section resizes only update the member and never touch
+    // it -- so clone from the member size to match the visible panel.
+    const width = sourceMember?.member.gridData.w ?? panelToClone.gridData.w;
+    const height = sourceMember?.member.gridData.h ?? panelToClone.gridData.h;
 
     dashboard.showPlaceholderUntil(
       this.cloneEmbeddable(panelToClone, embeddable.type),
       placePanelBeside,
       {
-        width: panelToClone.gridData.w,
-        height: panelToClone.gridData.h,
+        width,
+        height,
         currentPanels: dashboard.getInput().panels,
         placeBesideId: panelToClone.explicitInput.id,
       } as IPanelPlacementBesideArgs,

@@ -203,9 +203,10 @@ test('Cloning a section member (flag on) drops the clone into the same section',
       '123': getSampleDashboardPanel<ContactCardEmbeddableInput>({
         explicitInput: { firstName: 'Neo', id: '123' },
         type: CONTACT_CARD_EMBEDDABLE,
-        // Distinctive size so we can assert the clone inherits it rather than
-        // falling back to the default section slot (24x15).
-        gridData: { x: 0, y: 0, w: 12, h: 20, i: '123' },
+        // Stale flat GridLayout size. Section resizes never touch panelsJSON, so
+        // this diverges from the member's (visible) size below -- the clone must
+        // follow the member, not this.
+        gridData: { x: 0, y: 0, w: 24, h: 15, i: '123' },
       }),
     },
     layout: {
@@ -216,7 +217,7 @@ test('Cloning a section member (flag on) drops the clone into the same section',
           type: 'section',
           name: 'Section 1',
           collapsed: false,
-          members: [{ idRef: '123', type: 'panel', gridData: { x: 0, y: 0, w: 24, h: 15 } }],
+          members: [{ idRef: '123', type: 'panel', gridData: { x: 0, y: 0, w: 12, h: 8 } }],
         },
       ],
     },
@@ -241,9 +242,9 @@ test('Cloning a section member (flag on) drops the clone into the same section',
   expect(memberIds).toContain('123');
   expect(memberIds).toContain(newId);
 
-  // The cloned member keeps the source panel's width/height (12x20), not the
-  // default section slot (24x15).
+  // The cloned member inherits the section member's (visible) size 12x8, NOT
+  // the stale panelsJSON size 24x15.
   const clonedMember = s1.members.find((m: any) => m.idRef === newId);
   expect(clonedMember.gridData.w).toBe(12);
-  expect(clonedMember.gridData.h).toBe(20);
+  expect(clonedMember.gridData.h).toBe(8);
 });
