@@ -243,19 +243,32 @@ export const getNavActions = (
     }
     const input = currentContainer.getInput();
     const existing = input.layout;
+    let createdName: string;
     if (!existing || existing.type !== 'SectionLayout' || existing.items.length === 0) {
       // Migrating every panel from the flat grid into a section re-parents them
       // across the grid -> section-grid component swap, so recreate them via the
       // container's natural remove/add lifecycle (see reparentPanels).
+      const firstSection = migrateAllPanelsToSection(input.panels);
+      createdName = firstSection.name;
       currentContainer.reparentPanels(Object.keys(input.panels), {
         type: 'SectionLayout',
-        items: [migrateAllPanelsToSection(input.panels)],
+        items: [firstSection],
       });
     } else {
+      const items = appendEmptySection(existing.items);
+      // appendEmptySection appends the new section at the end of the list.
+      createdName = items[items.length - 1].name;
       currentContainer.updateInput({
-        layout: { type: 'SectionLayout', items: appendEmptySection(existing.items) },
+        layout: { type: 'SectionLayout', items },
       });
     }
+    notifications.toasts.addSuccess({
+      title: i18n.translate('dashboard.section.addSuccess', {
+        defaultMessage: '"{name}" added to the end',
+        values: { name: createdName },
+      }),
+      'data-test-subj': 'dashboardSectionAddedSuccess',
+    });
   };
 
   navActions[TopNavIds.OPTIONS] = (anchorElement) => {
