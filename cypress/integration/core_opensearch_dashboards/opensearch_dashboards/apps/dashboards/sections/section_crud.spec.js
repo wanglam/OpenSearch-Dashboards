@@ -67,21 +67,32 @@ const getSectionId = (index = 0) => {
     .then((attr) => attr.replace('dashboardSection-', ''));
 };
 
+/**
+ * Hover the section to reveal the kebab menu (hidden via CSS
+ * opacity:0 + pointer-events:none until hover/focus-within).
+ */
+const hoverSection = (sectionId) => {
+  cy.getElementByTestId(`dashboardSection-${sectionId}`).trigger('mouseover');
+};
+
 const renameSection = (sectionId, newName) => {
-  cy.getElementByTestId(`dashboardSectionMenuButton-${sectionId}`).click();
+  hoverSection(sectionId);
+  cy.getElementByTestId(`dashboardSectionMenuButton-${sectionId}`).click({ force: true });
   cy.getElementByTestId(`dashboardSectionRename-${sectionId}`).click();
   cy.getElementByTestId('dashboardSectionRenameInput').clear().type(newName);
   cy.getElementByTestId('dashboardSectionRenameConfirm').click();
 };
 
 const deleteSection = (sectionId) => {
-  cy.getElementByTestId(`dashboardSectionMenuButton-${sectionId}`).click();
+  hoverSection(sectionId);
+  cy.getElementByTestId(`dashboardSectionMenuButton-${sectionId}`).click({ force: true });
   cy.getElementByTestId(`dashboardSectionDelete-${sectionId}`).click();
   cy.get('.euiModal').find('button').contains('Delete').click();
 };
 
 const ungroupSections = (sectionId) => {
-  cy.getElementByTestId(`dashboardSectionMenuButton-${sectionId}`).click();
+  hoverSection(sectionId);
+  cy.getElementByTestId(`dashboardSectionMenuButton-${sectionId}`).click({ force: true });
   cy.getElementByTestId(`dashboardSectionUngroupAll-${sectionId}`).click();
   cy.get('.euiModal').find('button').contains('Ungroup').click();
 };
