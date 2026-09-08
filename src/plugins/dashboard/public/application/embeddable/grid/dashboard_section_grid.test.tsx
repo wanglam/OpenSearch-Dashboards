@@ -159,9 +159,9 @@ describe('DashboardSectionGrid', () => {
     wrapper.unmount();
   });
 
-  // -- Empty section CTA widget ---------------------------------------------
+  // -- Empty section actions ------------------------------------------------
 
-  it('shows empty section CTA widget with both buttons when callbacks provided', () => {
+  it('shows empty section actions when callbacks are provided', () => {
     const onCreateNewPanel = jest.fn();
     const onAddPanel = jest.fn();
     const wrapper = mount(
@@ -175,15 +175,17 @@ describe('DashboardSectionGrid', () => {
       />
     );
 
-    expect(findTestSubject(wrapper, 'emptySectionWidget')).toHaveLength(1);
+    expect(findTestSubject(wrapper, `dashboardSectionEmptyCta-${SECTION_ID}`)).toHaveLength(1);
 
     const createBtn = findTestSubject(wrapper, 'createNewVisToSectionButton');
     expect(createBtn).toHaveLength(1);
+    expect(createBtn.text()).toContain('Create new visualization');
     createBtn.simulate('click');
     expect(onCreateNewPanel).toHaveBeenCalledTimes(1);
 
     const addBtn = findTestSubject(wrapper, 'addExistingVisToSectionButton');
     expect(addBtn).toHaveLength(1);
+    expect(addBtn.text()).toContain('Add from library');
     addBtn.simulate('click');
     expect(onAddPanel).toHaveBeenCalledTimes(1);
 
@@ -202,27 +204,27 @@ describe('DashboardSectionGrid', () => {
       />
     );
 
-    expect(findTestSubject(wrapper, 'emptySectionWidget')).toHaveLength(1);
+    expect(findTestSubject(wrapper, `dashboardSectionEmptyCta-${SECTION_ID}`)).toHaveLength(1);
     expect(findTestSubject(wrapper, 'createNewVisToSectionButton')).toHaveLength(0);
     expect(findTestSubject(wrapper, 'addExistingVisToSectionButton')).toHaveLength(0);
 
     wrapper.unmount();
   });
 
-  it('does not show CTA widget when members are present', () => {
+  it('does not show empty section actions when members are present', () => {
     const wrapper = mount(<DashboardSectionGrid {...getDefaultProps()} />);
 
-    expect(findTestSubject(wrapper, 'emptySectionWidget')).toHaveLength(0);
+    expect(findTestSubject(wrapper, `dashboardSectionEmptyCta-${SECTION_ID}`)).toHaveLength(0);
 
     wrapper.unmount();
   });
 
-  it('does not show CTA widget when collapsed even with no members', () => {
+  it('does not show empty section actions when collapsed even with no members', () => {
     const wrapper = mount(
       <DashboardSectionGrid {...getDefaultProps({ members: [], collapsed: true })} />
     );
 
-    expect(findTestSubject(wrapper, 'emptySectionWidget')).toHaveLength(0);
+    expect(findTestSubject(wrapper, `dashboardSectionEmptyCta-${SECTION_ID}`)).toHaveLength(0);
 
     wrapper.unmount();
   });

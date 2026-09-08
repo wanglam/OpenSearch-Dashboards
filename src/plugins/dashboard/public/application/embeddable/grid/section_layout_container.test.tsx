@@ -396,27 +396,40 @@ describe('SectionLayoutContainer', () => {
     test('Ungrouped section has no drag handle', () => {
       const { component } = setup({ extraPanelIds: ['orphan1'] });
 
-      // The virtual section should not have a drag handle
       const ungroupedSection = findTestSubject(component, 'dashboardSectionUngrouped');
       expect(ungroupedSection.length).toBe(1);
-      // No drag handle with any prefix matching ungrouped
-      expect(findTestSubject(component, 'dashboardSectionDragHandle-__ungrouped__').length).toBe(0);
+      const header = ungroupedSection.find('.dshSectionLayout__sectionHeader').first();
+      expect(header.prop('data-rbd-drag-handle-draggable-id')).toBeUndefined();
     });
   });
 
-  describe('drag handle visibility', () => {
-    test('drag handle is present in edit mode', () => {
+  describe('section header drag handle', () => {
+    test('section headers are drag handles in edit mode', () => {
       const { component } = setup({ viewMode: ViewMode.EDIT });
 
-      expect(findTestSubject(component, 'dashboardSectionDragHandle-s1').length).toBe(1);
-      expect(findTestSubject(component, 'dashboardSectionDragHandle-s2').length).toBe(1);
+      const section1Header = findTestSubject(component, 'dashboardSection-s1')
+        .find('.dshSectionLayout__sectionHeader')
+        .first();
+      const section2Header = findTestSubject(component, 'dashboardSection-s2')
+        .find('.dshSectionLayout__sectionHeader')
+        .first();
+
+      expect(section1Header.prop('data-rbd-drag-handle-draggable-id')).toBe('s1');
+      expect(section2Header.prop('data-rbd-drag-handle-draggable-id')).toBe('s2');
     });
 
-    test('drag handle is absent in view mode', () => {
+    test('section headers are not drag handles in view mode', () => {
       const { component } = setup({ viewMode: ViewMode.VIEW });
 
-      expect(findTestSubject(component, 'dashboardSectionDragHandle-s1').length).toBe(0);
-      expect(findTestSubject(component, 'dashboardSectionDragHandle-s2').length).toBe(0);
+      const section1Header = findTestSubject(component, 'dashboardSection-s1')
+        .find('.dshSectionLayout__sectionHeader')
+        .first();
+      const section2Header = findTestSubject(component, 'dashboardSection-s2')
+        .find('.dshSectionLayout__sectionHeader')
+        .first();
+
+      expect(section1Header.prop('data-rbd-drag-handle-draggable-id')).toBeUndefined();
+      expect(section2Header.prop('data-rbd-drag-handle-draggable-id')).toBeUndefined();
     });
   });
 

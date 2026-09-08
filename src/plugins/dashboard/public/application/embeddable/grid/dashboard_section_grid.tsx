@@ -29,7 +29,7 @@ import _ from 'lodash';
 import React from 'react';
 import classNames from 'classnames';
 import { i18n } from '@osd/i18n';
-import { EuiButton, EuiButtonEmpty, EuiText, EuiSpacer } from '@elastic/eui';
+import { EuiButton, EuiButtonEmpty } from '@elastic/eui';
 import { Layout } from 'react-grid-layout';
 import { EmbeddableChildPanel, EmbeddableStart } from '../../../../../embeddable/public';
 import { DashboardContainer } from '../dashboard_container';
@@ -188,49 +188,29 @@ export class DashboardSectionGrid extends React.Component<DashboardSectionGridPr
             className="dshDashboardSectionGrid__emptyCta"
             data-test-subj={`dashboardSectionEmptyCta-${sectionId}`}
           >
-            {/* Mirrors the empty-dashboard start screen (.dshEmptyWidget): a
-                dashed box prompting the user to add their first panel, offering
-                both "Create new visualization" and "Add existing visualization". */}
-            <div
-              className="dshDashboardSectionGrid__emptyWidget"
-              data-test-subj="emptySectionWidget"
-            >
-              <EuiText size="s" color="subdued">
-                <p>
-                  {i18n.translate('dashboard.section.addPanel.emptyPrompt', {
-                    defaultMessage: 'This section is empty.',
-                  })}
-                </p>
-              </EuiText>
-              <EuiSpacer size="s" />
-              {onCreateNewPanel ? (
-                <EuiButton
-                  size="s"
-                  iconType="plusInCircle"
-                  onClick={onCreateNewPanel}
-                  data-test-subj="createNewVisToSectionButton"
-                >
-                  {i18n.translate('dashboard.section.addPanel.createNewLabel', {
-                    defaultMessage: 'Create new visualization',
-                  })}
-                </EuiButton>
-              ) : null}
-              {onAddPanel ? (
-                <>
-                  <EuiSpacer size="xs" />
-                  <EuiButtonEmpty
-                    size="s"
-                    iconType="plusInCircle"
-                    onClick={onAddPanel}
-                    data-test-subj="addExistingVisToSectionButton"
-                  >
-                    {i18n.translate('dashboard.section.addPanel.ctaLabel', {
-                      defaultMessage: 'Add existing visualization',
-                    })}
-                  </EuiButtonEmpty>
-                </>
-              ) : null}
-            </div>
+            {onCreateNewPanel ? (
+              <EuiButton
+                size="s"
+                iconType="plusInCircle"
+                onClick={onCreateNewPanel}
+                data-test-subj="createNewVisToSectionButton"
+              >
+                {i18n.translate('dashboard.section.addPanel.createNewLabel', {
+                  defaultMessage: 'Create new visualization',
+                })}
+              </EuiButton>
+            ) : null}
+            {onAddPanel ? (
+              <EuiButtonEmpty
+                size="s"
+                onClick={onAddPanel}
+                data-test-subj="addExistingVisToSectionButton"
+              >
+                {i18n.translate('dashboard.section.addPanel.ctaLabel', {
+                  defaultMessage: 'Add from library',
+                })}
+              </EuiButtonEmpty>
+            ) : null}
           </div>
         ) : null}
         <div className={innerClassName}>

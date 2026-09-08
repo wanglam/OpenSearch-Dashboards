@@ -177,21 +177,13 @@
 .dshDashboardSectionGrid__emptyCta {
   display: flex;
   align-items: center;
-  justify-content: center;
   height: 100%;
-  padding: $euiSize;
+  padding-left: $euiSize;
+  padding-top: 8px;
 }
 
-// Mirrors the empty-dashboard start screen (.dshEmptyWidget): a dashed,
-// centered box with a prompt + "Add existing visualization" button. Uses
-// lighter padding than the full-dashboard widget so it fits a section's area.
-.dshDashboardSectionGrid__emptyWidget {
-  border: $euiBorderThin;
-  border-style: dashed;
-  border-radius: $euiBorderRadius;
-  padding: $euiSize $euiSizeXL;
-  text-align: center;
-  max-width: 400px;
+.dshDashboardSectionGrid__emptyCta button {
+  margin-right: 10px;
 }
 
 /**
@@ -213,8 +205,13 @@
   padding: $euiSizeS;
 }
 
+.dshSectionLayout .dshSectionLayout__section:not(.dshSectionLayout__section--editing) {
+  cursor: default;
+}
+
 .dshSectionLayout__section {
   border: $euiBorderThin;
+  border-style: dashed;
   border-radius: $euiBorderRadius;
   overflow: hidden;
 
@@ -258,6 +255,14 @@
   }
 }
 
+.dshSectionLayout__section--editing {
+  transition: border-color 250ms ease;
+}
+
+.dshSectionLayout__section--editing:hover {
+  border-color: $euiColorPrimary;
+}
+
 .dshSectionLayout__sectionHeader {
   display: flex;
   align-items: center;
@@ -279,8 +284,8 @@
 
   // Match the member panel card background (#FCFEFF) + a bottom divider that
   // adds no layout height (inset shadow, not border-bottom).
-  background-color: $euiColorEmptyShade;
-  box-shadow: inset 0 -1px 0 $euiBorderColor;
+  // background-color: $euiColorEmptyShade;
+  // box-shadow: inset 0 -1px 0 $euiBorderColor;
 
   .dshSectionLayout__sectionTitle {
     margin-left: $euiSizeXS;
@@ -297,12 +302,20 @@
       text-overflow: ellipsis;
     }
   }
+}
 
-  // Section options kebab -- pinned to the right edge of the header.
-  .dshSectionLayout__sectionMenu {
-    flex: 0 0 auto;
-    margin-left: $euiSizeXS;
-  }
+.dshSectionLayout__sectionMenu {
+  flex: 0 0 auto;
+  margin-left: $euiSizeXS;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 250ms ease;
+}
+
+.dshSectionLayout__section--editing:hover .dshSectionLayout__sectionMenu,
+.dshSectionLayout__section--editing:focus-within .dshSectionLayout__sectionMenu {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 // The trailing read-only "Ungrouped" virtual section (computed, never stored).
