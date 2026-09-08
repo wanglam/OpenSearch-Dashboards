@@ -159,54 +159,56 @@ export class DashboardSectionGrid extends React.Component<DashboardSectionGridPr
       );
     });
 
-    const innerClassName = collapsed
-      ? 'dshDashboardSectionGrid__inner dshDashboardSectionGrid__inner--collapsed'
-      : 'dshDashboardSectionGrid__inner';
+    const innerClassName = classNames('dshDashboardSectionGrid__inner', {
+      'dshDashboardSectionGrid__inner--collapsed': collapsed,
+    });
 
     return (
       <div className="dshDashboardSectionGrid" data-test-subj={`dashboardSectionGrid-${sectionId}`}>
-        {!collapsed && members.length === 0 ? (
-          <div
-            className="dshDashboardSectionGrid__emptyCta"
-            data-test-subj={`dashboardSectionEmptyCta-${sectionId}`}
-          >
-            {onCreateNewPanel ? (
-              <EuiButton
-                size="s"
-                iconType="plusInCircle"
-                onClick={onCreateNewPanel}
-                data-test-subj="createNewVisToSectionButton"
+        <div className={innerClassName} aria-hidden={collapsed}>
+          <div className="dshDashboardSectionGrid__content">
+            {members.length === 0 ? (
+              <div
+                className="dshDashboardSectionGrid__emptyCta"
+                data-test-subj={`dashboardSectionEmptyCta-${sectionId}`}
               >
-                {i18n.translate('dashboard.section.addPanel.createNewLabel', {
-                  defaultMessage: 'Create new visualization',
-                })}
-              </EuiButton>
+                {onCreateNewPanel ? (
+                  <EuiButton
+                    size="s"
+                    iconType="plusInCircle"
+                    onClick={onCreateNewPanel}
+                    data-test-subj="createNewVisToSectionButton"
+                  >
+                    {i18n.translate('dashboard.section.addPanel.createNewLabel', {
+                      defaultMessage: 'Create new visualization',
+                    })}
+                  </EuiButton>
+                ) : null}
+                {onAddPanel ? (
+                  <EuiButtonEmpty
+                    size="s"
+                    onClick={onAddPanel}
+                    data-test-subj="addExistingVisToSectionButton"
+                  >
+                    {i18n.translate('dashboard.section.addPanel.ctaLabel', {
+                      defaultMessage: 'Add from library',
+                    })}
+                  </EuiButtonEmpty>
+                ) : null}
+              </div>
             ) : null}
-            {onAddPanel ? (
-              <EuiButtonEmpty
-                size="s"
-                onClick={onAddPanel}
-                data-test-subj="addExistingVisToSectionButton"
-              >
-                {i18n.translate('dashboard.section.addPanel.ctaLabel', {
-                  defaultMessage: 'Add from library',
-                })}
-              </EuiButtonEmpty>
-            ) : null}
+            <ResponsiveSizedGrid
+              className="dshDashboardSectionGrid__grid"
+              isViewMode={isViewMode}
+              layout={layout}
+              onLayoutChange={this.onLayoutChange}
+              useMargins={useMargins}
+              draggableHandle={PANEL_DRAG_HANDLE}
+              maximizedPanelId={hasMaximizedMember ? expandedPanelId : undefined}
+            >
+              {children}
+            </ResponsiveSizedGrid>
           </div>
-        ) : null}
-        <div className={innerClassName}>
-          <ResponsiveSizedGrid
-            className="dshDashboardSectionGrid__grid"
-            isViewMode={isViewMode}
-            layout={layout}
-            onLayoutChange={this.onLayoutChange}
-            useMargins={useMargins}
-            draggableHandle={PANEL_DRAG_HANDLE}
-            maximizedPanelId={hasMaximizedMember ? expandedPanelId : undefined}
-          >
-            {children}
-          </ResponsiveSizedGrid>
         </div>
       </div>
     );

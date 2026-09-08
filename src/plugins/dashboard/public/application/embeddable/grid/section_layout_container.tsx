@@ -541,8 +541,11 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
                         {...(!isViewMode ? provided.dragHandleProps : {})}
                       >
                         <EuiButtonIcon
-                          iconType={section.collapsed ? 'arrowRight' : 'arrowDown'}
+                          iconType="arrowDown"
                           color="text"
+                          className={classNames('dshSectionLayout__collapseButton', {
+                            'dshSectionLayout__collapseButton--collapsed': section.collapsed,
+                          })}
                           onClick={() => this.toggleCollapsed(section.id)}
                           data-test-subj={`dashboardSectionToggle-${section.id}`}
                           aria-label={

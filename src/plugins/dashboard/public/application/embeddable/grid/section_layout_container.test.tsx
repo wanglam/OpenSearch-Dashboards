@@ -188,6 +188,11 @@ describe('SectionLayoutContainer', () => {
       const layoutAfter = container.getInput().layout as any;
       expect(layoutAfter.items[0].collapsed).toBe(true);
       expect(layoutAfter.items[1].collapsed).toBe(false);
+      expect(
+        findTestSubject(component, 'dashboardSectionToggle-s1').hasClass(
+          'dshSectionLayout__collapseButton--collapsed'
+        )
+      ).toBe(true);
     });
 
     test('clicking toggle again expands the section', async () => {
@@ -206,6 +211,11 @@ describe('SectionLayoutContainer', () => {
       updateAndWait(component);
 
       expect((container.getInput().layout as any).items[0].collapsed).toBe(false);
+      expect(
+        findTestSubject(component, 'dashboardSectionToggle-s1').hasClass(
+          'dshSectionLayout__collapseButton--collapsed'
+        )
+      ).toBe(false);
     });
   });
 
