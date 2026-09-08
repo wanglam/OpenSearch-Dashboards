@@ -22,6 +22,7 @@ import {
   DEFAULT_PANEL_HEIGHT,
   DASHBOARD_GRID_COLUMN_COUNT,
 } from './dashboard_constants';
+import { findOpenSpace } from './panel/dashboard_panel_placement';
 
 interface PanelMap {
   [id: string]: DashboardPanelState;
@@ -86,9 +87,11 @@ export const appendEmptySection = (items: DashboardSection[]): DashboardSection[
 ];
 
 /**
- * Slot for a newly added member: place it on the SAME row as the existing
- * bottom-most panel, immediately to its right, when the incoming panel still
- * fits within the grid width; otherwise wrap to a new row below everything.
+ * Slot for a newly added member: find the top-left-most open space in the
+ * section's inner grid that can fit the incoming panel. Uses the same 2D
+ * bitmap scan as flat-grid panel placement (`findOpenSpace`), so gaps left
+ * by removed or resized members are reused instead of wasted.
+ *
  * Add-to-section and move-to-section pass the incoming panel's own w/h so
  * panels keep their size; callers adding a brand-new panel omit w/h and get
  * the default size.
@@ -98,23 +101,11 @@ export const computeAppendedMemberGridData = (
   w: number = DEFAULT_PANEL_WIDTH,
   h: number = DEFAULT_PANEL_HEIGHT
 ): SectionMemberGridData => {
-  if (members.length === 0) return { x: 0, y: 0, w, h };
-
-  // Bottom-most, then right-most member = the current insertion anchor.
-  const anchor = members.reduce((best, m) =>
-    m.gridData.y > best.gridData.y ||
-    (m.gridData.y === best.gridData.y && m.gridData.x > best.gridData.x)
-      ? m
-      : best
+  return findOpenSpace(
+    members.map((m) => m.gridData),
+    w,
+    h
   );
-  const nextX = anchor.gridData.x + anchor.gridData.w;
-  // Same line if the incoming panel fits in the remaining width of that row.
-  if (nextX + w <= DASHBOARD_GRID_COLUMN_COUNT) {
-    return { x: nextX, y: anchor.gridData.y, w, h };
-  }
-  // Otherwise wrap: new row below all existing members.
-  const maxBottom = members.reduce((mx, m) => Math.max(mx, m.gridData.y + m.gridData.h), 0);
-  return { x: 0, y: maxBottom, w, h };
 };
 
 /**
