@@ -63,4 +63,3 @@ export {
   MovePanelToSectionActionContext,
   ACTION_MOVE_PANEL_TO_SECTION,
 } from './move_panel_to_section_action';
-export { openAddPanelToSectionFlyout } from './add_panel_to_section_flyout';

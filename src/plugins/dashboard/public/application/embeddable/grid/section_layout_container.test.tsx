@@ -15,7 +15,7 @@ import { act } from 'react';
 import { waitFor } from '@testing-library/react';
 import { I18nProvider } from '@osd/i18n/react';
 import { findTestSubject } from 'test_utils/helpers';
-import { ViewMode } from '../../../../../embeddable/public';
+import { openAddPanelFlyout, ViewMode } from '../../../../../embeddable/public';
 import {
   CONTACT_CARD_EMBEDDABLE,
   ContactCardEmbeddableFactory,
@@ -27,6 +27,11 @@ import { OpenSearchDashboardsContextProvider } from '../../../../../opensearch_d
 import { DashboardContainer, DashboardContainerOptions } from '../dashboard_container';
 import { getSampleDashboardInput, getSampleDashboardPanel } from '../../test_helpers';
 import { SectionLayoutContainer } from './section_layout_container';
+
+jest.mock('../../../../../embeddable/public', () => ({
+  ...jest.requireActual('../../../../../embeddable/public'),
+  openAddPanelFlyout: jest.fn(),
+}));
 
 sizeMe.noPlaceholders = true;
 
@@ -148,6 +153,7 @@ function updateAndWait(component: ReactWrapper) {
 
 afterEach(() => {
   jest.restoreAllMocks();
+  jest.clearAllMocks();
 });
 
 describe('SectionLayoutContainer', () => {
@@ -182,6 +188,11 @@ describe('SectionLayoutContainer', () => {
       const layoutAfter = container.getInput().layout as any;
       expect(layoutAfter.items[0].collapsed).toBe(true);
       expect(layoutAfter.items[1].collapsed).toBe(false);
+      expect(
+        findTestSubject(component, 'dashboardSectionToggle-s1').hasClass(
+          'dshSectionLayout__collapseButton--collapsed'
+        )
+      ).toBe(true);
     });
 
     test('clicking toggle again expands the section', async () => {
@@ -200,6 +211,11 @@ describe('SectionLayoutContainer', () => {
       updateAndWait(component);
 
       expect((container.getInput().layout as any).items[0].collapsed).toBe(false);
+      expect(
+        findTestSubject(component, 'dashboardSectionToggle-s1').hasClass(
+          'dshSectionLayout__collapseButton--collapsed'
+        )
+      ).toBe(false);
     });
   });
 
@@ -238,6 +254,37 @@ describe('SectionLayoutContainer', () => {
       const layout = container.getInput().layout as any;
       expect(layout.items[0].name).toBe('Renamed Section');
       expect(layout.items[1].name).toBe('Section 2');
+    });
+  });
+
+  describe('add panel', () => {
+    test('uses the generic flyout and claims its added panel into the section', async () => {
+      const { container, component } = setup({ extraPanelIds: ['orphan1'] });
+
+      await act(async () => {
+        findTestSubject(component, 'dashboardSectionMenuButton-s1').simulate('click');
+      });
+      updateAndWait(component);
+
+      await act(async () => {
+        findTestSubject(component, 'dashboardSectionAddPanel-s1').simulate('click');
+      });
+
+      const options = (openAddPanelFlyout as jest.Mock).mock.calls[0][0];
+      expect(options).toEqual(
+        expect.objectContaining({
+          embeddable: container,
+          showCreateNew: false,
+          closeAfterAdd: true,
+        })
+      );
+
+      options.onPanelAdded({ id: 'orphan1' });
+
+      const section = (container.getInput().layout as any).items.find(
+        (item: any) => item.id === 's1'
+      );
+      expect(section.members.map((member: any) => member.idRef)).toContain('orphan1');
     });
   });
 

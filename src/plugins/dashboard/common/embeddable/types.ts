@@ -63,7 +63,7 @@ export interface SectionLayoutMember {
   gridData: SectionMemberGridData;
 }
 
-export interface SectionLayout {
+export interface DashboardSection {
   id: string;
   type: 'section';
   name: string;
@@ -83,5 +83,5 @@ export type DashboardLayoutType = 'GridLayout' | 'SectionLayout';
  */
 export interface DashboardLayout {
   type: DashboardLayoutType;
-  items: SectionLayout[];
+  items: DashboardSection[];
 }

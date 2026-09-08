@@ -47,9 +47,14 @@ import {
   euiDragDropReorder,
   DropResult,
 } from '@elastic/eui';
-import { ViewMode, EmbeddableStart, EmbeddableInput } from '../../../../../embeddable/public';
+import {
+  ViewMode,
+  EmbeddableStart,
+  EmbeddableInput,
+  openAddPanelFlyout,
+} from '../../../../../embeddable/public';
 import { withOpenSearchDashboards } from '../../../../../opensearch_dashboards_react/public';
-import { DashboardLayout, SectionLayout, SectionLayoutMember } from '../../../../common';
+import { DashboardLayout, DashboardSection, SectionLayoutMember } from '../../../../common';
 import {
   DashboardContainer,
   DashboardContainerInput,
@@ -57,7 +62,7 @@ import {
 } from '../dashboard_container';
 import { DashboardPanelState } from '../types';
 import { DashboardSectionGrid } from './dashboard_section_grid';
-import { openAddPanelToSectionFlyout } from '../../actions/add_panel_to_section_flyout';
+import { claimPanelIntoSection } from '../section_create_target';
 import {
   computeUnclaimedPanels,
   computeUngroupedLayout,
@@ -130,10 +135,10 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
     }
   }
 
-  private getSections = (): SectionLayout[] => this.state.layout?.items ?? [];
+  private getSections = (): DashboardSection[] => this.state.layout?.items ?? [];
 
   /** Write an updated section list back to the container as a SectionLayout. */
-  private updateSections = (items: SectionLayout[]) => {
+  private updateSections = (items: DashboardSection[]) => {
     this.props.container.updateInput({ layout: { type: 'SectionLayout', items } });
   };
 
@@ -149,7 +154,7 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
     this.updateSections(euiDragDropReorder(this.getSections(), source.index, destination.index));
   };
 
-  private startRename = (section: SectionLayout) => {
+  private startRename = (section: DashboardSection) => {
     this.setState({
       renamingSectionId: section.id,
       renameDraft: section.name,
@@ -170,13 +175,18 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
     const services = this.props.opensearchDashboards.services;
     if (!services?.overlays) return;
     this.setState({ openKebabSectionId: undefined });
-    openAddPanelToSectionFlyout({
+    openAddPanelFlyout({
+      embeddable: this.props.container,
+      getFactory: services.embeddable.getEmbeddableFactory,
+      getAllFactories: services.embeddable.getEmbeddableFactories,
       overlays: services.overlays,
       notifications: services.notifications,
-      container: this.props.container,
-      sectionId,
-      savedObjectFinder: services.SavedObjectFinder,
-      getEmbeddableFactories: services.embeddable.getEmbeddableFactories,
+      SavedObjectFinder: services.SavedObjectFinder,
+      showCreateNew: false,
+      closeAfterAdd: true,
+      onPanelAdded: (embeddable) => {
+        claimPanelIntoSection(this.props.container, sectionId, embeddable.id);
+      },
     });
   };
 
@@ -288,14 +298,14 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
   };
 
   /** Resolve a section's members to { panel, member } pairs, skipping stale refs. */
-  private resolveMembers = (section: SectionLayout) => {
+  private resolveMembers = (section: DashboardSection) => {
     const { panels } = this.state;
     return section.members
       .map((member) => ({ panel: panels[member.idRef], member }))
       .filter((entry) => Boolean(entry.panel));
   };
 
-  private renderSectionKebab = (section: SectionLayout) => {
+  private renderSectionKebab = (section: DashboardSection) => {
     const button = (
       <EuiButtonIcon
         iconType="boxesVertical"
@@ -531,8 +541,11 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
                         {...(!isViewMode ? provided.dragHandleProps : {})}
                       >
                         <EuiButtonIcon
-                          iconType={section.collapsed ? 'arrowRight' : 'arrowDown'}
+                          iconType="arrowDown"
                           color="text"
+                          className={classNames('dshSectionLayout__collapseButton', {
+                            'dshSectionLayout__collapseButton--collapsed': section.collapsed,
+                          })}
                           onClick={() => this.toggleCollapsed(section.id)}
                           data-test-subj={`dashboardSectionToggle-${section.id}`}
                           aria-label={
@@ -578,7 +591,6 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
                         onCreateNewPanel={
                           !isViewMode ? () => this.createNewVisualization(section.id) : undefined
                         }
-                        hideCollapsedHint
                       />
                     </div>
                   )}

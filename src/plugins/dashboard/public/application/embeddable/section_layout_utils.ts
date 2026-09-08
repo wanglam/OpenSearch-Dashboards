@@ -15,7 +15,7 @@
 // every section action (create / add / remove / reorder / rename / ungroup).
 
 import { v4 as uuidv4 } from 'uuid';
-import { SectionLayout, SectionLayoutMember, SectionMemberGridData } from '../../../common';
+import { DashboardSection, SectionLayoutMember, SectionMemberGridData } from '../../../common';
 import { DashboardPanelState } from './types';
 import {
   DEFAULT_PANEL_WIDTH,
@@ -34,7 +34,7 @@ export const generateSectionId = (): string => `section_${uuidv4()}`;
  * than items.length + 1) keeps names stable and collision-free after a middle
  * section is deleted.
  */
-export const getNextSectionName = (items: SectionLayout[]): string => {
+export const getNextSectionName = (items: DashboardSection[]): string => {
   const used = new Set<number>();
   items.forEach((section) => {
     const match = /^Section (\d+)$/.exec(section.name);
@@ -57,7 +57,7 @@ export const getNextSectionName = (items: SectionLayout[]): string => {
 export const migrateAllPanelsToSection = (
   panels: PanelMap,
   name: string = 'Section 1'
-): SectionLayout => {
+): DashboardSection => {
   const ordered = Object.values(panels).sort((a, b) =>
     a.gridData.y === b.gridData.y ? a.gridData.x - b.gridData.x : a.gridData.y - b.gridData.y
   );
@@ -74,7 +74,7 @@ export const migrateAllPanelsToSection = (
 };
 
 /** Append a new empty (expanded) section with an auto-generated name. */
-export const appendEmptySection = (items: SectionLayout[]): SectionLayout[] => [
+export const appendEmptySection = (items: DashboardSection[]): DashboardSection[] => [
   ...items,
   {
     id: generateSectionId(),
@@ -124,12 +124,12 @@ export const computeAppendedMemberGridData = (
  * size (e.g. when moving between sections); omit for the default panel size.
  */
 export const appendMemberToSection = (
-  items: SectionLayout[],
+  items: DashboardSection[],
   sectionId: string,
   memberId: string,
   w?: number,
   h?: number
-): { items: SectionLayout[]; gridData: SectionMemberGridData } | undefined => {
+): { items: DashboardSection[]; gridData: SectionMemberGridData } | undefined => {
   const section = items.find((s) => s.id === sectionId);
   if (!section) return undefined;
   const gridData = computeAppendedMemberGridData(section.members, w, h);
@@ -142,7 +142,7 @@ export const appendMemberToSection = (
 };
 
 /** Every panel id referenced as a member of some section. */
-export const getClaimedMemberIds = (items: SectionLayout[]): Set<string> => {
+export const getClaimedMemberIds = (items: DashboardSection[]): Set<string> => {
   const ids = new Set<string>();
   items.forEach((section) => section.members.forEach((m) => ids.add(m.idRef)));
   return ids;
@@ -158,7 +158,7 @@ export const getClaimedMemberIds = (items: SectionLayout[]): Set<string> => {
  * Returned in panels-array (map insertion) order, which mirrors panelsJSON.
  */
 export const computeUnclaimedPanels = (
-  items: SectionLayout[],
+  items: DashboardSection[],
   panels: PanelMap
 ): DashboardPanelState[] => {
   const claimed = getClaimedMemberIds(items);
@@ -198,20 +198,23 @@ export const computeUngroupedLayout = (panels: DashboardPanelState[]): SectionLa
 };
 
 /** Remove a member (panel id) from whichever section holds it. */
-export const removeMemberFromLayout = (items: SectionLayout[], memberId: string): SectionLayout[] =>
+export const removeMemberFromLayout = (
+  items: DashboardSection[],
+  memberId: string
+): DashboardSection[] =>
   items.map((s) => ({ ...s, members: s.members.filter((m) => m.idRef !== memberId) }));
 
 export const renameSection = (
-  items: SectionLayout[],
+  items: DashboardSection[],
   sectionId: string,
   name: string
-): SectionLayout[] => items.map((s) => (s.id === sectionId ? { ...s, name } : s));
+): DashboardSection[] => items.map((s) => (s.id === sectionId ? { ...s, name } : s));
 
 export const setSectionCollapsed = (
-  items: SectionLayout[],
+  items: DashboardSection[],
   sectionId: string,
   collapsed: boolean
-): SectionLayout[] => items.map((s) => (s.id === sectionId ? { ...s, collapsed } : s));
+): DashboardSection[] => items.map((s) => (s.id === sectionId ? { ...s, collapsed } : s));
 
 /**
  * Remove a section; returns the new items plus the member panel ids that should
@@ -219,9 +222,9 @@ export const setSectionCollapsed = (
  * section AND its panels).
  */
 export const removeSection = (
-  items: SectionLayout[],
+  items: DashboardSection[],
   sectionId: string
-): { items: SectionLayout[]; removedMemberIds: string[] } => {
+): { items: DashboardSection[]; removedMemberIds: string[] } => {
   const section = items.find((s) => s.id === sectionId);
   return {
     items: items.filter((s) => s.id !== sectionId),
@@ -237,11 +240,11 @@ export const removeSection = (
  * target section doesn't exist.
  */
 export const moveMemberToSection = (
-  items: SectionLayout[],
+  items: DashboardSection[],
   memberId: string,
   targetSectionId: string,
   fallbackSize?: Pick<SectionMemberGridData, 'w' | 'h'>
-): SectionLayout[] => {
+): DashboardSection[] => {
   if (!items.some((s) => s.id === targetSectionId)) return items;
   // Capture the member's current w/h BEFORE removing it from the old section.
   let memberW = fallbackSize?.w;
@@ -267,7 +270,7 @@ export const moveMemberToSection = (
  * disappears, so no header rows are inserted. Panels not referenced by any
  * section are left untouched.
  */
-export const flattenSectionsToPanels = (items: SectionLayout[], panels: PanelMap): PanelMap => {
+export const flattenSectionsToPanels = (items: DashboardSection[], panels: PanelMap): PanelMap => {
   const next: PanelMap = { ...panels };
   let yCursor = 0;
   items.forEach((section) => {

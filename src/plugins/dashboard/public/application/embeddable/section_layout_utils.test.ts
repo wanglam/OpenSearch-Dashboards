@@ -9,7 +9,7 @@
  * GitHub history for details.
  */
 
-import { SectionLayout } from '../../../common';
+import { DashboardSection } from '../../../common';
 import { DashboardPanelState } from './types';
 import {
   appendEmptySection,
@@ -33,7 +33,11 @@ const panel = (id: string, x: number, y: number, w: number, h: number): Dashboar
     gridData: { x, y, w, h, i: id },
   }) as DashboardPanelState;
 
-const section = (id: string, name: string, members: SectionLayout['members']): SectionLayout => ({
+const section = (
+  id: string,
+  name: string,
+  members: DashboardSection['members']
+): DashboardSection => ({
   id,
   type: 'section',
   name,
