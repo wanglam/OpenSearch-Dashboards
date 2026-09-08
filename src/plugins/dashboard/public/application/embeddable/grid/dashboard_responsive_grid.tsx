@@ -9,25 +9,7 @@
  * GitHub history for details.
  */
 
-// Dashboard collapsible sections
-// "Rendering architecture: nested grids".
-//
-// This is the shared, reusable `react-grid-layout` primitive used by BOTH
-// the outer dashboard grid (DashboardGrid) and each section's inner grid
-// (DashboardSectionGrid). It was extracted from DashboardGrid so the exact
-// same drag/resize/collision behavior is available at both nesting levels.
-//
-// Two changes versus the original inline ResponsiveGrid in dashboard_grid.tsx:
-//   1. `draggableHandle`/`draggableCancel` are props (not hard-coded), so the
-//      outer grid can EXCLUDE inner-grid drags via draggableCancel while the
-//      inner grid uses the standard panel dragger -- this is the disjoint-drag
-//      isolation the nested-grid prototype proved necessary.
-//   2. The "last valid measured width" is a PER-INSTANCE ref, not a module
-//      global. The original code kept `lastValidGridSize` as a module-level
-//      variable; with nested grids that is actively wrong -- the inner grid's
-//      width differs from the outer grid's, and a shared global would let
-//      whichever rendered last clobber the other's width. A per-instance ref
-//      keeps each grid's width independent.
+// Shared react-grid-layout primitive for the dashboard and section grids.
 
 import 'react-resizable/css/styles.css';
 
@@ -68,8 +50,6 @@ export interface ResponsiveGridProps {
   className?: string;
   /** Defaults to the standard panel dragger. */
   draggableHandle?: string;
-  /** In edit mode, mousedowns matching this selector never start a drag on THIS grid. */
-  draggableCancel?: string;
 }
 
 function ResponsiveGrid({
@@ -82,7 +62,6 @@ function ResponsiveGrid({
   useMargins,
   className,
   draggableHandle,
-  draggableCancel,
 }: ResponsiveGridProps) {
   // Per-instance "last valid width". sizeMe reports width 0 in some transient
   // states (e.g. while a panel is expanded); we keep the last non-zero width
@@ -126,7 +105,6 @@ function ResponsiveGrid({
           ? '.doesnt-exist'
           : (draggableHandle ?? PANEL_DRAG_HANDLE)
       }
-      draggableCancel={draggableCancel}
       layout={layout}
       onLayoutChange={onLayoutChange}
       onResize={({}, {}, {}, {}, event) => ensureWindowScrollsToBottom(event)}

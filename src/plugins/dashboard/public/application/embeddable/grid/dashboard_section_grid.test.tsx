@@ -127,38 +127,6 @@ describe('DashboardSectionGrid', () => {
     wrapper.unmount();
   });
 
-  // -- Collapsed behavior ---------------------------------------------------
-
-  it('shows collapsed hint when collapsed=true', () => {
-    const wrapper = mount(<DashboardSectionGrid {...getDefaultProps({ collapsed: true })} />);
-
-    const hint = findTestSubject(wrapper, `dashboardSectionCollapsedHint-${SECTION_ID}`);
-    expect(hint).toHaveLength(1);
-    expect(hint.text()).toContain('collapsed');
-
-    wrapper.unmount();
-  });
-
-  it('hides collapsed hint when collapsed=true and hideCollapsedHint=true', () => {
-    const wrapper = mount(
-      <DashboardSectionGrid {...getDefaultProps({ collapsed: true, hideCollapsedHint: true })} />
-    );
-
-    const hint = findTestSubject(wrapper, `dashboardSectionCollapsedHint-${SECTION_ID}`);
-    expect(hint).toHaveLength(0);
-
-    wrapper.unmount();
-  });
-
-  it('does not show collapsed hint when not collapsed', () => {
-    const wrapper = mount(<DashboardSectionGrid {...getDefaultProps({ collapsed: false })} />);
-
-    const hint = findTestSubject(wrapper, `dashboardSectionCollapsedHint-${SECTION_ID}`);
-    expect(hint).toHaveLength(0);
-
-    wrapper.unmount();
-  });
-
   // -- Empty section actions ------------------------------------------------
 
   it('shows empty section actions when callbacks are provided', () => {

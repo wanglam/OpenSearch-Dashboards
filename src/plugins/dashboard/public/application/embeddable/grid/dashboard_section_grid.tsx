@@ -90,12 +90,6 @@ export interface DashboardSectionGridProps {
    * the empty-section widget alongside "Add existing visualization".
    */
   onCreateNewPanel?: () => void;
-  /**
-   * When true, suppress the collapsed-state hint text (the SectionLayout stack
-   * wants a collapsed section to show only its header). Members stay mounted
-   * either way.
-   */
-  hideCollapsedHint?: boolean;
 }
 
 export class DashboardSectionGrid extends React.Component<DashboardSectionGridProps> {
@@ -124,7 +118,6 @@ export class DashboardSectionGrid extends React.Component<DashboardSectionGridPr
       expandedPanelId,
       onAddPanel,
       onCreateNewPanel,
-      hideCollapsedHint,
     } = this.props;
 
     const membersInOrder = [...members].sort((a, b) => {
@@ -172,17 +165,6 @@ export class DashboardSectionGrid extends React.Component<DashboardSectionGridPr
 
     return (
       <div className="dshDashboardSectionGrid" data-test-subj={`dashboardSectionGrid-${sectionId}`}>
-        {collapsed && !hideCollapsedHint ? (
-          <div
-            className="dshDashboardSectionGrid__collapsedHint"
-            data-test-subj={`dashboardSectionCollapsedHint-${sectionId}`}
-          >
-            {i18n.translate('dashboard.section.collapsedHint', {
-              defaultMessage:
-                'This section is collapsed. Click the expand arrow in the header to show its panels.',
-            })}
-          </div>
-        ) : null}
         {!collapsed && members.length === 0 ? (
           <div
             className="dshDashboardSectionGrid__emptyCta"
@@ -221,7 +203,6 @@ export class DashboardSectionGrid extends React.Component<DashboardSectionGridPr
             onLayoutChange={this.onLayoutChange}
             useMargins={useMargins}
             draggableHandle={PANEL_DRAG_HANDLE}
-            draggableCancel={undefined}
             maximizedPanelId={hasMaximizedMember ? expandedPanelId : undefined}
           >
             {children}

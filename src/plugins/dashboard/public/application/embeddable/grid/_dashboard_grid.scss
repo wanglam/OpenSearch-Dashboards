@@ -50,18 +50,6 @@
   display: none;
 }
 
-.dshDashboardSectionGrid__collapsedHint {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  padding: $euiSizeS $euiSize;
-  color: $euiColorDarkShade;
-  font-size: $euiFontSizeXS;
-  font-style: italic;
-  text-align: center;
-}
-
 .dshDashboardSectionGrid__emptyCta {
   display: flex;
   align-items: center;

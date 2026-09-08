@@ -32,7 +32,7 @@ export {
   GridData,
   SectionMemberGridData,
   SectionLayoutMember,
-  SectionLayout,
+  DashboardSection,
   DashboardLayout,
 } from './embeddable/types';
 export {
