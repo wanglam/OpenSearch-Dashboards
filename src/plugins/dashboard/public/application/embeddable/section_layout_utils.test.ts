@@ -43,49 +43,56 @@ const section = (id: string, name: string, members: SectionLayout['members']): S
 
 describe('section_layout_utils', () => {
   describe('migrateAllPanelsToSection', () => {
-    it('repacks panels into fresh section-relative coordinates (same-row-first), keeping each own w/h', () => {
+    it('preserves the existing arrangement while translating the top edge to y=0', () => {
       const panels = {
-        a: panel('a', 0, 0, 24, 10),
-        b: panel('b', 24, 0, 24, 15),
+        lowerLeft: panel('lowerLeft', 4, 30, 20, 12),
+        topRight: panel('topRight', 28, 10, 20, 8),
+        topLeft: panel('topLeft', 2, 10, 10, 6),
       };
       const result = migrateAllPanelsToSection(panels, 'Section 1');
       expect(result.type).toBe('section');
       expect(result.name).toBe('Section 1');
       expect(result.collapsed).toBe(false);
-      expect(result.members).toHaveLength(2);
-      const a = result.members.find((m) => m.idRef === 'a')!;
-      const b = result.members.find((m) => m.idRef === 'b')!;
-      // a and b fit on the same row (24 + 24 <= 48), so b packs right of a --
-      // matching their original x/y here is coincidental, not a copy.
-      expect(a).toEqual({ idRef: 'a', type: 'panel', gridData: { x: 0, y: 0, w: 24, h: 10 } });
-      expect(b).toEqual({ idRef: 'b', type: 'panel', gridData: { x: 24, y: 0, w: 24, h: 15 } });
-    });
-
-    it('does NOT copy a panel absolute y that has no valid meaning in the section (always repacks from y=0)', () => {
-      // A single panel sitting mid-grid at y=40 in GridLayout mode -- its
-      // absolute y is meaningless inside a section's own coordinate space,
-      // which always starts at y=0.
-      const panels = { solo: panel('solo', 0, 40, 24, 15) };
-      const result = migrateAllPanelsToSection(panels);
       expect(result.members).toEqual([
-        { idRef: 'solo', type: 'panel', gridData: { x: 0, y: 0, w: 24, h: 15 } },
+        {
+          idRef: 'topLeft',
+          type: 'panel',
+          gridData: { x: 2, y: 0, w: 10, h: 6 },
+        },
+        {
+          idRef: 'topRight',
+          type: 'panel',
+          gridData: { x: 28, y: 0, w: 20, h: 8 },
+        },
+        {
+          idRef: 'lowerLeft',
+          type: 'panel',
+          gridData: { x: 4, y: 20, w: 20, h: 12 },
+        },
       ]);
     });
 
-    it('wraps to a new row when panels do not fit on the same row, using each panel own w/h', () => {
+    it('normalizes a single panel y while preserving its x position and dimensions', () => {
+      const panels = { solo: panel('solo', 7, 40, 24, 15) };
+      const result = migrateAllPanelsToSection(panels);
+      expect(result.members).toEqual([
+        { idRef: 'solo', type: 'panel', gridData: { x: 7, y: 0, w: 24, h: 15 } },
+      ]);
+    });
+
+    it('preserves intentional horizontal gaps instead of repacking panels', () => {
       const panels = {
-        a: panel('a', 0, 0, 30, 10),
-        b: panel('b', 30, 0, 30, 8),
+        a: panel('a', 0, 0, 10, 10),
+        b: panel('b', 30, 0, 10, 8),
       };
       const result = migrateAllPanelsToSection(panels);
       const a = result.members.find((m) => m.idRef === 'a')!;
       const b = result.members.find((m) => m.idRef === 'b')!;
-      // 30 + 30 > 48 -> b cannot share a's row, so it wraps below.
-      expect(a.gridData).toEqual({ x: 0, y: 0, w: 30, h: 10 });
-      expect(b.gridData).toEqual({ x: 0, y: 10, w: 30, h: 8 });
+      expect(a.gridData).toEqual({ x: 0, y: 0, w: 10, h: 10 });
+      expect(b.gridData).toEqual({ x: 30, y: 0, w: 10, h: 8 });
     });
 
-    it('orders members by original y then x before packing', () => {
+    it('orders members by original y then x', () => {
       const panels = {
         bottom: panel('bottom', 0, 20, 24, 5),
         topRight: panel('topRight', 24, 0, 24, 5),

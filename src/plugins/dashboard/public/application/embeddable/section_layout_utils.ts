@@ -47,13 +47,11 @@ export const getNextSectionName = (items: SectionLayout[]): string => {
 
 /**
  * First "Add section": move ALL current panels into a single new section,
- * repacked into fresh SECTION-RELATIVE coordinates (same-row-first, wrap on
- * overflow -- the same placement policy as computeAppendedMemberGridData,
- * applied to each panel in turn). A panel's absolute GridLayout gridData has
- * no valid meaning inside a section's own coordinate space (which always
- * starts at y=0), so it is read only for each panel's own w/h -- never for
- * its x/y. panelsJSON.gridData itself is left untouched by this move; it
- * remains the dashboard's GridLayout-mode representation and is only ever
+ * preserving their existing arrangement. The section grid uses the same
+ * horizontal coordinate space, so x/w/h remain unchanged; y is translated by
+ * the original minimum y so the section starts at y=0 while keeping relative
+ * vertical spacing. panelsJSON.gridData itself is left untouched by this move;
+ * it remains the dashboard's GridLayout-mode representation and is only ever
  * recomputed on ungroup (see flattenSectionsToPanels).
  */
 export const migrateAllPanelsToSection = (
@@ -63,11 +61,14 @@ export const migrateAllPanelsToSection = (
   const ordered = Object.values(panels).sort((a, b) =>
     a.gridData.y === b.gridData.y ? a.gridData.x - b.gridData.x : a.gridData.y - b.gridData.y
   );
-  const members: SectionLayoutMember[] = [];
-  ordered.forEach((panel) => {
-    const { w, h } = panel.gridData;
-    const gridData = computeAppendedMemberGridData(members, w, h);
-    members.push({ idRef: panel.explicitInput.id, type: 'panel', gridData });
+  const minY = ordered[0]?.gridData.y ?? 0;
+  const members: SectionLayoutMember[] = ordered.map((panel) => {
+    const { x, y, w, h } = panel.gridData;
+    return {
+      idRef: panel.explicitInput.id,
+      type: 'panel',
+      gridData: { x, y: y - minY, w, h },
+    };
   });
   return { id: generateSectionId(), type: 'section', name, collapsed: false, members };
 };
@@ -88,9 +89,9 @@ export const appendEmptySection = (items: SectionLayout[]): SectionLayout[] => [
  * Slot for a newly added member: place it on the SAME row as the existing
  * bottom-most panel, immediately to its right, when the incoming panel still
  * fits within the grid width; otherwise wrap to a new row below everything.
- * (Used by add-to-section, move-to-section, and bulk migration into a new
- * section -- each passes the incoming panel's own w/h so panels keep their
- * size; callers adding a brand-new panel omit w/h and get the default size.)
+ * Add-to-section and move-to-section pass the incoming panel's own w/h so
+ * panels keep their size; callers adding a brand-new panel omit w/h and get
+ * the default size.
  */
 export const computeAppendedMemberGridData = (
   members: SectionLayoutMember[],
