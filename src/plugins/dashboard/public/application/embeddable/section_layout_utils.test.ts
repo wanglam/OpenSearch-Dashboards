@@ -242,6 +242,14 @@ describe('section_layout_utils', () => {
       expect(movedMember.gridData.w).toBe(36);
       expect(movedMember.gridData.h).toBe(20);
     });
+
+    it('uses fallback dimensions when moving an unclaimed panel', () => {
+      const items = [section('s1', 'S1', [])];
+      const result = moveMemberToSection(items, 'p1', 's1', { w: 36, h: 20 });
+      const movedMember = result[0].members.find((m) => m.idRef === 'p1')!;
+      expect(movedMember.gridData.w).toBe(36);
+      expect(movedMember.gridData.h).toBe(20);
+    });
   });
 
   describe('flattenSectionsToPanels', () => {

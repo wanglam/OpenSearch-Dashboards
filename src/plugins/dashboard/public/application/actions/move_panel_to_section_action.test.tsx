@@ -181,6 +181,38 @@ test('execute() opens a modal to pick the target section', async () => {
   expect(mountPointArg).toBeDefined();
 });
 
+test('moving an unclaimed panel preserves its stored dimensions', async () => {
+  const input = container.getInput();
+  const panel = input.panels[embeddable.id];
+  container.updateInput({
+    panels: {
+      ...input.panels,
+      [embeddable.id]: {
+        ...panel,
+        gridData: { ...panel.gridData, w: 36, h: 20 },
+      },
+    },
+  });
+
+  const close = jest.fn();
+  const openModal = jest.fn().mockReturnValue({ close });
+  const core = { ...coreStart, overlays: { ...coreStart.overlays, openModal } } as CoreStart;
+  const action = new MovePanelToSectionAction(core);
+
+  await action.execute({ embeddable });
+  const wrapper = mount(openModal.mock.calls[0][0]);
+
+  act(() => {
+    (wrapper.find('EuiButton[fill=true]').prop('onClick') as Function)();
+  });
+
+  const layout = container.getInput().layout as any;
+  const member = layout.items[0].members.find((item: any) => item.idRef === embeddable.id);
+  expect(member.gridData.w).toBe(36);
+  expect(member.gridData.h).toBe(20);
+  wrapper.unmount();
+});
+
 // ---------------------------------------------------------------------------
 // New tests: execute() error paths, getIconType, and modal interaction
 // ---------------------------------------------------------------------------
