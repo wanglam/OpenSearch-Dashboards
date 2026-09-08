@@ -71,7 +71,7 @@ import {
 import { PLACEHOLDER_EMBEDDABLE } from './placeholder';
 import { PanelPlacementMethod, IPanelPlacementArgs } from './panel/dashboard_panel_placement';
 import { DashboardLayout } from '../../../common';
-import { appendMemberToSection, removeMemberFromLayout } from './section_layout_utils';
+import { removeMemberFromLayout } from './section_layout_utils';
 
 export interface DashboardContainerInput extends ContainerInput {
   viewMode: ViewMode;
@@ -280,14 +280,7 @@ export class DashboardContainer extends Container<InheritedChildInput, Dashboard
   public showPlaceholderUntil<TPlacementMethodArgs extends IPanelPlacementArgs>(
     newStateComplete: Promise<Partial<PanelState>>,
     placementMethod?: PanelPlacementMethod<TPlacementMethodArgs>,
-    placementArgs?: TPlacementMethodArgs,
-    // When the source panel lives in a section (and the sections feature is on),
-    // the placeholder -- and then its replacement -- are inserted as members of
-    // that section, so the new panel renders inside the section instead of the
-    // read-only "Ungrouped" group. Only the clone action passes this; it is
-    // self-gated on `allowDashboardSections` so other/flag-off callers are
-    // unaffected.
-    sectionId?: string
+    placementArgs?: TPlacementMethodArgs
   ): void {
     const originalPanelState = {
       type: PLACEHOLDER_EMBEDDABLE,
@@ -310,28 +303,35 @@ export class DashboardContainer extends Container<InheritedChildInput, Dashboard
     );
     const placeholderId = placeholderPanelState.explicitInput.id;
 
+    // When cloning inside a section, the caller pre-computes the
+    // section-relative placement on IPanelPlacementBesideArgs.sectionTarget.
+    const sectionTarget =
+      placementArgs && 'sectionTarget' in placementArgs
+        ? (placementArgs as any).sectionTarget
+        : undefined;
     const layout = this.input.layout;
     const useSection =
-      Boolean(sectionId) &&
+      Boolean(sectionTarget) &&
       Boolean(this.options.allowDashboardSections) &&
       layout?.type === 'SectionLayout' &&
-      layout.items.some((section) => section.id === sectionId);
+      layout.items.some((section) => section.id === sectionTarget?.sectionId);
 
     if (useSection) {
-      // Insert the placeholder into panels AND as a member of the target section
-      // in one update, so it appears in the section (loading) from the start.
-      // Forward the placeholder's grid size so the section member keeps the
-      // source panel's width/height instead of defaulting to a full-width slot.
-      const appended = appendMemberToSection(
-        layout!.items,
-        sectionId!,
-        placeholderId,
-        placeholderPanelState.gridData.w,
-        placeholderPanelState.gridData.h
+      // Use the caller-provided section-relative placement directly instead of
+      // recomputing via appendMemberToSection. This lets the clone action reuse
+      // placePanelBeside against the section's member coordinates, giving a
+      // "beside the original" placement that matches flat-grid clone behavior.
+      const newMember = {
+        idRef: placeholderId,
+        type: 'panel' as const,
+        gridData: sectionTarget!.memberGridData,
+      };
+      const newItems = layout!.items.map((s: any) =>
+        s.id === sectionTarget!.sectionId ? { ...s, members: [...s.members, newMember] } : s
       );
       this.updateInput({
         panels: { ...this.input.panels, [placeholderId]: placeholderPanelState },
-        ...(appended ? { layout: { type: 'SectionLayout', items: appended.items } } : {}),
+        layout: { type: 'SectionLayout', items: newItems },
       });
     } else {
       this.updateInput({

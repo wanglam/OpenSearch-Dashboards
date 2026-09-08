@@ -30,7 +30,7 @@
 
 import _ from 'lodash';
 import { PanelNotFoundError } from '../../../../../embeddable/public';
-import { GridData } from '../../../../common';
+import { GridData, SectionMemberGridData } from '../../../../common';
 import { DashboardPanelState, DASHBOARD_GRID_COLUMN_COUNT } from '..';
 
 export type PanelPlacementMethod<PlacementArgs extends IPanelPlacementArgs> = (
@@ -45,6 +45,10 @@ export interface IPanelPlacementArgs {
 
 export interface IPanelPlacementBesideArgs extends IPanelPlacementArgs {
   placeBesideId: string;
+  /** When cloning inside a section, carry the target section id and the
+   *  caller-computed section-relative placement so `showPlaceholderUntil` can
+   *  insert the member directly without recomputing. */
+  sectionTarget?: { sectionId: string; memberGridData: SectionMemberGridData };
 }
 
 /**

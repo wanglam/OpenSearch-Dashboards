@@ -247,4 +247,9 @@ test('Cloning a section member (flag on) drops the clone into the same section',
   const clonedMember = s1.members.find((m: any) => m.idRef === newId);
   expect(clonedMember.gridData.w).toBe(12);
   expect(clonedMember.gridData.h).toBe(8);
+
+  // placePanelBeside places the clone to the RIGHT of the source (x:0+w:12=12,
+  // same y), matching flat-grid clone behavior.
+  expect(clonedMember.gridData.x).toBe(12);
+  expect(clonedMember.gridData.y).toBe(0);
 });

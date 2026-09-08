@@ -121,16 +121,56 @@ export class ClonePanelAction implements ActionByType<typeof ACTION_CLONE_PANEL>
     const width = sourceMember?.member.gridData.w ?? panelToClone.gridData.w;
     const height = sourceMember?.member.gridData.h ?? panelToClone.gridData.h;
 
-    dashboard.showPlaceholderUntil(
-      this.cloneEmbeddable(panelToClone, embeddable.type),
-      placePanelBeside,
-      {
+    // When cloning inside a section, run placePanelBeside against the section's
+    // member coordinates (section-relative) so the clone lands beside the
+    // original within the section -- matching flat-grid clone UX.
+    const besideArgs: IPanelPlacementBesideArgs = (() => {
+      if (sourceSectionId && layout?.type === 'SectionLayout') {
+        const sourceSection = layout.items.find((s) => s.id === sourceSectionId);
+        if (sourceSection) {
+          // Build a pseudo-panels map from section members for placePanelBeside
+          const sectionPanels: { [key: string]: DashboardPanelState } = {};
+          sourceSection.members.forEach((member) => {
+            sectionPanels[member.idRef] = {
+              gridData: { ...member.gridData, i: member.idRef },
+              explicitInput: { id: member.idRef },
+            } as DashboardPanelState;
+          });
+          const besideResult = placePanelBeside({
+            width,
+            height,
+            currentPanels: sectionPanels,
+            placeBesideId: embeddable.id,
+          });
+          return {
+            width,
+            height,
+            currentPanels: dashboard.getInput().panels,
+            placeBesideId: panelToClone.explicitInput.id,
+            sectionTarget: {
+              sectionId: sourceSectionId,
+              memberGridData: {
+                x: besideResult.x,
+                y: besideResult.y,
+                w: besideResult.w,
+                h: besideResult.h,
+              },
+            },
+          };
+        }
+      }
+      return {
         width,
         height,
         currentPanels: dashboard.getInput().panels,
         placeBesideId: panelToClone.explicitInput.id,
-      } as IPanelPlacementBesideArgs,
-      sourceSectionId
+      };
+    })();
+
+    dashboard.showPlaceholderUntil(
+      this.cloneEmbeddable(panelToClone, embeddable.type),
+      placePanelBeside,
+      besideArgs
     );
   }
 
