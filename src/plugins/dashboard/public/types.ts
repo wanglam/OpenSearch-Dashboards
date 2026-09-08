@@ -143,12 +143,13 @@ export interface DashboardVariableUrlState {
 }
 
 /**
- * In URL panels are optional,
- * Panels are not added to the URL when in "view" mode
+ * Panels and layout are omitted from URL state in view mode and included in
+ * edit mode so unsaved dashboard changes survive refreshes.
  */
 export type DashboardAppStateInUrl = Omit<DashboardAppState, 'panels' | 'variables' | 'layout'> & {
   panels?: SavedDashboardPanel[];
   variables?: DashboardVariableUrlState[];
+  layout?: DashboardLayout;
 };
 
 export interface DashboardAppStateTransitions {
