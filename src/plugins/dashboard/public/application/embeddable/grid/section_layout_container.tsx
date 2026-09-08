@@ -319,7 +319,7 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
       </EuiContextMenuItem>,
       <EuiContextMenuItem
         key="createNew"
-        icon="plusInCircle"
+        icon="visualizeApp"
         data-test-subj={`dashboardSectionCreateNew-${section.id}`}
         onClick={() => this.createNewVisualization(section.id)}
       >
@@ -334,7 +334,7 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
         onClick={() => this.openAddPanel(section.id)}
       >
         {i18n.translate('dashboard.section.menu.addExistingVisualization', {
-          defaultMessage: 'Add existing visualization',
+          defaultMessage: 'Add from library',
         })}
       </EuiContextMenuItem>,
       <EuiContextMenuItem
@@ -503,6 +503,7 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
               // the classic grid rather than being clipped to the section box.
               const ownsMaximized = expandedPanelId !== undefined && section.id === owningSectionId;
               const sectionClasses = classNames('dshSectionLayout__section', {
+                'dshSectionLayout__section--editing': !isViewMode,
                 'dshSectionLayout__section--hidden': hideSection,
                 'dshSectionLayout__section--collapsed': section.collapsed,
                 'dshSectionLayout__section--maximized': ownsMaximized,
@@ -521,8 +522,11 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
                       className={sectionClasses}
                       data-test-subj={`dashboardSection-${section.id}`}
                     >
-                      <div className="dshSectionLayout__sectionHeader">
-                        {!isViewMode && (
+                      <div
+                        className="dshSectionLayout__sectionHeader"
+                        {...(!isViewMode ? provided.dragHandleProps : {})}
+                      >
+                        {/* {!isViewMode && (
                           // Drag handle: only this initiates a section reorder, so
                           // dragging panels inside the section's grid is unaffected.
                           <div
@@ -532,11 +536,10 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
                               defaultMessage: 'Drag to reorder section {name}',
                               values: { name: section.name },
                             })}
-                            {...provided.dragHandleProps}
                           >
                             <EuiIcon type="grab" size="m" color="subdued" />
                           </div>
-                        )}
+                        )} */}
                         <EuiButtonIcon
                           iconType={section.collapsed ? 'arrowRight' : 'arrowDown'}
                           color="text"
