@@ -130,7 +130,8 @@ export class MovePanelToSectionAction implements ActionByType<typeof ACTION_MOVE
           onClose={() => modalSession.close()}
           onSelect={(targetId) => {
             if (targetId && targetId !== currentSectionId) {
-              const moved = moveMemberToSection(layout.items, embeddable.id, targetId);
+              const panelSize = dashboard.getInput().panels[embeddable.id]?.gridData;
+              const moved = moveMemberToSection(layout.items, embeddable.id, targetId, panelSize);
               // Auto-expand the target section so the moved panel is visible.
               const items = setSectionCollapsed(moved, targetId, false);
               // The panel re-parents between two section grids, so recreate it

@@ -189,21 +189,16 @@ export class VisualizeEmbeddableFactory implements EmbeddableFactoryDefinition<
         parent
       );
     } else {
-      // Opaque, container-owned context to round-trip through the editor (e.g.
-      // which dashboard section this create was launched from). Read once: a
-      // container may consume/clear it on read. The container decides what, if
-      // anything, to provide.
       const containerData = parent?.getStateTransferContainerInfoData?.();
-      const container =
-        parent && parent.getInput().id && (parent.getTitle() || containerData)
-          ? {
-              containerInfo: {
-                containerId: parent.getInput().id,
-                containerName: parent.getTitle() ?? '',
-                ...(containerData ? { containerData } : {}),
-              },
-            }
-          : {};
+      const container = parent
+        ? {
+            containerInfo: {
+              containerId: parent.getInput().id,
+              containerName: parent.getTitle() ?? '',
+              containerData,
+            },
+          }
+        : {};
       showNewVisModal({
         originatingApp: await this.getCurrentAppId(),
         outsideVisualizeApp: true,

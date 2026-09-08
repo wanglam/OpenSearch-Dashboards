@@ -232,18 +232,20 @@ export const removeSection = (
 /**
  * Move a member from its current section to another. Returns the new items with
  * the member removed from its old section and appended to the target (with a
- * fresh section-relative slot). The panel's own w/h are preserved across the
- * move. No-op if the target section doesn't exist.
+ * fresh section-relative slot). The current member w/h take precedence; the
+ * optional fallback preserves dimensions for an unclaimed panel. No-op if the
+ * target section doesn't exist.
  */
 export const moveMemberToSection = (
   items: SectionLayout[],
   memberId: string,
-  targetSectionId: string
+  targetSectionId: string,
+  fallbackSize?: Pick<SectionMemberGridData, 'w' | 'h'>
 ): SectionLayout[] => {
   if (!items.some((s) => s.id === targetSectionId)) return items;
   // Capture the member's current w/h BEFORE removing it from the old section.
-  let memberW: number | undefined;
-  let memberH: number | undefined;
+  let memberW = fallbackSize?.w;
+  let memberH = fallbackSize?.h;
   for (const section of items) {
     const member = section.members.find((m) => m.idRef === memberId);
     if (member) {
