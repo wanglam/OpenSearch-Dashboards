@@ -62,7 +62,6 @@ import {
   computeUnclaimedPanels,
   computeUngroupedLayout,
   flattenSectionsToPanels,
-  getClaimedMemberIds,
   removeSection,
   renameSection,
   setSectionCollapsed,
@@ -232,11 +231,17 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
     const { items, removedMemberIds } = removeSection(items0, sectionId);
     const panels = { ...this.props.container.getInput().panels };
     removedMemberIds.forEach((id) => delete panels[id]);
-    // Auto-revert to GridLayout when the last section is deleted.
-    const layout: DashboardLayout = items.length
-      ? { type: 'SectionLayout', items }
-      : { type: 'GridLayout', items: [] };
-    this.props.container.updateInput({ panels, layout });
+    if (items.length) {
+      this.props.container.updateInput({ panels, layout: { type: 'SectionLayout', items } });
+      return;
+    }
+
+    // Surviving unclaimed panels move from the virtual section grid to the flat grid.
+    this.props.container.reparentPanels(
+      Object.keys(panels),
+      { type: 'GridLayout', items: [] },
+      panels
+    );
   };
 
   /**
@@ -274,12 +279,12 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
 
     const currentPanels = this.props.container.getInput().panels;
     const panels = flattenSectionsToPanels(items, currentPanels);
-    // Every section member re-parents from its section grid back to the flat
-    // grid (a component swap), so recreate them via the container's natural
-    // remove/add lifecycle. Revert to GridLayout (empty items); on save this
-    // normalizes to no layoutJSON at all (see update_saved_dashboard).
-    const reparentedIds = [...getClaimedMemberIds(items)];
-    this.props.container.reparentPanels(reparentedIds, { type: 'GridLayout', items: [] }, panels);
+    // Every surviving panel, including unclaimed panels, moves to the flat grid.
+    this.props.container.reparentPanels(
+      Object.keys(panels),
+      { type: 'GridLayout', items: [] },
+      panels
+    );
   };
 
   /** Resolve a section's members to { panel, member } pairs, skipping stale refs. */
