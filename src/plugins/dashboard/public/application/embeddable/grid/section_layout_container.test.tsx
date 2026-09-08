@@ -325,6 +325,43 @@ describe('SectionLayoutContainer', () => {
         expect(layout.type).toBe('GridLayout');
       });
     });
+
+    test('deleting the last section reparents surviving unclaimed panels', async () => {
+      const { container, component, coreStart } = setup({
+        layout: makeSectionLayout([{ id: 's1', name: 'Only Section', members: [{ idRef: 'p1' }] }]),
+        panels: {
+          p1: getSampleDashboardPanel<ContactCardEmbeddableInput>({
+            explicitInput: { firstName: 'Alice', id: 'p1' },
+            type: CONTACT_CARD_EMBEDDABLE,
+          }),
+        },
+        extraPanelIds: ['orphan1'],
+      });
+      const reparentPanels = jest.spyOn(container, 'reparentPanels');
+
+      (coreStart.overlays.openConfirm as jest.Mock).mockResolvedValueOnce(true);
+
+      await act(async () => {
+        findTestSubject(component, 'dashboardSectionMenuButton-s1').simulate('click');
+      });
+      updateAndWait(component);
+
+      await act(async () => {
+        findTestSubject(component, 'dashboardSectionDelete-s1').simulate('click');
+      });
+
+      await waitFor(() => {
+        updateAndWait(component);
+        expect(container.getInput().layout?.type).toBe('GridLayout');
+      });
+
+      expect(reparentPanels).toHaveBeenCalledTimes(1);
+      const [ids, layout, panels] = reparentPanels.mock.calls[0];
+      expect(ids).toEqual(['orphan1']);
+      expect(layout).toEqual({ type: 'GridLayout', items: [] });
+      expect(panels.p1).toBeUndefined();
+      expect(panels.orphan1).toBeDefined();
+    });
   });
 
   describe('ungroup all sections', () => {
@@ -351,6 +388,36 @@ describe('SectionLayoutContainer', () => {
       // Both panels should still exist
       expect(container.getInput().panels.p1).toBeDefined();
       expect(container.getInput().panels.p2).toBeDefined();
+    });
+
+    test('confirmed ungroup reparents claimed and unclaimed panels', async () => {
+      const { container, component, coreStart } = setup({ extraPanelIds: ['orphan1'] });
+      const reparentPanels = jest.spyOn(container, 'reparentPanels');
+
+      (coreStart.overlays.openConfirm as jest.Mock).mockResolvedValueOnce(true);
+
+      await act(async () => {
+        findTestSubject(component, 'dashboardSectionMenuButton-s1').simulate('click');
+      });
+      updateAndWait(component);
+
+      await act(async () => {
+        findTestSubject(component, 'dashboardSectionUngroupAll-s1').simulate('click');
+      });
+
+      await waitFor(() => {
+        updateAndWait(component);
+        expect(container.getInput().layout?.type).toBe('GridLayout');
+      });
+
+      expect(reparentPanels).toHaveBeenCalledTimes(1);
+      const [ids, layout, panels] = reparentPanels.mock.calls[0];
+      expect(ids).toEqual(expect.arrayContaining(['p1', 'p2', 'orphan1']));
+      expect(ids).toHaveLength(3);
+      expect(layout).toEqual({ type: 'GridLayout', items: [] });
+      expect(panels.p1).toBeDefined();
+      expect(panels.p2).toBeDefined();
+      expect(panels.orphan1).toBeDefined();
     });
 
     test('cancelled ungroup is a no-op', async () => {
