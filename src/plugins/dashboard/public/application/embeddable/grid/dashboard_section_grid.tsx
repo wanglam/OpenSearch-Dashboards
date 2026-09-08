@@ -29,7 +29,7 @@ import _ from 'lodash';
 import React from 'react';
 import classNames from 'classnames';
 import { i18n } from '@osd/i18n';
-import { EuiButton, EuiButtonEmpty, EuiText, EuiSpacer } from '@elastic/eui';
+import { EuiButton, EuiButtonEmpty } from '@elastic/eui';
 import { Layout } from 'react-grid-layout';
 import { EmbeddableChildPanel, EmbeddableStart } from '../../../../../embeddable/public';
 import { DashboardContainer } from '../dashboard_container';

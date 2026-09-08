@@ -180,10 +180,10 @@
   height: 100%;
   padding-left: $euiSize;
   padding-top: 8px;
+}
 
-  button {
-    margin-right: 10px
-  }
+.dshDashboardSectionGrid__emptyCta button {
+  margin-right: 10px;
 }
 
 /**
@@ -205,9 +205,7 @@
   padding: $euiSizeS;
 }
 
-.dshSectionLayout
-  .euiDraggable
-  .dshSectionLayout__section.euiDraggable__item--isDisabled {
+.dshSectionLayout .dshSectionLayout__section:not(.dshSectionLayout__section--editing) {
   cursor: default;
 }
 
@@ -216,17 +214,7 @@
   border-style: dashed;
   border-radius: $euiBorderRadius;
   overflow: hidden;
-}
 
-.dshSectionLayout__section--editing {
-  transition: border-color 250ms ease;
-}
-
-.dshSectionLayout__section--editing:hover {
-  border-color: $euiColorPrimary;
-}
-
-.dshSectionLayout__section {
   // A non-owning section while a member is maximized.
   &--hidden {
     display: none;
@@ -265,6 +253,14 @@
       height: 100%;
     }
   }
+}
+
+.dshSectionLayout__section--editing {
+  transition: border-color 250ms ease;
+}
+
+.dshSectionLayout__section--editing:hover {
+  border-color: $euiColorPrimary;
 }
 
 .dshSectionLayout__sectionHeader {
@@ -306,7 +302,6 @@
       text-overflow: ellipsis;
     }
   }
-
 }
 
 .dshSectionLayout__sectionMenu {

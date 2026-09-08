@@ -41,7 +41,6 @@ import {
   EuiModalFooter,
   EuiModalHeader,
   EuiModalHeaderTitle,
-  EuiIcon,
   EuiDragDropContext,
   EuiDroppable,
   EuiDraggable,
@@ -526,20 +525,6 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
                         className="dshSectionLayout__sectionHeader"
                         {...(!isViewMode ? provided.dragHandleProps : {})}
                       >
-                        {/* {!isViewMode && (
-                          // Drag handle: only this initiates a section reorder, so
-                          // dragging panels inside the section's grid is unaffected.
-                          <div
-                            className="dshSectionLayout__dragHandle"
-                            data-test-subj={`dashboardSectionDragHandle-${section.id}`}
-                            aria-label={i18n.translate('dashboard.section.dragToReorder', {
-                              defaultMessage: 'Drag to reorder section {name}',
-                              values: { name: section.name },
-                            })}
-                          >
-                            <EuiIcon type="grab" size="m" color="subdued" />
-                          </div>
-                        )} */}
                         <EuiButtonIcon
                           iconType={section.collapsed ? 'arrowRight' : 'arrowDown'}
                           color="text"
