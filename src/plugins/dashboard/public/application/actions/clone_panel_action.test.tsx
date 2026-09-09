@@ -253,3 +253,99 @@ test('Cloning a section member (flag on) drops the clone into the same section',
   expect(clonedMember.gridData.x).toBe(12);
   expect(clonedMember.gridData.y).toBe(0);
 });
+
+test('Cloning a surrounded section member shifts siblings down (no overlap)', async () => {
+  const localCore = coreMock.createStart();
+  localCore.savedObjects.client = {
+    ...localCore.savedObjects.client,
+    get: jest.fn(),
+    find: jest.fn(),
+    create: jest.fn(),
+  } as any;
+
+  const options = {
+    ExitFullScreenButton: () => null,
+    SavedObjectFinder: () => null,
+    application: {} as any,
+    embeddable: start,
+    chrome: {} as any,
+    inspector: {} as any,
+    notifications: {} as any,
+    overlays: localCore.overlays,
+    savedObjectMetaData: {} as any,
+    uiActions: {} as any,
+    allowDashboardSections: true,
+  };
+
+  // Source '123' is fully boxed in: 'b' occupies the slot to its right, 'c' the
+  // slot below. placePanelBeside finds no open slot beside the source and falls
+  // into its bottom-shift fallback -- the clone goes below the source and the
+  // members after it in grid order must shift down. This is the regression:
+  // the section path used to discard that sibling shift, so the clone overlapped
+  // an existing member and rendered "under" instead of at the shifted slot.
+  const input = getSampleDashboardInput({
+    panels: {
+      '123': getSampleDashboardPanel<ContactCardEmbeddableInput>({
+        explicitInput: { firstName: 'Neo', id: '123' },
+        type: CONTACT_CARD_EMBEDDABLE,
+        gridData: { x: 0, y: 0, w: 24, h: 15, i: '123' },
+      }),
+      b: getSampleDashboardPanel<ContactCardEmbeddableInput>({
+        explicitInput: { firstName: 'Trinity', id: 'b' },
+        type: CONTACT_CARD_EMBEDDABLE,
+        gridData: { x: 24, y: 0, w: 24, h: 15, i: 'b' },
+      }),
+      c: getSampleDashboardPanel<ContactCardEmbeddableInput>({
+        explicitInput: { firstName: 'Morpheus', id: 'c' },
+        type: CONTACT_CARD_EMBEDDABLE,
+        gridData: { x: 0, y: 15, w: 24, h: 15, i: 'c' },
+      }),
+    },
+    layout: {
+      type: 'SectionLayout',
+      items: [
+        {
+          id: 's1',
+          type: 'section',
+          name: 'Section 1',
+          collapsed: false,
+          members: [
+            { idRef: '123', type: 'panel', gridData: { x: 0, y: 0, w: 24, h: 15 } },
+            { idRef: 'b', type: 'panel', gridData: { x: 24, y: 0, w: 24, h: 15 } },
+            { idRef: 'c', type: 'panel', gridData: { x: 0, y: 15, w: 24, h: 15 } },
+          ],
+        },
+      ],
+    },
+  } as any);
+  const sectioned = new DashboardContainer(input, options as any);
+  const child = await sectioned.untilEmbeddableLoaded('123');
+
+  const action = new ClonePanelAction(localCore);
+  await action.execute({ embeddable: child as any });
+  await new Promise((r) => setTimeout(r, 20));
+
+  const layout = sectioned.getInput().layout as any;
+  const s1 = layout.items.find((s: any) => s.id === 's1');
+  const byId = (id: string) => s1.members.find((m: any) => m.idRef === id);
+  const newId = s1.members
+    .map((m: any) => m.idRef)
+    .find((id: string) => !['123', 'b', 'c'].includes(id));
+  expect(newId).toBeDefined();
+
+  // Clone lands below the source, in the source's column.
+  expect(byId(newId).gridData).toMatchObject({ x: 0, y: 15, w: 24, h: 15 });
+  // Siblings after the source were shifted down (this is the fix).
+  expect(byId('b').gridData.y).toBe(30);
+  expect(byId('c').gridData.y).toBe(45);
+
+  // No two members overlap.
+  const rects = s1.members.map((m: any) => m.gridData);
+  const overlaps = (r1: any, r2: any) =>
+    r1.x < r2.x + r2.w && r1.x + r1.w > r2.x && r1.y < r2.y + r2.h && r1.y + r1.h > r2.y;
+  for (let i = 0; i < rects.length; i++) {
+    for (let j = i + 1; j < rects.length; j++) {
+      expect(overlaps(rects[i], rects[j])).toBe(false);
+    }
+  }
+});

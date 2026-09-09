@@ -303,31 +303,62 @@ export class DashboardContainer extends Container<InheritedChildInput, Dashboard
     );
     const placeholderId = placeholderPanelState.explicitInput.id;
 
-    // When cloning inside a section, the caller pre-computes the
-    // section-relative placement on IPanelPlacementBesideArgs.sectionTarget.
-    const sectionTarget =
-      placementArgs && 'sectionTarget' in placementArgs
-        ? (placementArgs as any).sectionTarget
-        : undefined;
+    // When cloning inside a section, the caller tags the target section id on
+    // IPanelPlacementBesideArgs.sectionId.
+    const sectionId =
+      placementArgs && 'sectionId' in placementArgs ? (placementArgs as any).sectionId : undefined;
     const layout = this.input.layout;
     const useSection =
-      Boolean(sectionTarget) &&
+      Boolean(sectionId) &&
       Boolean(this.options.allowDashboardSections) &&
       layout?.type === 'SectionLayout' &&
-      layout.items.some((section) => section.id === sectionTarget?.sectionId);
+      layout.items.some((section) => section.id === sectionId);
 
     if (useSection) {
-      // Use the caller-provided section-relative placement directly instead of
-      // recomputing via appendMemberToSection. This lets the clone action reuse
-      // placePanelBeside against the section's member coordinates, giving a
-      // "beside the original" placement that matches flat-grid clone behavior.
-      const newMember = {
-        idRef: placeholderId,
-        type: 'panel' as const,
-        gridData: sectionTarget!.memberGridData,
-      };
+      const targetSection = layout!.items.find((s) => s.id === sectionId)!;
+
+      // Run the SAME placement method the caller passed, but against a
+      // pseudo-panel map built from the target section's members, so placement
+      // happens in section-relative coordinates. placePanelBeside mutates this
+      // map in place when it shifts siblings down (no open slot beside the
+      // source), so we read the shifted positions back below.
+      //
+      // NOTE: this is a second placement call. createPanelState above already
+      // ran the method against the flat panel grid to give the placeholder its
+      // panelsJSON gridData. The two are intentional and serve different
+      // coordinate spaces: panelsJSON holds the flat GridLayout position,
+      // layoutJSON the section-relative one.
+      const sectionPanels: { [key: string]: DashboardPanelState } = {};
+      targetSection.members.forEach((m) => {
+        sectionPanels[m.idRef] = {
+          gridData: { ...m.gridData, i: m.idRef },
+          explicitInput: { id: m.idRef },
+        } as DashboardPanelState;
+      });
+      const slot = placementMethod
+        ? placementMethod({ ...(placementArgs as any), currentPanels: sectionPanels })
+        : placeholderPanelState.gridData;
+
+      const newMembers = [
+        // Existing members, with any bottom-shift the placement method applied.
+        ...targetSection.members.map((m) => ({
+          ...m,
+          gridData: {
+            x: sectionPanels[m.idRef].gridData.x,
+            y: sectionPanels[m.idRef].gridData.y,
+            w: sectionPanels[m.idRef].gridData.w,
+            h: sectionPanels[m.idRef].gridData.h,
+          },
+        })),
+        // The cloned panel, placed beside (or below, on shift) the source.
+        {
+          idRef: placeholderId,
+          type: 'panel' as const,
+          gridData: { x: slot.x, y: slot.y, w: slot.w, h: slot.h },
+        },
+      ];
       const newItems = layout!.items.map((s: any) =>
-        s.id === sectionTarget!.sectionId ? { ...s, members: [...s.members, newMember] } : s
+        s.id === sectionId ? { ...s, members: newMembers } : s
       );
       this.updateInput({
         panels: { ...this.input.panels, [placeholderId]: placeholderPanelState },
