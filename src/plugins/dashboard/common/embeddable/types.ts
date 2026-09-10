@@ -37,16 +37,9 @@ export interface GridData {
 }
 
 /**
- * Collapsible dashboard sections (feature-flagged via `allowDashboardSections`).
- *
- * The section layout is stored in a dedicated top-level `layoutJSON` saved-object
- * attribute (NOT inside `panelsJSON`). `panelsJSON` remains the source of truth for
- * panel *definitions*, including each panel's own `gridData` -- the dashboard's
- * GridLayout-mode representation. While a panel is a section member, its section-
- * relative position lives only in the member's own `gridData` (below); the panel's
- * `panelsJSON.gridData` is left untouched by every section-internal operation
- * (add to section, move between sections, drag/resize inside a section, rename,
- * collapse) and is only ever recomputed when ungrouping back to GridLayout.
+ * Section member coordinates are relative to their section and stored in
+ * `layoutJSON`. Panel definitions and GridLayout coordinates remain in
+ * `panelsJSON`.
  */
 export interface SectionMemberGridData {
   x: number;
@@ -56,10 +49,9 @@ export interface SectionMemberGridData {
 }
 
 export interface SectionLayoutMember {
-  /** References a panel id (panelIndex) in panelsJSON. */
   idRef: string;
   type: 'panel';
-  /** Section-relative coordinates within the section's own inner grid. */
+  /** Coordinates within the section grid. */
   gridData: SectionMemberGridData;
 }
 
@@ -68,18 +60,15 @@ export interface DashboardSection {
   type: 'section';
   name: string;
   collapsed: boolean;
-  /** Members in render order within the section's inner grid. */
   members: SectionLayoutMember[];
 }
 
 export type DashboardLayoutType = 'GridLayout' | 'SectionLayout';
 
 /**
- * Top-level dashboard layout descriptor. When absent (undefined) or `GridLayout`,
- * the dashboard renders the classic single react-grid-layout of panels. When
- * `SectionLayout`, the dashboard renders `items` (sections) in array order, each
- * with its own inner grid. A `SectionLayout` with zero `items` is treated as
- * `GridLayout` (auto-revert).
+ * `GridLayout` renders one panel grid. `SectionLayout` renders sections in
+ * `items` order, each with its own member grid. An empty `SectionLayout` is
+ * treated as `GridLayout`.
  */
 export interface DashboardLayout {
   type: DashboardLayoutType;

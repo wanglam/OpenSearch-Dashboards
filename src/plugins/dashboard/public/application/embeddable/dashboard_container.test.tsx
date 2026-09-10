@@ -308,7 +308,7 @@ test('removeEmbeddable prunes the panel from its section in SectionLayout mode',
   expect((input.layout as any).items[0].members.map((m: any) => m.idRef)).toEqual(['m2']);
 });
 
-test('addNewEmbeddable no longer funnels into a section; the panel stays unclaimed', async () => {
+test('addNewEmbeddable leaves a SectionLayout panel unclaimed', async () => {
   const initialInput = getSampleDashboardInput({
     panels: {},
     layout: {
@@ -327,13 +327,9 @@ test('addNewEmbeddable no longer funnels into a section; the panel stays unclaim
   );
 
   const input = container.getInput();
-  // No section claims the new panel -- it renders in the virtual "Ungrouped"
-  // group instead (computed at render time from unclaimed panels).
   (input.layout as any).items.forEach((section: any) => expect(section.members).toEqual([]));
   expect(input.panels[embeddable.id]).toBeDefined();
 });
-
-// --- Coverage expansion tests ---
 
 test('removeEmbeddable in GridLayout (no layout) does not touch layout', () => {
   const initialInput = getSampleDashboardInput({
@@ -343,7 +339,6 @@ test('removeEmbeddable in GridLayout (no layout) does not touch layout', () => {
         type: CONTACT_CARD_EMBEDDABLE,
       }),
     },
-    // No layout property → GridLayout mode
   });
 
   const container = new DashboardContainer(initialInput, options);
@@ -383,7 +378,6 @@ test('removeEmbeddable in SectionLayout where panel is not in any section is a n
 
   const input = container.getInput();
   expect(input.panels.orphan).toBeUndefined();
-  // Layout items should be unchanged since the panel was not a member of any section
   expect(input.layout).toEqual(layoutBefore);
   container.destroy();
 });
@@ -473,8 +467,6 @@ test('replacePanel transfers section membership from the replaced panel to the r
   const layout = container.getInput().layout as any;
   const s1 = layout.items.find((s: any) => s.id === 's1');
   const memberIds = s1.members.map((m: any) => m.idRef);
-  // The replacement inherits the section slot; the old id is gone (not orphaned
-  // in Ungrouped).
   expect(memberIds).toEqual(['new1']);
   expect(container.getInput().panels.new1).toBeDefined();
   expect(container.getInput().panels.old1).toBeUndefined();
@@ -495,7 +487,6 @@ test('replacePanel in GridLayout mode does not add a layout', () => {
     type: CONTACT_CARD_EMBEDDABLE,
     explicitInput: { id: 'new1', firstName: 'New' } as any,
   });
-  // No SectionLayout was introduced by a plain replace.
   expect(container.getInput().layout).toBeUndefined();
   container.destroy();
 });
@@ -519,7 +510,6 @@ test('addOrUpdateEmbeddable replaces existing panel when id matches', async () =
   );
 
   const input = container.getInput();
-  // The old panel 'exist1' should be replaced (removed) and a new uuid panel added
   expect(input.panels.exist1).toBeUndefined();
   const panelIds = Object.keys(input.panels);
   expect(panelIds.length).toBe(1);
@@ -552,14 +542,12 @@ test('addOrUpdateEmbeddable uses explicitInput.id as fallback for matching', asy
 
   const container = new DashboardContainer(initialInput, options);
 
-  // No embeddableId param — uses explicitInput.id to find match
   await container.addOrUpdateEmbeddable(CONTACT_CARD_EMBEDDABLE, {
     id: 'match1',
     firstName: 'Replaced',
   } as any);
 
   const input = container.getInput();
-  // Old match1 removed, new uuid panel created
   expect(input.panels.match1).toBeUndefined();
   expect(Object.keys(input.panels).length).toBe(1);
   container.destroy();
@@ -575,13 +563,11 @@ test('showPlaceholderUntil adds placeholder then replaces on resolve', async () 
 
   container.showPlaceholderUntil(Promise.resolve(resolvedState));
 
-  // Placeholder should be added immediately
   const panelIds = Object.keys(container.getInput().panels);
   expect(panelIds.length).toBe(1);
   const placeholderId = panelIds[0];
   expect(container.getInput().panels[placeholderId].type).toBe('placeholder');
 
-  // Wait for promise to resolve and panel replacement
   await new Promise((r) => setTimeout(r, 50));
 
   const input = container.getInput();
@@ -601,7 +587,6 @@ test('getPanelQueries returns empty array when no children have originalQuery', 
     },
   });
   const container = new DashboardContainer(initialInput, options);
-  // Wait for embeddable to load
   await new Promise<void>((resolve) => {
     const sub = container.getOutput$().subscribe((output) => {
       if (output.embeddableLoaded.pq1) {
@@ -612,7 +597,6 @@ test('getPanelQueries returns empty array when no children have originalQuery', 
   });
 
   const queries = container.getPanelQueries();
-  // ContactCardEmbeddable does not have originalQuery
   expect(queries).toEqual([]);
   container.destroy();
 });
@@ -636,7 +620,6 @@ test('getPanelQueries returns queries from children that have originalQuery', as
     });
   });
 
-  // Monkey-patch the child to have an originalQuery
   const child = container.getChild<any>('pq2');
   child.originalQuery = 'SELECT * FROM {{myVar}}';
 
@@ -648,7 +631,6 @@ test('getPanelQueries returns queries from children that have originalQuery', as
 test('getPanelQueries handles errors gracefully (catch branch)', () => {
   const container = new DashboardContainer(getSampleDashboardInput(), options);
 
-  // Mock getChildIds to return ids that don't have loaded children
   jest.spyOn(container, 'getChildIds').mockReturnValue(['bogus1', 'bogus2']);
   jest.spyOn(container, 'getChild').mockImplementation(() => {
     throw new Error('not loaded');
@@ -662,10 +644,7 @@ test('getPanelQueries handles errors gracefully (catch branch)', () => {
 test('destroy cleans up variable subscriptions', () => {
   const container = new DashboardContainer(getSampleDashboardInput(), options);
 
-  // Verify variableService exists
   expect(container.variableService).toBeDefined();
-
-  // Destroy should not throw
   container.destroy();
 });
 
@@ -676,7 +655,6 @@ test('constructor initializes with variables when provided', () => {
   const initialInput = getSampleDashboardInput({ variables } as any);
 
   const container = new DashboardContainer(initialInput, options);
-  // The container should have been created with variables
   expect(container.getInput().variables).toEqual(variables);
   container.destroy();
 });
@@ -692,12 +670,10 @@ test('initVariableRefreshSubscription refreshes on timeRange change when query v
   const refreshSpy = jest.spyOn(container.variableService, 'refreshTimeFilteredVariableOptions');
   jest.spyOn(container.variableService, 'getVariables').mockReturnValue(variables as any);
 
-  // Trigger a timeRange change
   container.updateInput({
     timeRange: { from: 'now-1h', to: 'now' },
   });
 
-  // Allow subscription to fire
   await new Promise((r) => setTimeout(r, 10));
 
   expect(refreshSpy).toHaveBeenCalled();
@@ -715,7 +691,6 @@ test('initVariableRefreshSubscription refreshes all on reload when query variabl
   const refreshAllSpy = jest.spyOn(container.variableService, 'refreshAllVariableOptions');
   jest.spyOn(container.variableService, 'getVariables').mockReturnValue(variables as any);
 
-  // Trigger a reload
   container.updateInput({
     lastReloadRequestTime: new Date().getTime(),
   });
@@ -732,7 +707,6 @@ test('dashboard id change triggers setDashboardId on variableService', async () 
   const container = new DashboardContainer(initialInput, options);
   const setIdSpy = jest.spyOn(container.variableService, 'setDashboardId');
 
-  // Update the dashboard id
   container.updateInput({ id: 'new-saved-id' });
 
   await new Promise((r) => setTimeout(r, 10));
@@ -756,10 +730,6 @@ test('reparentPanels recreates the re-parented panel as a fresh instance with it
   const original = container.getChild<ContactCardEmbeddable>('123');
   expect(original).toBeDefined();
 
-  // Move the panel into a section. reparentPanels cycles it through
-  // onPanelRemoved (destroy) -> onPanelAdded (recreate), so the container hands
-  // back a brand-new instance -- this is what keeps a moved panel from
-  // rendering blank without any change to the shared embeddable/container core.
   container.reparentPanels(['123'], {
     type: 'SectionLayout',
     items: [
@@ -776,11 +746,8 @@ test('reparentPanels recreates the re-parented panel as a fresh instance with it
 
   const recreated = container.getChild<ContactCardEmbeddable>('123');
   expect(recreated).toBeDefined();
-  // A fresh instance (proves the destroy + recreate cycle ran).
   expect(recreated).not.toBe(original);
-  // Input is preserved because it is re-seeded from the untouched panel state.
   expect(recreated.getInput().firstName).toBe('Sam');
-  // The final layout landed.
   expect(container.getInput().layout?.type).toBe('SectionLayout');
 
   container.destroy();
@@ -792,13 +759,10 @@ test('getStateTransferContainerInfoData round-trips the pending create-section i
     allowDashboardSections: true,
   });
 
-  // Nothing pending -> nothing to round-trip.
   expect(container.getStateTransferContainerInfoData()).toBeUndefined();
 
   container.setPendingCreateSectionContext('section-1');
-  // Emits the opaque context the editor will echo back.
   expect(container.getStateTransferContainerInfoData()).toEqual({ sectionId: 'section-1' });
-  // Consumed on read: a second read returns nothing (no stale re-claim).
   expect(container.getStateTransferContainerInfoData()).toBeUndefined();
 
   container.destroy();

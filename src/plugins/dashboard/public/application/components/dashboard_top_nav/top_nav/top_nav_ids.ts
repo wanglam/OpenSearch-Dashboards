@@ -38,6 +38,5 @@ export const TopNavIds = {
   FULL_SCREEN: 'fullScreenMode',
   VISUALIZE: 'visualize',
   ADD_EXISTING: 'addExisting',
-  // Dashboard collapsible sections.
   ADD_SECTION: 'addSection',
 };

@@ -91,11 +91,6 @@ export interface DashboardContainerInput extends ContainerInput {
   };
   isEmptyState?: boolean;
   variables?: Variable[];
-  /**
-   * Section layout descriptor. Undefined / `GridLayout` renders the classic single
-   * grid of `panels`; `SectionLayout` renders sections (each with its own inner grid)
-   * whose members reference panel ids in `panels`.
-   */
   layout?: DashboardLayout;
 }
 
@@ -128,11 +123,6 @@ export interface DashboardContainerOptions {
   initialVariables?: Variable[];
   savedObjects?: CoreStart['savedObjects'];
   telemetry?: CoreStart['telemetry'];
-  // Dashboard collapsible sections feature flag (dashboard.allowDashboardSections).
-  // The viewport reads this to decide whether to render a saved SectionLayout as
-  // sections. When off, a dashboard that still has layoutJSON renders as a flat
-  // GridLayout (using panelsJSON.gridData) so turning the flag off cleanly hides
-  // the feature. Defaults to off/unchanged behavior when absent.
   allowDashboardSections?: boolean;
 }
 
@@ -151,8 +141,7 @@ export class DashboardContainer extends Container<InheritedChildInput, Dashboard
   private readonly logos: Logos;
   private root?: Root;
   private variableSubscriptions: Subscription[] = [];
-  // Transient: which section a "Create new visualization" was launched from.
-  // Set and consumed synchronously around the editor navigation; never persisted.
+  // Transient context passed through the visualization editor.
   private pendingCreateSectionId?: string;
   public readonly variableService: VariableService;
   public readonly variableInterpolationService: IVariableInterpolationService;
@@ -249,12 +238,7 @@ export class DashboardContainer extends Container<InheritedChildInput, Dashboard
     );
   }
 
-  /**
-   * SectionLayout: when a member panel is removed (the generic "Delete from
-   * dashboard" action), also prune it from the section it belonged to so no
-   * dangling member reference remains in the layout. GridLayout behavior is
-   * unchanged.
-   */
+  // Keep section membership consistent when a panel is deleted.
   public removeEmbeddable(embeddableId: string) {
     super.removeEmbeddable(embeddableId);
     const layout = this.input.layout;
@@ -303,8 +287,6 @@ export class DashboardContainer extends Container<InheritedChildInput, Dashboard
     );
     const placeholderId = placeholderPanelState.explicitInput.id;
 
-    // When cloning inside a section, the caller tags the target section id on
-    // IPanelPlacementBesideArgs.sectionId.
     const sectionId =
       placementArgs && 'sectionId' in placementArgs ? (placementArgs as any).sectionId : undefined;
     const layout = this.input.layout;
@@ -317,17 +299,8 @@ export class DashboardContainer extends Container<InheritedChildInput, Dashboard
     if (useSection) {
       const targetSection = layout!.items.find((s) => s.id === sectionId)!;
 
-      // Run the SAME placement method the caller passed, but against a
-      // pseudo-panel map built from the target section's members, so placement
-      // happens in section-relative coordinates. placePanelBeside mutates this
-      // map in place when it shifts siblings down (no open slot beside the
-      // source), so we read the shifted positions back below.
-      //
-      // NOTE: this is a second placement call. createPanelState above already
-      // ran the method against the flat panel grid to give the placeholder its
-      // panelsJSON gridData. The two are intentional and serve different
-      // coordinate spaces: panelsJSON holds the flat GridLayout position,
-      // layoutJSON the section-relative one.
+      // Placement runs independently in the flat and section-relative grids.
+      // Read back every member because placePanelBeside may shift siblings.
       const sectionPanels: { [key: string]: DashboardPanelState } = {};
       targetSection.members.forEach((m) => {
         sectionPanels[m.idRef] = {
@@ -340,7 +313,6 @@ export class DashboardContainer extends Container<InheritedChildInput, Dashboard
         : placeholderPanelState.gridData;
 
       const newMembers = [
-        // Existing members, with any bottom-shift the placement method applied.
         ...targetSection.members.map((m) => ({
           ...m,
           gridData: {
@@ -350,7 +322,6 @@ export class DashboardContainer extends Container<InheritedChildInput, Dashboard
             h: sectionPanels[m.idRef].gridData.h,
           },
         })),
-        // The cloned panel, placed beside (or below, on shift) the source.
         {
           idRef: placeholderId,
           type: 'panel' as const,
@@ -400,11 +371,7 @@ export class DashboardContainer extends Container<InheritedChildInput, Dashboard
       },
     };
 
-    // If the replaced panel was a member of a section, transfer that membership
-    // to the replacement so it stays in the same section instead of falling into
-    // the read-only "Ungrouped" group. This covers Replace panel, add/unlink
-    // library, and the clone placeholder swap. GridLayout dashboards have no
-    // section members, so this is a no-op for them.
+    // Preserve section membership when replacing a panel id.
     const layout = this.input.layout;
     const layoutUpdate =
       layout?.type === 'SectionLayout' &&
@@ -495,22 +462,8 @@ export class DashboardContainer extends Container<InheritedChildInput, Dashboard
   }
 
   /**
-   * Re-parent existing panels across the dashboard's grids (Add-section,
-   * Move-to-section, Ungroup) by cycling them through the container's natural
-   * onPanelRemoved -> onPanelAdded lifecycle. A cross-grid React unmount
-   * destroys the moving panel's embeddable (EmbeddablePanel.componentWillUnmount),
-   * and the container only creates/destroys children as ids enter/leave
-   * `input.panels`; so a move that merely changed the layout would leave a
-   * destroyed instance cached and render blank. Instead we remove the panels
-   * (onPanelRemoved destroys them + clears the cache) and immediately re-add
-   * them with the final layout (onPanelAdded recreates fresh instances). The
-   * two updateInput calls run synchronously back-to-back; React 18 (createRoot)
-   * auto-batches them into a single commit, so there is no empty frame -- the
-   * recreated panels just show their normal loading state.
-   *
-   * @param ids ids of the panels being re-parented (their embeddables recreate)
-   * @param layout the final layout to land
-   * @param panels the final panels map (defaults to the current panels)
+   * Moving a panel between grid renderers unmounts and destroys its embeddable.
+   * Remove and re-add affected panels so the container creates live instances.
    */
   public reparentPanels(
     ids: string[],
@@ -520,29 +473,15 @@ export class DashboardContainer extends Container<InheritedChildInput, Dashboard
     const finalPanels = panels ?? this.input.panels;
     const strippedPanels = { ...this.input.panels };
     ids.forEach((id) => delete strippedPanels[id]);
-    // Phase 1: drop the panels so the container destroys their (now unmounted)
-    // embeddables and clears its cache.
     this.updateInput({ panels: strippedPanels });
-    // Phase 2: land the final panels + layout so the container recreates them.
     this.updateInput({ panels: finalPanels, layout });
   }
 
-  /**
-   * Transiently records which section a "Create new visualization" was launched
-   * from, so it can be handed to the editor via the state-transfer round-trip
-   * (see getStateTransferContainerInfoData). Set synchronously right before
-   * navigating to the editor; consumed (and cleared) within the same call.
-   */
   public setPendingCreateSectionContext(sectionId: string) {
     this.pendingCreateSectionId = sectionId;
   }
 
-  /**
-   * Container-owned, opaque context to round-trip through an editor. When the
-   * dashboard sections flag is on and a "Create new visualization" was launched
-   * from a section, this returns `{ sectionId }` so the returning panel can be
-   * claimed back into that section. Consumed on read.
-   */
+  // Consume the section context once so a later create cannot reuse it.
   public getStateTransferContainerInfoData(): Record<string, unknown> | undefined {
     if (!this.options.allowDashboardSections) return undefined;
     const sectionId = this.pendingCreateSectionId;

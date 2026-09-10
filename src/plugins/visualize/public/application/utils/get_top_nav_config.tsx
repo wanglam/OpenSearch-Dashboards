@@ -304,9 +304,6 @@ export const getNavActions = (
               state: {
                 type: VISUALIZE_EMBEDDABLE_TYPE,
                 input: { savedObjectId: id },
-                // Echo the originating container's pass-through context (e.g. the
-                // dashboard section this create was launched from) so it can be
-                // recovered when the editor returns.
                 ...(containerInfo ? { containerInfo } : {}),
               },
             });
@@ -357,9 +354,6 @@ export const getNavActions = (
       } as VisualizeInput,
       embeddableId,
       type: VISUALIZE_EMBEDDABLE_TYPE,
-      // Echo the originating container's pass-through context (e.g. the
-      // dashboard section this create was launched from) so it can be recovered
-      // when the editor returns.
       ...(containerInfo ? { containerInfo } : {}),
     };
     stateTransfer.navigateToWithEmbeddablePackage(originatingApp, { state });

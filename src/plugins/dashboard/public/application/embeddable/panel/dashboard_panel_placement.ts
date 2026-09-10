@@ -45,19 +45,13 @@ export interface IPanelPlacementArgs {
 
 export interface IPanelPlacementBesideArgs extends IPanelPlacementArgs {
   placeBesideId: string;
-  /** When cloning inside a section, the target section id. `showPlaceholderUntil`
-   *  runs the placement against that section's members (section-relative coords)
-   *  instead of the flat panel grid. */
+  /** Target section when placement uses section-relative coordinates. */
   sectionId?: string;
 }
 
 /**
- * Generic 2D bitmap placement: find the top-left-most open rectangle of the
- * requested size within a grid of `columns` width that already contains the
- * given `occupied` rectangles. Returns `{ x, y, w, h }`.
- *
- * Shared by both the flat GridLayout panel placement and the section-internal
- * member placement so they use identical gap-filling logic.
+ * Find the first open rectangle using the same placement rules for flat and
+ * section grids.
  */
 export function findOpenSpace(
   occupied: ReadonlyArray<{ x: number; y: number; w: number; h: number }>,
@@ -70,7 +64,6 @@ export function findOpenSpace(
     maxY = Math.max(rect.y + rect.h, maxY);
   });
 
-  // Handle case of empty grid.
   if (maxY < 0) {
     return { x: 0, y: 0, w: width, h: height };
   }
@@ -97,7 +90,6 @@ export function findOpenSpace(
   for (let y = 0; y < maxY; y++) {
     for (let x = 0; x < columns; x++) {
       if (grid[y][x] === 1) {
-        // Space is filled
         continue;
       } else {
         for (let h = y; h < Math.min(y + height, maxY); h++) {
@@ -109,10 +101,8 @@ export function findOpenSpace(
             const fitsPanelHeight = h === Math.min(y + height - 1, maxY - 1);
 
             if (spaceIsEmpty && fitsPanelWidth && fitsPanelHeight) {
-              // Found space
               return { x, y, w: width, h: height };
             } else if (grid[h][w] === 1) {
-              // x, y spot doesn't work, break.
               break;
             }
           }
@@ -123,7 +113,6 @@ export function findOpenSpace(
   return { x: 0, y: maxY, w: width, h: height };
 }
 
-// Look for the smallest y and x value where the default panel will fit.
 export function findTopLeftMostOpenSpace({
   width,
   height,

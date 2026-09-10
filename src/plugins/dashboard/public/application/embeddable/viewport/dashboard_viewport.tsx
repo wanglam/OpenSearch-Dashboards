@@ -145,9 +145,6 @@ export class DashboardViewport extends React.Component<DashboardViewportProps, S
     const { container, PanelComponent } = this.props;
     const { isEmbeddedExternally, isFullScreenMode, panels, title, description, useMargins } =
       this.state;
-    // A SectionLayout with at least one section renders the vertical section
-    // stack; undefined / GridLayout / an empty SectionLayout (auto-revert) fall
-    // back to the classic single-grid renderer.
     return (
       <div
         data-shared-items-count={Object.values(panels).length}
@@ -174,14 +171,7 @@ export class DashboardViewport extends React.Component<DashboardViewportProps, S
 
   public render() {
     const { isEmptyState, layout } = this.state;
-    // In SectionLayout mode the empty-state prompt lives inside the empty
-    // SECTION (its add-visualization widget), so suppress the dashboard-level
-    // empty widget to avoid stacking two "add a panel" prompts.
-    //
-    // Gate on the feature flag: when `allowDashboardSections` is off, a dashboard
-    // that still has a saved SectionLayout renders as a flat GridLayout (from
-    // panelsJSON.gridData) rather than as sections, so turning the flag off
-    // cleanly hides the feature for existing sectioned dashboards.
+    // Section layouts own their empty state and remain hidden when the feature is disabled.
     const isSectionLayout =
       !!this.context.services.allowDashboardSections &&
       layout?.type === 'SectionLayout' &&

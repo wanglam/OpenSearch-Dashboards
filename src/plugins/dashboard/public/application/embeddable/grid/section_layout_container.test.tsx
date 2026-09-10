@@ -35,10 +35,6 @@ jest.mock('../../../../../embeddable/public', () => ({
 
 sizeMe.noPlaceholders = true;
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 function makeSectionLayout(
   sections: Array<{
     id: string;
@@ -77,7 +73,6 @@ function setup(overrides?: {
   const embeddableStart = doStart();
   const coreStart = coreMock.createStart();
 
-  // Default: two sections, each with one member panel
   const defaultLayout = makeSectionLayout([
     { id: 's1', name: 'Section 1', members: [{ idRef: 'p1' }] },
     { id: 's2', name: 'Section 2', members: [{ idRef: 'p2' }] },
@@ -94,7 +89,6 @@ function setup(overrides?: {
     }),
   };
 
-  // Add extra unclaimed panels if requested
   const panels = overrides?.panels ?? { ...defaultPanels };
   if (overrides?.extraPanelIds) {
     overrides.extraPanelIds.forEach((id) => {
@@ -147,10 +141,6 @@ function updateAndWait(component: ReactWrapper) {
   component.update();
 }
 
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
-
 afterEach(() => {
   jest.restoreAllMocks();
   jest.clearAllMocks();
@@ -174,12 +164,10 @@ describe('SectionLayoutContainer', () => {
     test('toggles collapsed state on the target section only', async () => {
       const { container, component } = setup();
 
-      // Initially both sections are NOT collapsed
       const layoutBefore = container.getInput().layout as any;
       expect(layoutBefore.items[0].collapsed).toBe(false);
       expect(layoutBefore.items[1].collapsed).toBe(false);
 
-      // Click toggle on section 1
       await act(async () => {
         findTestSubject(component, 'dashboardSectionToggle-s1').simulate('click');
       });
@@ -223,29 +211,24 @@ describe('SectionLayoutContainer', () => {
     test('rename updates only the target section name', async () => {
       const { container, component } = setup();
 
-      // Open kebab for s1
       await act(async () => {
         findTestSubject(component, 'dashboardSectionMenuButton-s1').simulate('click');
       });
       updateAndWait(component);
 
-      // Click rename
       await act(async () => {
         findTestSubject(component, 'dashboardSectionRename-s1').simulate('click');
       });
       updateAndWait(component);
 
-      // Modal should be visible with input
       const renameInput = findTestSubject(component, 'dashboardSectionRenameInput');
       expect(renameInput.length).toBe(1);
 
-      // Type a new name
       await act(async () => {
         renameInput.simulate('change', { target: { value: 'Renamed Section' } });
       });
       updateAndWait(component);
 
-      // Confirm
       await act(async () => {
         findTestSubject(component, 'dashboardSectionRenameConfirm').simulate('click');
       });
@@ -292,32 +275,25 @@ describe('SectionLayoutContainer', () => {
     test('confirmed delete removes section and its member panels', async () => {
       const { container, component, coreStart } = setup();
 
-      // Mock openConfirm to resolve true (user confirms)
       (coreStart.overlays.openConfirm as jest.Mock).mockResolvedValueOnce(true);
 
-      // Open kebab for s1
       await act(async () => {
         findTestSubject(component, 'dashboardSectionMenuButton-s1').simulate('click');
       });
       updateAndWait(component);
 
-      // Click delete
       await act(async () => {
         findTestSubject(component, 'dashboardSectionDelete-s1').simulate('click');
       });
 
-      // Wait for the async openConfirm to resolve
       await waitFor(() => {
         updateAndWait(component);
         const layout = container.getInput().layout as any;
-        // s1 should be gone
         expect(layout.items.length).toBe(1);
         expect(layout.items[0].id).toBe('s2');
       });
 
-      // Panel p1 should be removed
       expect(container.getInput().panels.p1).toBeUndefined();
-      // Panel p2 should still exist
       expect(container.getInput().panels.p2).toBeDefined();
     });
 
@@ -432,7 +408,6 @@ describe('SectionLayoutContainer', () => {
         expect(layout.type).toBe('GridLayout');
       });
 
-      // Both panels should still exist
       expect(container.getInput().panels.p1).toBeDefined();
       expect(container.getInput().panels.p2).toBeDefined();
     });
@@ -588,7 +563,6 @@ describe('SectionLayoutContainer', () => {
     });
 
     test('the virtual Ungrouped section is marked maximized when it owns the expanded panel', () => {
-      // p3 is unclaimed -> renders in the virtual "Ungrouped" section.
       const { container, component } = setup({ extraPanelIds: ['p3'] });
       act(() => {
         container.updateInput({ expandedPanelId: 'p3' });
@@ -598,7 +572,6 @@ describe('SectionLayoutContainer', () => {
       const ungrouped = findTestSubject(component, 'dashboardSectionUngrouped').first();
       expect(ungrouped.hasClass('dshSectionLayout__section--maximized')).toBe(true);
       expect(ungrouped.hasClass('dshSectionLayout__section--hidden')).toBe(false);
-      // Real sections (which don't own the expanded panel) are hidden.
       expect(
         findTestSubject(component, 'dashboardSection-s1')
           .first()

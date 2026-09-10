@@ -45,7 +45,7 @@
   width: 100%;
 }
 
-// Animate intrinsic content height while keeping member embeddables mounted.
+// Keep member embeddables mounted while the section animates closed.
 .dshDashboardSectionGrid__inner {
   display: grid;
   grid-template-rows: 1fr;
@@ -202,8 +202,6 @@
     transition: none;
   }
 }
-
-// REACT-GRID
 
 .react-grid-item {
   transition: none;

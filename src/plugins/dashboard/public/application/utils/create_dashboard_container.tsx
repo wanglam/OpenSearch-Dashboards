@@ -119,11 +119,7 @@ export const createDashboardContainer = async ({
             incomingEmbeddable.type,
             incomingEmbeddable.input
           );
-        // If this "Create new visualization" was launched from a section, the
-        // target section id round-trips back on the editor's package via the
-        // dashboard container's opaque containerData. Claim the returning panel
-        // into that section so it doesn't land unclaimed in the "Ungrouped"
-        // virtual section.
+        // Restore the section selected before entering the editor.
         const targetSectionId = incomingEmbeddable.containerInfo?.containerData?.sectionId as
           string | undefined;
         if (targetSectionId && addedEmbeddable && !isErrorEmbeddable(addedEmbeddable)) {
@@ -521,7 +517,6 @@ const handleDashboardContainerChanges = (
     newAppState.variables = input.variables;
     dashboard.setIsDirty(true);
   }
-  // Sync section layout from container input to appState
   if (!isEqual(input.layout, appStateData.layout)) {
     newAppState.layout = input.layout;
     dashboard.setIsDirty(true);

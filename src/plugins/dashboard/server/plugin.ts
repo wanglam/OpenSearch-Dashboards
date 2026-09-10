@@ -59,10 +59,6 @@ export class DashboardPlugin implements Plugin<DashboardPluginSetup, DashboardPl
       .create<ConfigSchema>()
       .pipe(first())
       .toPromise();
-    // Only register the `variablesJSON` mapping field when the Variables feature
-    // is enabled, and the `layoutJSON` field when Dashboard Sections is enabled.
-    // When disabled, the fields are absent so the mapping hash is unchanged (no
-    // saved-object index migration is triggered).
     core.savedObjects.registerType(
       getDashboardSavedObjectType(variables.enabled, allowDashboardSections)
     );

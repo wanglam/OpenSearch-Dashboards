@@ -9,8 +9,6 @@
  * GitHub history for details.
  */
 
-// Shared react-grid-layout primitive for the dashboard and section grids.
-
 import 'react-resizable/css/styles.css';
 
 // @ts-ignore
@@ -21,17 +19,11 @@ import React from 'react';
 import ReactGridLayout, { Layout, ReactGridLayoutProps } from 'react-grid-layout';
 import { DASHBOARD_GRID_COLUMN_COUNT, DASHBOARD_GRID_HEIGHT } from '../dashboard_constants';
 
-/** Standard panel drag handle class rendered by EmbeddablePanel chrome. */
 export const PANEL_DRAG_HANDLE = '.embPanel__dragger';
 
-/**
- * This is a fix for a bug that stopped the browser window from automatically scrolling down when panels were made
- * taller than the current grid.
- * see https://github.com/elastic/kibana/issues/14710.
- */
+// Keep the page scrolling when a resize reaches the viewport edge.
 function ensureWindowScrollsToBottom(event: { clientY: number; pageY: number }) {
-  // The buffer is to handle the case where the browser is maximized and it's impossible for the mouse to move below
-  // the screen, out of the window.  see https://github.com/elastic/kibana/issues/14737
+  // The pointer cannot move below a maximized browser window.
   const WINDOW_BUFFER = 10;
   if (event.clientY > window.innerHeight - WINDOW_BUFFER) {
     window.scrollTo(0, event.pageY + WINDOW_BUFFER - window.innerHeight);
@@ -46,9 +38,7 @@ export interface ResponsiveGridProps {
   children: JSX.Element[];
   maximizedPanelId?: string;
   useMargins: boolean;
-  /** Extra class(es) on the ReactGridLayout root, e.g. the section inner-grid marker. */
   className?: string;
-  /** Defaults to the standard panel dragger. */
   draggableHandle?: string;
 }
 
@@ -63,10 +53,8 @@ function ResponsiveGrid({
   className,
   draggableHandle,
 }: ResponsiveGridProps) {
-  // Per-instance "last valid width". sizeMe reports width 0 in some transient
-  // states (e.g. while a panel is expanded); we keep the last non-zero width
-  // so the grid doesn't collapse to width 0. Instance-local (useRef) so nested
-  // grids never clobber each other's width -- see file header note.
+  // sizeMe can report zero while layouts change; retain the last usable width
+  // independently for each nested grid.
   const lastValidWidthRef = React.useRef(0);
   if (size.width > 0) {
     lastValidWidthRef.current = size.width;
@@ -81,7 +69,7 @@ function ResponsiveGrid({
   });
 
   const MARGINS = useMargins ? 8 : 0;
-  // We can't take advantage of isDraggable or isResizable due to performance concerns:
+  // Toggling isDraggable or isResizable has known performance costs:
   // https://github.com/STRML/react-grid-layout/issues/240
   return (
     // @ts-expect-error TS2769 TODO(ts-error): fixme
@@ -96,10 +84,8 @@ function ResponsiveGrid({
       margin={[MARGINS, MARGINS]}
       cols={DASHBOARD_GRID_COLUMN_COUNT}
       rowHeight={DASHBOARD_GRID_HEIGHT}
-      // Pass the named classes of what should get the dragging handle
-      // (.doesnt-exist literally doesnt exist -> nothing draggable). Drag is
-      // disabled in view mode AND while a panel is maximized (a maximized panel
-      // fills the grid and must not be draggable/rearrangeable).
+      // A selector that matches nothing disables dragging without the
+      // performance cost of toggling isDraggable.
       draggableHandle={
         isViewMode || maximizedPanelId !== undefined
           ? '.doesnt-exist'
@@ -114,7 +100,6 @@ function ResponsiveGrid({
   );
 }
 
-// Using sizeMe sets up the grid to be re-rendered automatically not only when the window size changes, but also
-// when the container size changes, so it works for Full Screen mode switches.
+// Observe container width so nested and full-screen grids resize correctly.
 const config = { monitorWidth: true };
 export const ResponsiveSizedGrid = sizeMe(config)(ResponsiveGrid);

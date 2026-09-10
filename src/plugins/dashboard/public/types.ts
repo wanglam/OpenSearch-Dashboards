@@ -269,8 +269,6 @@ export interface DashboardServices extends CoreStart {
   savedDashboards: SavedObjectLoader;
   dashboardProviders: () => { [key: string]: DashboardProvider } | undefined;
   dashboardConfig: OpenSearchDashboardsLegacyStart['dashboardConfig'];
-  // whether the collapsible-sections feature is enabled
-  // (dashboard.allowDashboardSections). Gates the "Add section" menu entry.
   allowDashboardSections: boolean;
   dashboardCapabilities: DashboardCapabilities;
   embeddableCapabilities: {

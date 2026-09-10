@@ -3,20 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * Dashboard Sections CRUD integration tests.
- *
- * Requires OSD started with --dashboard.allowDashboardSections=true.
- *
- * Does NOT use workspaces — navigates directly to the global dashboards
- * app to avoid index-pattern setup requirements.
- */
+// Requires dashboard.allowDashboardSections and home:useNewHomePage.
 
 const DASHBOARD_NAME_PREFIX = 'Cy Sections';
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 const navigateToDashboards = () => {
   cy.visit('/app/dashboards#/list');
@@ -26,7 +15,6 @@ const navigateToDashboards = () => {
 const createNewDashboard = () => {
   navigateToDashboards();
   cy.getElementByTestId('newItemButton').scrollIntoView().click({ force: true });
-  // Wait for edit mode (save button visible)
   cy.getElementByTestId('dashboardSaveMenuItem', { timeout: 15000 }).should('be.visible');
 };
 
@@ -37,16 +25,6 @@ const saveDashboard = (name) => {
   cy.contains('was saved', { timeout: 15000 }).should('be.visible');
 };
 
-/**
- * Click the "Add" icon in the top nav to open the add-panel popover,
- * then click "Section" to add a new section.
- *
- * Requires `home:useNewHomePage=true` in the OSD config.
- * In the new top nav, "Add" (dashboardAddPanelButton) opens the
- * EuiContextMenu popover which contains both viz types AND "Section".
- * In the legacy top nav (home:useNewHomePage=false), this button opens
- * the saved-objects flyout instead — no "Section" entry.
- */
 const addSection = () => {
   cy.getElementByTestId('dashboardAddPanelButton').click({ force: true });
   cy.get('.euiContextMenuPanel', { timeout: 30000 })
@@ -56,9 +34,6 @@ const addSection = () => {
   cy.getElementByTestId('dashboardSectionLayout', { timeout: 10000 }).should('exist');
 };
 
-/**
- * Get the section ID from the nth section's data-test-subj.
- */
 const getSectionId = (index = 0) => {
   return cy
     .get('[data-test-subj^="dashboardSection-"]')
@@ -67,10 +42,7 @@ const getSectionId = (index = 0) => {
     .then((attr) => attr.replace('dashboardSection-', ''));
 };
 
-/**
- * Hover the section to reveal the kebab menu (hidden via CSS
- * opacity:0 + pointer-events:none until hover/focus-within).
- */
+// Section actions are revealed on hover.
 const hoverSection = (sectionId) => {
   cy.getElementByTestId(`dashboardSection-${sectionId}`).trigger('mouseover');
 };
@@ -97,9 +69,6 @@ const ungroupSections = (sectionId) => {
   cy.get('.euiModal').find('button').contains('Ungroup').click();
 };
 
-/**
- * Clean up all dashboards created by this test suite.
- */
 const cleanupTestDashboards = () => {
   cy.request({
     method: 'POST',
@@ -123,10 +92,6 @@ const cleanupTestDashboards = () => {
     }
   });
 };
-
-// ---------------------------------------------------------------------------
-// Test suite
-// ---------------------------------------------------------------------------
 
 describe('Dashboard Sections', () => {
   before(() => {
@@ -201,7 +166,6 @@ describe('Dashboard Sections', () => {
       const dashName = `${DASHBOARD_NAME_PREFIX} Persist ${Date.now()}`;
       saveDashboard(dashName);
 
-      // Reload the page
       cy.reload();
 
       cy.getElementByTestId('dashboardSectionLayout', { timeout: 30000 }).should('exist');
@@ -243,11 +207,9 @@ describe('Dashboard Sections', () => {
       addSection();
 
       getSectionId(0).then((sectionId) => {
-        // Collapse
         cy.getElementByTestId(`dashboardSectionToggle-${sectionId}`).click();
         cy.getElementByTestId(`dashboardSectionGrid-${sectionId}`).should('not.be.visible');
 
-        // Expand
         cy.getElementByTestId(`dashboardSectionToggle-${sectionId}`).click();
         cy.getElementByTestId(`dashboardSectionGrid-${sectionId}`).should('be.visible');
       });
@@ -275,10 +237,7 @@ describe('Dashboard Sections', () => {
   });
 
   describe('Discard changes reverts section layout', () => {
-    /**
-     * Helper: switch from edit to view mode.
-     * Handles both the new-nav toggle switch and the legacy Edit button.
-     */
+    // Support both dashboard navigation variants.
     const exitEditMode = () => {
       cy.get('body').then(($body) => {
         if ($body.find('[data-test-subj="dashboardEditSwitch"]').length) {
@@ -291,11 +250,9 @@ describe('Dashboard Sections', () => {
 
     it('should revert a newly-added section when discarding on a flat-grid dashboard', () => {
       createNewDashboard();
-      // Save as a flat dashboard (no sections) so we have a saved baseline.
       const dashName = `${DASHBOARD_NAME_PREFIX} DiscardFlat ${Date.now()}`;
       saveDashboard(dashName);
 
-      // Enter edit mode.
       cy.get('body').then(($body) => {
         if ($body.find('[data-test-subj="dashboardEditSwitch"]').length) {
           cy.getElementByTestId('dashboardEditSwitch').click();
@@ -304,16 +261,13 @@ describe('Dashboard Sections', () => {
         }
       });
 
-      // Add a section.
       addSection();
       cy.get('[data-test-subj^="dashboardSection-"]').should('have.length.gte', 1);
 
-      // Exit edit mode -> discard.
       exitEditMode();
       cy.get('.euiModal').should('be.visible');
       cy.get('.euiModal').find('button').contains('Discard changes').click();
 
-      // After discard: flat grid restored, no sections.
       cy.get('[data-test-subj^="dashboardSection-"]', { timeout: 15000 }).should('not.exist');
       cy.getElementByTestId('dashboardSectionLayout').should('not.exist');
     });
@@ -327,7 +281,6 @@ describe('Dashboard Sections', () => {
       const dashName = `${DASHBOARD_NAME_PREFIX} DiscardSections ${Date.now()}`;
       saveDashboard(dashName);
 
-      // Enter edit mode.
       cy.get('body').then(($body) => {
         if ($body.find('[data-test-subj="dashboardEditSwitch"]').length) {
           cy.getElementByTestId('dashboardEditSwitch').click();
@@ -336,16 +289,13 @@ describe('Dashboard Sections', () => {
         }
       });
 
-      // Add a second section.
       addSection();
       cy.get('[data-test-subj^="dashboardSection-"]').should('have.length.gte', 2);
 
-      // Exit edit mode -> discard.
       exitEditMode();
       cy.get('.euiModal').should('be.visible');
       cy.get('.euiModal').find('button').contains('Discard changes').click();
 
-      // After discard: back to single original section.
       cy.get('[data-test-subj^="dashboardSection-"]', { timeout: 15000 }).should('have.length', 1);
       cy.get('[data-test-subj^="dashboardSectionTitle-"]')
         .first()

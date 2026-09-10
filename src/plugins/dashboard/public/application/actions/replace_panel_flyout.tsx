@@ -84,12 +84,7 @@ export class ReplacePanelFlyout extends React.Component<Props> {
     const dashboard = container as unknown as DashboardContainer;
     const panelToReplace = dashboard.getInput().panels[panelToRemove.id] as DashboardPanelState;
 
-    // Route through replacePanel (rather than a manual addNewEmbeddable + panels
-    // swap) so the replacement inherits the removed panel's grid position AND its
-    // section membership -- replacePanel transfers the section member reference
-    // to the new id in one update. The previous manual swap never touched
-    // layoutJSON, so a replaced section member fell into the read-only
-    // "Ungrouped" group. GridLayout dashboards are unaffected.
+    // replacePanel preserves grid position and section membership.
     dashboard.replacePanel(panelToReplace, {
       type,
       explicitInput: { savedObjectId, id: uuidv4() } as SavedObjectEmbeddableInput,

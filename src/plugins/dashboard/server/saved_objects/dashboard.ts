@@ -32,15 +32,8 @@ import { SavedObjectsType } from 'opensearch-dashboards/server';
 import { dashboardSavedObjectTypeMigrations } from './dashboard_migrations';
 
 /**
- * Builds the `dashboard` saved-object type.
- *
- * The `variablesJSON` (Dashboard Variables) and `layoutJSON` (Dashboard Sections)
- * fields are only registered when their respective features are enabled. When
- * disabled, the field is absent from the mapping, so upgrading does NOT change the
- * dashboard mapping hash and therefore does NOT trigger a saved-object index
- * migration for it. This is important for multi-tenancy deployments (e.g. Amazon
- * OpenSearch Service domains), where tenant-index migration is fragile and these
- * features may never be used.
+ * Register optional JSON fields only when their features are enabled so disabled
+ * features do not change the mapping hash or trigger tenant-index migrations.
  */
 export const getDashboardSavedObjectType = (
   variablesEnabled: boolean,

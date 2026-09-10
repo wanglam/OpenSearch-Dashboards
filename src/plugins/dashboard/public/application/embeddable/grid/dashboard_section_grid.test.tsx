@@ -16,12 +16,7 @@ import { DashboardSectionGrid, DashboardSectionGridProps } from './dashboard_sec
 import { DashboardPanelState } from '../types';
 import { SectionLayoutMember } from '../../../../common';
 
-// ---------------------------------------------------------------------------
-// Mocks
-// ---------------------------------------------------------------------------
-
-// Stub out EmbeddableChildPanel to a lightweight div so we don't need a real
-// embeddable registry or container child lifecycle.
+// Avoid the container child lifecycle in this component test.
 jest.mock('../../../../../embeddable/public', () => ({
   EmbeddableChildPanel: ({
     embeddableId,
@@ -32,8 +27,7 @@ jest.mock('../../../../../embeddable/public', () => ({
   }) => <div data-test-subj="mockEmbeddablePanel">{embeddableId}</div>,
 }));
 
-// Stub ResponsiveSizedGrid to render children in a plain div while still
-// forwarding the onLayoutChange ref so the unit under test can call it.
+// Expose onLayoutChange without mounting react-grid-layout.
 jest.mock('./dashboard_responsive_grid', () => ({
   PANEL_DRAG_HANDLE: '.embPanel__dragger',
   ResponsiveSizedGrid: ({
@@ -51,10 +45,6 @@ jest.mock('./dashboard_responsive_grid', () => ({
     </div>
   ),
 }));
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 const SECTION_ID = 'section-1';
 
@@ -95,16 +85,11 @@ function getDefaultProps(
   };
 }
 
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
-
 describe('DashboardSectionGrid', () => {
   it('renders member panels sorted by y then x', () => {
     const props = getDefaultProps();
     const wrapper = mount(<DashboardSectionGrid {...props} />);
 
-    // panel-b (y=0) should come before panel-a (y=10)
     const panels = findTestSubject(wrapper, 'dashboardPanel');
     expect(panels).toHaveLength(2);
     expect(panels.at(0).text()).toBe('panel-b');
@@ -126,8 +111,6 @@ describe('DashboardSectionGrid', () => {
 
     wrapper.unmount();
   });
-
-  // -- Empty section actions ------------------------------------------------
 
   it('shows empty section actions when callbacks are provided', () => {
     const onCreateNewPanel = jest.fn();
@@ -199,8 +182,6 @@ describe('DashboardSectionGrid', () => {
     wrapper.unmount();
   });
 
-  // -- onLayoutChange -------------------------------------------------------
-
   it('onLayoutChange filters unknown panel ids and maps to SectionLayoutMember[]', () => {
     const onMembersLayoutChange = jest.fn();
     const props = getDefaultProps({ onMembersLayoutChange });
@@ -225,15 +206,12 @@ describe('DashboardSectionGrid', () => {
     wrapper.unmount();
   });
 
-  // -- expandedPanelId (maximize) -------------------------------------------
-
   it('applies expanded class to matching member and hidden to siblings', () => {
     const wrapper = mount(
       <DashboardSectionGrid {...getDefaultProps({ expandedPanelId: 'panel-b' })} />
     );
 
     const panels = findTestSubject(wrapper, 'dashboardPanel');
-    // panel-b is y=0 (sorted first), panel-a is y=10 (sorted second)
     const panelB = panels.at(0);
     const panelA = panels.at(1);
 
@@ -272,8 +250,6 @@ describe('DashboardSectionGrid', () => {
 
     wrapper.unmount();
   });
-
-  // -- data-test-subj on root -----------------------------------------------
 
   it('renders with correct data-test-subj on root', () => {
     const wrapper = mount(<DashboardSectionGrid {...getDefaultProps()} />);

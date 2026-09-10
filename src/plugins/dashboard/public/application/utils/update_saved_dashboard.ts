@@ -52,10 +52,7 @@ export function updateSavedDashboard(
       ? JSON.stringify({ variables: appState.variables })
       : undefined;
 
-  // Section layout. A SectionLayout with zero sections is equivalent to GridLayout
-  // (auto-revert), so it is normalized away and NOT persisted. Only a SectionLayout
-  // with at least one section is stored in `layoutJSON`; GridLayout/undefined store
-  // nothing (mirrors the flag-gated, migration-free `variablesJSON` pattern).
+  // Persist only non-empty SectionLayouts; every other value uses GridLayout.
   const persistedLayout =
     appState.layout && appState.layout.type === 'SectionLayout' && appState.layout.items.length > 0
       ? appState.layout

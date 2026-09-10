@@ -195,7 +195,6 @@ test('Cloning a section member (flag on) drops the clone into the same section',
     overlays: localCore.overlays,
     savedObjectMetaData: {} as any,
     uiActions: {} as any,
-    // Sections feature on: showPlaceholderUntil self-gates on this.
     allowDashboardSections: true,
   };
   const input = getSampleDashboardInput({
@@ -203,9 +202,6 @@ test('Cloning a section member (flag on) drops the clone into the same section',
       '123': getSampleDashboardPanel<ContactCardEmbeddableInput>({
         explicitInput: { firstName: 'Neo', id: '123' },
         type: CONTACT_CARD_EMBEDDABLE,
-        // Stale flat GridLayout size. Section resizes never touch panelsJSON, so
-        // this diverges from the member's (visible) size below -- the clone must
-        // follow the member, not this.
         gridData: { x: 0, y: 0, w: 24, h: 15, i: '123' },
       }),
     },
@@ -227,29 +223,22 @@ test('Cloning a section member (flag on) drops the clone into the same section',
 
   const action = new ClonePanelAction(localCore);
   await action.execute({ embeddable: child as any });
-  // Let the async placeholder -> clone replace settle.
   await new Promise((r) => setTimeout(r, 20));
 
   const panels = sectioned.getInput().panels;
   const newId = Object.keys(panels).find((id) => id !== '123');
   expect(newId).toBeDefined();
 
-  // The clone is a member of the SAME section (not the Ungrouped group), and the
-  // original is still there -- the panel's own gridData stays untouched.
   const layout = sectioned.getInput().layout as any;
   const s1 = layout.items.find((s: any) => s.id === 's1');
   const memberIds = s1.members.map((m: any) => m.idRef);
   expect(memberIds).toContain('123');
   expect(memberIds).toContain(newId);
 
-  // The cloned member inherits the section member's (visible) size 12x8, NOT
-  // the stale panelsJSON size 24x15.
   const clonedMember = s1.members.find((m: any) => m.idRef === newId);
   expect(clonedMember.gridData.w).toBe(12);
   expect(clonedMember.gridData.h).toBe(8);
 
-  // placePanelBeside places the clone to the RIGHT of the source (x:0+w:12=12,
-  // same y), matching flat-grid clone behavior.
   expect(clonedMember.gridData.x).toBe(12);
   expect(clonedMember.gridData.y).toBe(0);
 });
@@ -277,12 +266,7 @@ test('Cloning a surrounded section member shifts siblings down (no overlap)', as
     allowDashboardSections: true,
   };
 
-  // Source '123' is fully boxed in: 'b' occupies the slot to its right, 'c' the
-  // slot below. placePanelBeside finds no open slot beside the source and falls
-  // into its bottom-shift fallback -- the clone goes below the source and the
-  // members after it in grid order must shift down. This is the regression:
-  // the section path used to discard that sibling shift, so the clone overlapped
-  // an existing member and rendered "under" instead of at the shifted slot.
+  // Box in the source so placement must shift subsequent members.
   const input = getSampleDashboardInput({
     panels: {
       '123': getSampleDashboardPanel<ContactCardEmbeddableInput>({
@@ -333,13 +317,10 @@ test('Cloning a surrounded section member shifts siblings down (no overlap)', as
     .find((id: string) => !['123', 'b', 'c'].includes(id));
   expect(newId).toBeDefined();
 
-  // Clone lands below the source, in the source's column.
   expect(byId(newId).gridData).toMatchObject({ x: 0, y: 15, w: 24, h: 15 });
-  // Siblings after the source were shifted down (this is the fix).
   expect(byId('b').gridData.y).toBe(30);
   expect(byId('c').gridData.y).toBe(45);
 
-  // No two members overlap.
   const rects = s1.members.map((m: any) => m.gridData);
   const overlaps = (r1: any, r2: any) =>
     r1.x < r2.x + r2.w && r1.x + r1.w > r2.x && r1.y < r2.y + r2.h && r1.y + r1.h > r2.y;

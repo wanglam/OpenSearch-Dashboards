@@ -9,21 +9,8 @@
  * GitHub history for details.
  */
 
-// Dashboard collapsible sections
-// "Rendering architecture: nested grids with section-relative coordinates".
-//
-// One instance of this component is rendered per EXPANDED section, inside that
-// section's outer grid item (below its header). It owns a real, independent
-// `react-grid-layout` instance containing ONLY that section's member panels.
-// react-grid-layout provides drag/resize/collision natively for this inner
-// grid, exactly as it does for the outer dashboard grid -- no hand-rolled
-// placement/collision logic (that was the flat-overlay Path-1 approach that
-// was removed).
-//
-// Coordinate model: a member's gridData.x/y are
-// SECTION-RELATIVE -- coordinates within THIS inner grid (0-based rows), NOT
-// the outer dashboard grid. They are never compared against outer-grid or
-// other-section coordinates.
+// Each section owns an independent grid whose member coordinates are relative
+// to that section.
 
 import _ from 'lodash';
 import React from 'react';
@@ -44,51 +31,18 @@ interface PanelLayout extends Layout {
 export interface DashboardSectionGridProps {
   container: DashboardContainer;
   PanelComponent: EmbeddableStart['EmbeddablePanel'];
-  /** Section panel id these members belong to. */
   sectionId: string;
-  /**
-   * This section's members as { panel, layout } pairs, where `panel` is the
-   * member's entry in the flat dashboard map and `layout` is its
-   * SECTION-RELATIVE position owned by the section (explicitInput.members).
-   */
   members: Array<{ panel: DashboardPanelState; member: SectionLayoutMember }>;
   isViewMode: boolean;
   useMargins: boolean;
   /**
-   * When true the section is collapsed: the inner grid is CSS-hidden
-   * (display:none) but its member panels stay MOUNTED. We deliberately do NOT
-   * unmount them -- OSD's EmbeddablePanel.componentWillUnmount() calls
-   * embeddable.destroy(), so unmounting a collapsed section's members would
-   * tear them down and they'd re-mount blank/white on expand. Hiding (the same
-   * mechanism OSD's "expand one panel" uses for the other panels via
-   * dshDashboardGrid__item--hidden) keeps each member alive so expand restores
-   * it intact.
+   * Collapsing is visual: member panels remain mounted so already-created
+   * embeddables are not destroyed.
    */
   collapsed: boolean;
-  /**
-   * The dashboard's currently maximized panel id (container.expandedPanelId).
-   * When it matches one of THIS section's members, that member is expanded to
-   * fill the section (and its siblings hidden) -- the inner half of the
-   * two-level maximize. Undefined / non-member id => normal grid.
-   */
   expandedPanelId?: string;
-  /**
-   * Called when the inner grid reports a layout change (drag/resize/collision
-   * within the section). Receives the section's NEW section-relative member
-   * layout list; the caller writes it back into the section panel's
-   * explicitInput.members (member panels' own gridData is never touched).
-   */
   onMembersLayoutChange: (sectionId: string, updatedLayouts: SectionLayoutMember[]) => void;
-  /**
-   * Opens the "add existing visualization to section" flyout. Used by the
-   * call-to-action shown when the (expanded) section has no members yet.
-   */
   onAddPanel?: () => void;
-  /**
-   * Creates a brand-new visualization for this section (navigates to the
-   * Visualize editor; the new panel funnels into a section on return). Shown in
-   * the empty-section widget alongside "Add existing visualization".
-   */
   onCreateNewPanel?: () => void;
 }
 
@@ -131,10 +85,7 @@ export class DashboardSectionGrid extends React.Component<DashboardSectionGridPr
       i: m.panel.explicitInput.id,
     }));
 
-    // Inner half of the two-level maximize: when the dashboard's maximized
-    // panel is one of THIS section's members, that member fills the section
-    // and its siblings are hidden -- reusing the outer grid's own expand/hide
-    // classes so the CSS (position/height/width overrides) is shared.
+    // A maximized member fills its section while its siblings remain hidden.
     const hasMaximizedMember =
       expandedPanelId !== undefined &&
       membersInOrder.some((m) => m.panel.explicitInput.id === expandedPanelId);

@@ -9,19 +9,8 @@
  * GitHub history for details.
  */
 
-// SectionLayout renderer (v2 data model).
-//
-// When a dashboard's `layout.type === 'SectionLayout'` the dashboard is NOT a
-// single react-grid-layout. Instead this component renders `layout.items`
-// (sections) in array order as a plain vertical stack. Each section has a
-// bespoke header (collapse chevron + name + an edit-mode kebab) followed by its
-// own inner react-grid-layout (DashboardSectionGrid) containing that section's
-// member panels at their SECTION-RELATIVE coordinates.
-//
-// Sections are no longer embeddable panels; membership + inner layout live in
-// the top-level `layout` attribute. Member panels still live in the container's
-// `panels` map (their own gridData is dormant in this mode) and are rendered by
-// id via EmbeddableChildPanel inside each section's inner grid.
+// Renders sections in layout order. Each section owns a grid of member panels
+// using section-relative coordinates.
 
 import React from 'react';
 import { Subscription } from 'rxjs';
@@ -87,9 +76,7 @@ interface State {
   viewMode: ViewMode;
   useMargins: boolean;
   expandedPanelId?: string;
-  /** Section whose kebab menu is currently open. */
   openKebabSectionId?: string;
-  /** Section currently being renamed (drives the rename modal). */
   renamingSectionId?: string;
   renameDraft: string;
 }
@@ -137,7 +124,6 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
 
   private getSections = (): DashboardSection[] => this.state.layout?.items ?? [];
 
-  /** Write an updated section list back to the container as a SectionLayout. */
   private updateSections = (items: DashboardSection[]) => {
     this.props.container.updateInput({ layout: { type: 'SectionLayout', items } });
   };
@@ -148,7 +134,6 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
     this.updateSections(setSectionCollapsed(this.getSections(), sectionId, !section.collapsed));
   };
 
-  /** Reorder sections via drag-and-drop of the section header handle. */
   private onSectionDragEnd = ({ source, destination }: DropResult) => {
     if (!destination || source.index === destination.index) return;
     this.updateSections(euiDragDropReorder(this.getSections(), source.index, destination.index));
@@ -190,21 +175,12 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
     });
   };
 
-  /**
-   * Create a brand-new visualization for a specific section. This navigates to
-   * the Visualize editor; on "Save and return" the new panel returns via the
-   * incoming-embeddable path. We stash the target section id first so that
-   * return path can claim the panel into THIS section instead of leaving it
-   * unclaimed in the "Ungrouped" virtual section (see section_create_target).
-   */
   private createNewVisualization = async (sectionId: string) => {
     const services = this.props.opensearchDashboards.services;
     this.setState({ openKebabSectionId: undefined });
     const factory = services.embeddable?.getEmbeddableFactory?.('visualization');
     if (factory) {
-      // Record the target section so it round-trips to the editor via the
-      // container's getStateTransferContainerInfoData() (containerInfo.containerData)
-      // and the returning panel is claimed back into this section.
+      // Preserve the target section through the editor round trip.
       this.props.container.setPendingCreateSectionContext?.(sectionId);
       await factory.create({} as EmbeddableInput, this.props.container);
     }
@@ -246,7 +222,6 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
       return;
     }
 
-    // Surviving unclaimed panels move from the virtual section grid to the flat grid.
     this.props.container.reparentPanels(
       Object.keys(panels),
       { type: 'GridLayout', items: [] },
@@ -254,14 +229,6 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
     );
   };
 
-  /**
-   * Ungroup ALL sections: flatten every section back into a single grid. Each
-   * member's section-relative coordinates are stacked top-to-bottom into
-   * absolute panel gridData, then the layout reverts to GridLayout. Offered on
-   * every section's kebab (it's a dashboard-wide action); guarded by a confirm
-   * modal since it discards the section structure. (Previously lived in the
-   * top-nav add-panel popover.)
-   */
   private ungroupAllSections = async () => {
     const services = this.props.opensearchDashboards.services;
     this.setState({ openKebabSectionId: undefined });
@@ -289,7 +256,6 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
 
     const currentPanels = this.props.container.getInput().panels;
     const panels = flattenSectionsToPanels(items, currentPanels);
-    // Every surviving panel, including unclaimed panels, moves to the flat grid.
     this.props.container.reparentPanels(
       Object.keys(panels),
       { type: 'GridLayout', items: [] },
@@ -297,7 +263,6 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
     );
   };
 
-  /** Resolve a section's members to { panel, member } pairs, skipping stale refs. */
   private resolveMembers = (section: DashboardSection) => {
     const { panels } = this.state;
     return section.members
@@ -424,16 +389,8 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
   }
 
   /**
-   * Trailing read-only "Ungrouped" virtual section. It is NEVER stored in
-   * layoutJSON -- it is computed each render from the panels that no explicit
-   * section claims (see computeUnclaimedPanels). This keeps the render
-   * invariant `rendered = section members + unclaimed panels`, so panels added
-   * by callers that only write panelsJSON (Explore / agent_traces
-   * "add to dashboard", incoming "Save and return", top-nav "Create new" /
-   * "Add from library") still appear instead of vanishing. Rendered read-only
-   * (no drag/resize, no layout write-back) with no chevron/kebab; per-panel
-   * "Move to section" promotes a panel into a real section. Only shown while at
-   * least one explicit section exists (zero sections === GridLayout).
+   * Panels not claimed by an explicit section render in a read-only virtual
+   * section. This section is derived at render time and is never persisted.
    */
   private renderVirtualSection() {
     const { container, PanelComponent } = this.props;
@@ -441,8 +398,6 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
     const unclaimed = computeUnclaimedPanels(this.getSections(), this.state.panels);
     if (unclaimed.length === 0) return null;
 
-    // Flow the unclaimed panels by their array order (using each panel's own
-    // w/h), ignoring their stored x/y -- see computeUngroupedLayout.
     const members = computeUngroupedLayout(unclaimed).map((member) => ({
       panel: this.state.panels[member.idRef],
       member,
@@ -450,8 +405,6 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
     const containsExpanded =
       expandedPanelId !== undefined &&
       unclaimed.some((panel) => panel.explicitInput.id === expandedPanelId);
-    // Hide this group only when a panel in ANOTHER section is maximized; when one
-    // of our own panels is maximized, keep it visible (its grid maximizes it).
     const hide = expandedPanelId !== undefined && !containsExpanded;
 
     const sectionClasses = classNames(
@@ -459,9 +412,6 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
       'dshSectionLayout__section--virtual',
       {
         'dshSectionLayout__section--hidden': hide,
-        // When one of our own panels is maximized, break out to fill the
-        // viewport just like a real section (otherwise the inner grid's
-        // height:100% collapses to 0 -- same fix as real sections).
         'dshSectionLayout__section--maximized': containsExpanded,
       }
     );
@@ -482,7 +432,7 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
           PanelComponent={PanelComponent}
           sectionId="__ungrouped__"
           members={members}
-          isViewMode // read-only: no drag/resize; layout is never written back
+          isViewMode
           useMargins={useMargins}
           collapsed={false}
           expandedPanelId={expandedPanelId}
@@ -498,8 +448,6 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
     const isViewMode = viewMode === ViewMode.VIEW;
     const sections = this.getSections();
 
-    // Two-level maximize: when a member is maximized, hide every OTHER section
-    // (the owning section's inner grid expands that member and hides siblings).
     const owningSectionId =
       expandedPanelId !== undefined
         ? sections.find((section) => section.members.some((m) => m.idRef === expandedPanelId))?.id
@@ -512,9 +460,6 @@ class SectionLayoutContainerUi extends React.Component<Props, State> {
             {sections.map((section, index) => {
               const members = this.resolveMembers(section);
               const hideSection = expandedPanelId !== undefined && section.id !== owningSectionId;
-              // The section that owns the maximized member breaks out to fill
-              // the dashboard viewport (see SCSS) so the member maximizes like
-              // the classic grid rather than being clipped to the section box.
               const ownsMaximized = expandedPanelId !== undefined && section.id === owningSectionId;
               const sectionClasses = classNames('dshSectionLayout__section', {
                 'dshSectionLayout__section--editing': !isViewMode,

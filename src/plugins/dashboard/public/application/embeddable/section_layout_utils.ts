@@ -9,11 +9,6 @@
  * GitHub history for details.
  */
 
-// Pure helpers for the SectionLayout (v2) data model. All functions are
-// side-effect free and operate on plain data (the `layout.items` array and the
-// container's `panels` map) so they are trivially unit-testable and reused by
-// every section action (create / add / remove / reorder / rename / ungroup).
-
 import { v4 as uuidv4 } from 'uuid';
 import { DashboardSection, SectionLayoutMember, SectionMemberGridData } from '../../../common';
 import { DashboardPanelState } from './types';
@@ -47,13 +42,8 @@ export const getNextSectionName = (items: DashboardSection[]): string => {
 };
 
 /**
- * First "Add section": move ALL current panels into a single new section,
- * preserving their existing arrangement. The section grid uses the same
- * horizontal coordinate space, so x/w/h remain unchanged; y is translated by
- * the original minimum y so the section starts at y=0 while keeping relative
- * vertical spacing. panelsJSON.gridData itself is left untouched by this move;
- * it remains the dashboard's GridLayout-mode representation and is only ever
- * recomputed on ungroup (see flattenSectionsToPanels).
+ * Move all panels into the first section without repacking them. The minimum
+ * panel y becomes zero and the remaining relative spacing is preserved.
  */
 export const migrateAllPanelsToSection = (
   panels: PanelMap,
@@ -74,7 +64,6 @@ export const migrateAllPanelsToSection = (
   return { id: generateSectionId(), type: 'section', name, collapsed: false, members };
 };
 
-/** Append a new empty (expanded) section with an auto-generated name. */
 export const appendEmptySection = (items: DashboardSection[]): DashboardSection[] => [
   ...items,
   {
@@ -87,14 +76,9 @@ export const appendEmptySection = (items: DashboardSection[]): DashboardSection[
 ];
 
 /**
- * Slot for a newly added member: find the top-left-most open space in the
- * section's inner grid that can fit the incoming panel. Uses the same 2D
- * bitmap scan as flat-grid panel placement (`findOpenSpace`), so gaps left
- * by removed or resized members are reused instead of wasted.
- *
- * Add-to-section and move-to-section pass the incoming panel's own w/h so
- * panels keep their size; callers adding a brand-new panel omit w/h and get
- * the default size.
+ * Reuse the flat-grid placement algorithm so new members fill the first
+ * available section-relative slot. Existing panels pass their current size;
+ * new panels use the dashboard defaults.
  */
 export const computeAppendedMemberGridData = (
   members: SectionLayoutMember[],
@@ -108,12 +92,6 @@ export const computeAppendedMemberGridData = (
   );
 };
 
-/**
- * Append a member (by panel id) to a specific section. Returns the new items and
- * the section-relative gridData assigned to the member. Returns undefined if the
- * section doesn't exist. Pass optional `w`/`h` to preserve the panel's current
- * size (e.g. when moving between sections); omit for the default panel size.
- */
 export const appendMemberToSection = (
   items: DashboardSection[],
   sectionId: string,
@@ -132,7 +110,6 @@ export const appendMemberToSection = (
   return { items: newItems, gridData };
 };
 
-/** Every panel id referenced as a member of some section. */
 export const getClaimedMemberIds = (items: DashboardSection[]): Set<string> => {
   const ids = new Set<string>();
   items.forEach((section) => section.members.forEach((m) => ids.add(m.idRef)));
@@ -140,13 +117,8 @@ export const getClaimedMemberIds = (items: DashboardSection[]): Set<string> => {
 };
 
 /**
- * Panels present in the dashboard's `panels` map that are NOT a member of any
- * explicit section. These are rendered in the trailing read-only "Ungrouped"
- * virtual section (never stored in layoutJSON). This is what makes the render
- * invariant `rendered = section members + unclaimed panels` hold, so panels
- * added by callers that only write panelsJSON (Explore / agent_traces
- * "add to dashboard") still show up instead of silently disappearing.
- * Returned in panels-array (map insertion) order, which mirrors panelsJSON.
+ * Panels not claimed by an explicit section render in the read-only,
+ * non-persisted "Ungrouped" section.
  */
 export const computeUnclaimedPanels = (
   items: DashboardSection[],
@@ -157,12 +129,8 @@ export const computeUnclaimedPanels = (
 };
 
 /**
- * Flow layout for the read-only "Ungrouped" section. It ignores each panel's
- * stored x/y and instead packs panels left-to-right in ARRAY ORDER using their
- * own w/h, wrapping to a new row when the next panel doesn't fit the grid
- * width. Each wrapped row starts below the tallest panel of the previous row.
- * This keeps the Ungrouped display order-driven and stable regardless of the
- * panels' absolute coordinates in panelsJSON.
+ * Lay out unclaimed panels in map order without changing their stored
+ * GridLayout coordinates.
  */
 export const computeUngroupedLayout = (panels: DashboardPanelState[]): SectionLayoutMember[] => {
   let cursorX = 0;
@@ -188,7 +156,6 @@ export const computeUngroupedLayout = (panels: DashboardPanelState[]): SectionLa
   });
 };
 
-/** Remove a member (panel id) from whichever section holds it. */
 export const removeMemberFromLayout = (
   items: DashboardSection[],
   memberId: string
@@ -207,11 +174,7 @@ export const setSectionCollapsed = (
   collapsed: boolean
 ): DashboardSection[] => items.map((s) => (s.id === sectionId ? { ...s, collapsed } : s));
 
-/**
- * Remove a section; returns the new items plus the member panel ids that should
- * also be deleted from the container's panels map (delete-section removes the
- * section AND its panels).
- */
+// Deleting a section also deletes its member panels.
 export const removeSection = (
   items: DashboardSection[],
   sectionId: string
@@ -224,11 +187,8 @@ export const removeSection = (
 };
 
 /**
- * Move a member from its current section to another. Returns the new items with
- * the member removed from its old section and appended to the target (with a
- * fresh section-relative slot). The current member w/h take precedence; the
- * optional fallback preserves dimensions for an unclaimed panel. No-op if the
- * target section doesn't exist.
+ * Preserve the member's current size when moving it. The fallback size is used
+ * when the panel is currently unclaimed.
  */
 export const moveMemberToSection = (
   items: DashboardSection[],
@@ -237,7 +197,7 @@ export const moveMemberToSection = (
   fallbackSize?: Pick<SectionMemberGridData, 'w' | 'h'>
 ): DashboardSection[] => {
   if (!items.some((s) => s.id === targetSectionId)) return items;
-  // Capture the member's current w/h BEFORE removing it from the old section.
+  // Read the current size before removing the member from its source section.
   let memberW = fallbackSize?.w;
   let memberH = fallbackSize?.h;
   for (const section of items) {
@@ -254,12 +214,8 @@ export const moveMemberToSection = (
 };
 
 /**
- * Ungroup: stack sections top-to-bottom and translate each member's
- * section-relative gridData into ABSOLUTE gridData on its panel. Returns a new
- * panels map. Sections are laid out in array order; a member's absolute y is the
- * running vertical cursor plus its section-relative y. The section chrome
- * disappears, so no header rows are inserted. Panels not referenced by any
- * section are left untouched.
+ * Flatten sections in array order by translating member coordinates into the
+ * panel map. Unclaimed panels are left unchanged.
  */
 export const flattenSectionsToPanels = (items: DashboardSection[], panels: PanelMap): PanelMap => {
   const next: PanelMap = { ...panels };

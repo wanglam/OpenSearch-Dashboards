@@ -112,12 +112,7 @@ export interface IContainer<
   ): Promise<E | ErrorEmbeddable>;
 
   /**
-   * Optional. Lets a container contribute opaque, container-owned context that
-   * should round-trip through an editor when a child is created/edited from
-   * within this container. The returned value is carried out on
-   * `ContainerInfo.containerData` and echoed back unchanged, so the container
-   * can recover it when the editor returns. Containers that have no such
-   * context simply do not implement this.
+   * Returns opaque container context to round-trip through a child editor.
    */
   getStateTransferContainerInfoData?(): Record<string, unknown> | undefined;
 }

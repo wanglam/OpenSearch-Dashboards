@@ -100,9 +100,7 @@ export class ClonePanelAction implements ActionByType<typeof ACTION_CLONE_PANEL>
       throw new PanelNotFoundError();
     }
 
-    // If the source panel belongs to a section, clone into that same section
-    // rather than the read-only "Ungrouped" group. showPlaceholderUntil
-    // self-gates on the sections feature flag, so this is a no-op when off.
+    // Keep a section member's clone in the same section.
     const layout = dashboard.getInput().layout;
     const sourceMember =
       layout?.type === 'SectionLayout'
@@ -114,18 +112,10 @@ export class ClonePanelAction implements ActionByType<typeof ACTION_CLONE_PANEL>
         : undefined;
     const sourceSectionId = sourceMember?.sectionId;
 
-    // When the source lives in a section, the size the user sees is the section
-    // member's gridData (layoutJSON). panelsJSON.gridData is the stale flat
-    // GridLayout size -- section resizes only update the member and never touch
-    // it -- so clone from the member size to match the visible panel.
+    // Clone the visible section size rather than the panel's flat-grid size.
     const width = sourceMember?.member.gridData.w ?? panelToClone.gridData.w;
     const height = sourceMember?.member.gridData.h ?? panelToClone.gridData.h;
 
-    // When the source lives in a section, tag the placement with the target
-    // section id. showPlaceholderUntil runs the placement method against the
-    // section's own members (section-relative coords) and applies any
-    // sibling-shift side effect, so the clone lands beside the original within
-    // the section -- matching flat-grid clone UX.
     const besideArgs: IPanelPlacementBesideArgs = {
       width,
       height,

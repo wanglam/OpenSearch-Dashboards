@@ -58,15 +58,7 @@ const PanelPopover = ({
       trigger: DASHBOARD_ADD_PANEL_TRIGGER as any,
     }));
 
-    // Dashboard collapsible sections: inject an "Add section"
-    // entry into the same "Create new" menu as the visualization types, placed
-    // immediately AFTER the Metrics visualization entry. We derive the order
-    // from the live Metrics action's own order (order-1 -> renders right after
-    // it) rather than a hard-coded constant, so the position stays correct
-    // regardless of which visualization types are installed/registered. If the
-    // Metrics entry is ever absent (plugin disabled/renamed), fall back to just
-    // after the lowest-ordered existing entry so the item stays in a predictable
-    // spot instead of jumping to a fixed slot.
+    // Keep Section immediately after Metrics without assuming fixed action orders.
     const metricsAction = actionsRef.current.find(
       (a) => a.id === 'add_vis_action_MetricsVisualization'
     );
@@ -96,9 +88,6 @@ const PanelPopover = ({
         trigger: DASHBOARD_ADD_PANEL_TRIGGER as any,
       });
     }
-
-    // "Ungroup all sections" now lives on each section container's kebab menu
-    // (see SectionLayoutContainer), not in this top-nav "Create new" popover.
 
     return buildContextMenuForActions({
       actions,

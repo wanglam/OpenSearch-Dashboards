@@ -646,11 +646,6 @@ export class DashboardPlugin implements Plugin<
     uiActions.registerAction(clonePanelAction);
     uiActions.attachAction(CONTEXT_MENU_TRIGGER, clonePanelAction.id);
 
-    // Dashboard collapsible sections (v2 layout model).
-    // "Change section" moves a member panel between sections. Gated behind the
-    // allowDashboardSections feature flag. (Add-existing / delete / reorder /
-    // rename live on the section-header controls in SectionLayoutContainer, and
-    // "Add section" / "Ungroup" are top-nav actions.)
     if (this.dashboardFeatureFlagConfig?.allowDashboardSections) {
       const movePanelToSectionAction = new MovePanelToSectionAction(core);
       uiActions.registerAction(movePanelToSectionAction);

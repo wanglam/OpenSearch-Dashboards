@@ -111,7 +111,6 @@ describe('section_layout_utils', () => {
     it('returns the smallest unused "Section N" name', () => {
       expect(getNextSectionName([])).toBe('Section 1');
       expect(getNextSectionName([section('x', 'Section 1', [])])).toBe('Section 2');
-      // Gap-filling: Section 2 deleted -> reuse 2 before 3.
       expect(
         getNextSectionName([section('x', 'Section 1', []), section('z', 'Section 3', [])])
       ).toBe('Section 2');
@@ -135,8 +134,6 @@ describe('section_layout_utils', () => {
         { idRef: 'a', type: 'panel' as const, gridData: { x: 0, y: 0, w: 24, h: 10 } },
         { idRef: 'b', type: 'panel' as const, gridData: { x: 24, y: 0, w: 24, h: 18 } },
       ];
-      // The bitmap scan finds the open slot at (0,10) below the shorter panel A,
-      // rather than appending at y=18 below the tallest panel B.
       expect(computeAppendedMemberGridData(members)).toEqual({ x: 0, y: 10, w: 24, h: 15 });
     });
 
@@ -166,9 +163,6 @@ describe('section_layout_utils', () => {
     });
 
     it('fills a gap left by a removed member instead of appending below', () => {
-      // Panel A (left) and a full-width panel C on the next row; the right half
-      // of row 0 is free (e.g. panel B was deleted). A new 24x10 panel must
-      // fill the (24,0) gap, not append at the bottom.
       const members = [
         { idRef: 'a', type: 'panel' as const, gridData: { x: 0, y: 0, w: 24, h: 10 } },
         { idRef: 'c', type: 'panel' as const, gridData: { x: 0, y: 10, w: 48, h: 10 } },
@@ -182,17 +176,11 @@ describe('section_layout_utils', () => {
     });
 
     it('does not dump the new member at the bottom when a resized member leaves upper space', () => {
-      // Reproduces the reported bug: member A resized to a tall narrow panel
-      // (20x37) beside a normal member B (24x15) at (24,0), leaving open space
-      // in the upper-right region. The old anchor algorithm wrapped the new
-      // member to the very bottom (y=37); findOpenSpace instead anchors it near
-      // the top so react-grid-layout compacts it into the free upper region.
       const members = [
         { idRef: 'a', type: 'panel' as const, gridData: { x: 0, y: 0, w: 20, h: 37 } },
         { idRef: 'b', type: 'panel' as const, gridData: { x: 24, y: 0, w: 24, h: 15 } },
       ];
       const result = computeAppendedMemberGridData(members, 24, 15);
-      // The regression guarantee: NOT wrapped below everything (old behavior: y=37).
       expect(result.y).toBeLessThan(37);
       expect(result).toEqual({ x: 20, y: 1, w: 24, h: 15 });
     });
@@ -305,7 +293,6 @@ describe('section_layout_utils', () => {
         ]),
       ];
       const result = flattenSectionsToPanels(items, panels);
-      // s1 occupies rows 0..10, so s2's member starts at absolute y=10.
       expect(result.p1.gridData).toEqual({ x: 0, y: 0, w: 24, h: 10, i: 'p1' });
       expect(result.p2.gridData).toEqual({ x: 0, y: 10, w: 24, h: 8, i: 'p2' });
     });
@@ -325,11 +312,10 @@ describe('section_layout_utils', () => {
         ]),
       ];
       const panels = {
-        a: panel('a', 0, 0, 24, 10), // claimed
-        c: panel('c', 0, 5, 24, 10), // unclaimed (inserted before b)
-        b: panel('b', 24, 0, 24, 15), // unclaimed
+        a: panel('a', 0, 0, 24, 10),
+        c: panel('c', 0, 5, 24, 10),
+        b: panel('b', 24, 0, 24, 15),
       };
-      // Order follows the panels map (insertion), NOT sorted by y/x.
       const result = computeUnclaimedPanels(items, panels);
       expect(result.map((p) => p.explicitInput.id)).toEqual(['c', 'b']);
     });
@@ -353,14 +339,12 @@ describe('section_layout_utils', () => {
 
   describe('computeUngroupedLayout', () => {
     it('flows panels by array order using their own w/h, ignoring stored x/y', () => {
-      // Stored coords are deliberately overlapping/garbage to prove they are ignored.
       const panels = [
         panel('a', 99, 99, 24, 10),
         panel('b', 99, 99, 24, 12),
         panel('c', 99, 99, 24, 8),
       ];
       const result = computeUngroupedLayout(panels);
-      // a,b fill row 0 (0..48); c wraps to the next row below the tallest of row 0 (h=12).
       expect(result).toEqual([
         { idRef: 'a', type: 'panel', gridData: { x: 0, y: 0, w: 24, h: 10 } },
         { idRef: 'b', type: 'panel', gridData: { x: 24, y: 0, w: 24, h: 12 } },

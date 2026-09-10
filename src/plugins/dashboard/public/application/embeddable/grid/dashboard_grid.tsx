@@ -42,11 +42,6 @@ import { DashboardContainerInput } from '../dashboard_container';
 import { DashboardContainer, DashboardReactContextValue } from '../dashboard_container';
 import { ResponsiveSizedGrid } from './dashboard_responsive_grid';
 
-/**
- * The classic single react-grid-layout of dashboard panels (GridLayout mode).
- * The SectionLayout mode is rendered by SectionLayoutContainer, not here;
- * DashboardViewport picks the renderer based on `layout.type`.
- */
 export interface DashboardGridProps extends ReactIntl.InjectedIntlProps {
   opensearchDashboards: DashboardReactContextValue;
   PanelComponent: EmbeddableStart['EmbeddablePanel'];

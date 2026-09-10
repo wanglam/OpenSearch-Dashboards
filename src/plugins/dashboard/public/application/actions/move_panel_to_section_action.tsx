@@ -9,14 +9,6 @@
  * GitHub history for details.
  */
 
-// Dashboard collapsible sections (v2 layout model).
-// "Move to section" panel action: reassigns a member panel to a different
-// section. Membership lives in the top-level `layout.items`, so this only edits
-// the layout (the panel's own gridData is untouched). Only compatible while the
-// dashboard is in SectionLayout mode. uiActions registers actions statically at
-// plugin setup, so the concrete section list is read at execute() time and
-// shown in a small radio modal.
-
 import React from 'react';
 import { i18n } from '@osd/i18n';
 import { CoreStart } from 'src/core/public';
@@ -44,13 +36,11 @@ export interface MovePanelToSectionActionContext {
   embeddable: IEmbeddable;
 }
 
-/** The SectionLayout of a dashboard container, or undefined when not in section mode. */
 const getSectionLayout = (dashboard: DashboardContainer): DashboardLayout | undefined => {
   const layout = dashboard.getInput().layout;
   return layout && layout.type === 'SectionLayout' && layout.items.length > 0 ? layout : undefined;
 };
 
-/** The id of the section a member currently belongs to (if any). */
 const findOwningSectionId = (layout: DashboardLayout, memberId: string): string | undefined =>
   layout.items.find((section) => section.members.some((m) => m.idRef === memberId))?.id;
 
@@ -86,10 +76,8 @@ export class MovePanelToSectionAction implements ActionByType<typeof ACTION_MOVE
     if (!layout) {
       return false;
     }
-    // A panel already in a section needs a DIFFERENT section to move to, i.e.
-    // more than one section. An unclaimed (Ungrouped) panel can always move into
-    // a section: the Ungrouped group only renders alongside >=1 explicit section
-    // (0 sections renders as a flat GridLayout), so a valid target always exists.
+    // A claimed panel needs another section as a target; an unclaimed panel can
+    // move into the first section.
     const owningSectionId = findOwningSectionId(layout, embeddable.id);
     return owningSectionId === undefined || layout.items.length > 1;
   }
@@ -113,8 +101,7 @@ export class MovePanelToSectionAction implements ActionByType<typeof ACTION_MOVE
     }
     const currentSectionId = findOwningSectionId(layout, embeddable.id);
 
-    // Sections are listed in their real top-to-bottom render order (array
-    // order). Selection is tracked by section id so duplicate names are safe.
+    // Select by id so duplicate section names remain unambiguous.
     const options: EuiRadioGroupOption[] = layout.items.map((section) => ({
       id: section.id,
       label: section.name,
@@ -132,10 +119,7 @@ export class MovePanelToSectionAction implements ActionByType<typeof ACTION_MOVE
             if (targetId && targetId !== currentSectionId) {
               const panelSize = dashboard.getInput().panels[embeddable.id]?.gridData;
               const moved = moveMemberToSection(layout.items, embeddable.id, targetId, panelSize);
-              // Auto-expand the target section so the moved panel is visible.
               const items = setSectionCollapsed(moved, targetId, false);
-              // The panel re-parents between two section grids, so recreate it
-              // via the container's natural remove/add lifecycle.
               dashboard.reparentPanels([embeddable.id], { type: 'SectionLayout', items });
             }
             modalSession.close();
@@ -170,8 +154,6 @@ function MoveToSectionModal({
         </EuiModalHeaderTitle>
       </EuiModalHeader>
       <EuiModalBody>
-        {/* Radio group selects by id, so duplicate section titles are fine and
-            never mis-highlight (unlike EuiSelectable's label-based matching). */}
         <EuiRadioGroup
           options={options}
           idSelected={selectedId}
