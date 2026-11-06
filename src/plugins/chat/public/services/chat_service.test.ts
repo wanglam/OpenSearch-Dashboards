@@ -2626,6 +2626,39 @@ describe('ChatService', () => {
       expect(mockSavedObjectsClient.find.mock.calls.length).toBe(callsAfterFirst);
     });
 
+    it('should not re-fetch the data source list when several ids are known to be invalid', async () => {
+      const { getDefaultDataSourceId } = jest.requireMock('../../../data_source_management/public');
+      getDefaultDataSourceId.mockResolvedValue('ds-invalid-default');
+
+      (window as any).assistantContextStore = {
+        getAllContexts: () => [
+          {
+            categories: ['page'],
+            description: 'page',
+            value: { appId: 'explore', dataset: { dataSource: { id: 'ds-invalid-page' } } },
+          },
+        ],
+      };
+
+      const service = new (ChatService as any)(
+        mockUiSettings,
+        mockCoreChatService,
+        mockWorkspaces,
+        mockSavedObjectsClient
+      );
+
+      await service.getCurrentDataSourceId();
+      expect(service.getRejectedDataSources()).toEqual([
+        { source: 'page', id: 'ds-invalid-page' },
+        { source: 'default', id: 'ds-invalid-default' },
+      ]);
+      const callsAfterFirst = mockSavedObjectsClient.find.mock.calls.length;
+      await service.getCurrentDataSourceId();
+      await service.peekCurrentDataSourceId();
+
+      expect(mockSavedObjectsClient.find.mock.calls.length).toBe(callsAfterFirst);
+    });
+
     it('should keep a switched-to data source that an earlier resolve had marked invalid', async () => {
       const { getDefaultDataSourceId } = jest.requireMock('../../../data_source_management/public');
       getDefaultDataSourceId.mockResolvedValue('ds-new');

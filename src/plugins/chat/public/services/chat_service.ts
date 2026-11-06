@@ -1298,8 +1298,9 @@ export class ChatService {
         .filter((ds) => ds.attributes?.dataSourceEngineType !== 'AnalyticEngine')
         .map((ds) => ({ id: ds.id, title: ds.attributes?.title || ds.id }))
         .sort((a, b) => a.title.toLowerCase().localeCompare(b.title.toLowerCase()));
-      // A fresh list may now contain ids that were rejected against the old one.
-      this.invalidDataSourceIds.clear();
+      // Forgive only the rejected ids the fresh list now contains; clearing all of them would
+      // make every unknown id re-fetch the list on each resolve.
+      for (const ds of this.cachedAvailableDataSources) this.invalidDataSourceIds.delete(ds.id);
       return this.cachedAvailableDataSources;
     } catch {
       return [];
